@@ -58,6 +58,7 @@ next-env.d.ts
 # Hosting and deployment metadata
 .vercel/
 .netlify/
+.mcp.json
 
 # Archives and packaged artifacts
 *.zip
