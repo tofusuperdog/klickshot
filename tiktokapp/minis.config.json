@@ -1,0 +1,26 @@
+{
+  "client_key": "mnve2ugyyu44qay5",
+  "navbar": {
+    "bgColorLight": "#000000",
+    "bgColorDark": "#000000"
+  },
+  "dev": {
+    "port": 3000,
+    "host": "localhost"
+  },
+  "build": {
+    "outputDir": "out",
+    "htmlEntry": "index.html"
+  },
+  "domain": {
+    "trustedDomains": [
+      "https://tiktok.minchapseries.com",
+      "https://api.minchapseries.com",
+      "https://minchapseries.com",
+      "https://dev.minchapseries.com",
+      "https://vxskkaxvlgycokdtuocj.supabase.co",
+      "https://open.tiktokapis.com",
+      "https://sf16-vod-license-multi.byteplusvod.com"
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --primary: #BF8EFF;
+  color-scheme: dark;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: black;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.veplayer-raised-subtitle xg-text-track.xg-text-track {
+  bottom: 25%;
+}
+
+.veplayer-raised-subtitle .xgplayer-playbackrate,
+.veplayer-raised-subtitle .xgplayer-mobile-playBackRate,
+.veplayer-raised-subtitle .xgplayer-fullscreen,
+.veplayer-raised-subtitle .xgplayer-vttsub,
+.veplayer-raised-subtitle .xgplayer-aisub {
+  display: none !important;
+}

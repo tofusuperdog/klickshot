@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+:root {
+  background-color: #0d0f35;
+  color: white;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #0d0f35;
+}
+
+/* Cinematic Effects */
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.95; }
+  10% { opacity: 0.9; }
+  15% { opacity: 0.99; }
+  20% { opacity: 0.95; }
+  25% { opacity: 0.98; }
+  30% { opacity: 0.92; }
+  35% { opacity: 0.99; }
+  40% { opacity: 0.96; }
+  45% { opacity: 0.94; }
+  50% { opacity: 0.98; }
+  60% { opacity: 0.95; }
+  70% { opacity: 0.99; }
+  80% { opacity: 0.97; }
+  90% { opacity: 0.99; }
+  100% { opacity: 1; }
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-20px) translateX(10px); }
+  50% { transform: translateY(-10px) translateX(20px); }
+  75% { transform: translateY(10px) translateX(-10px); }
+}
+
+@keyframes tracking-in {
+  0% {
+    letter-spacing: -0.5em;
+    opacity: 0;
+    filter: blur(12px);
+  }
+  100% {
+    letter-spacing: 0.2em;
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes logo-entrance {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+    filter: brightness(0) blur(20px);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(2) blur(10px);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1) blur(0);
+  }
+}
+
+.animate-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+.animate-tracking-in {
+  animation: tracking-in 1.5s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+.animate-logo {
+  animation: logo-entrance 1.2s cubic-bezier(0.230, 1.000, 0.320, 1.000) both;
+}
+
+.grain-overlay {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 40;
+  animation: grain 8s steps(10) infinite;
+}
+
+.cinematic-vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.6) 80%, rgba(0,0,0,0.95) 100%);
+  pointer-events: none;
+  z-index: 30;
+}

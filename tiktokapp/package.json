@@ -1,0 +1,28 @@
+{
+  "name": "minchapxtiktokapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:lan": "next dev -H 0.0.0.0",
+    "build": "next build",
+    "build:tiktok": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-tiktok-minis.ps1",
+    "package:tiktok": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/package-tiktok-minis.ps1",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@byteplus/veplayer": "^1.16.0",
+    "next": "16.2.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.14",
+    "tailwindcss": "3.4.17"
+  },
+  "overrides": {
+    "postcss": "8.5.14"
+  }
+}

@@ -1,0 +1,255 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cinematic-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cinematic-aurora {
+  position: absolute;
+  inset: -12%;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(118, 146, 255, 0.34), transparent 28%),
+    radial-gradient(circle at 78% 24%, rgba(191, 103, 255, 0.2), transparent 24%),
+    radial-gradient(circle at 68% 74%, rgba(255, 137, 88, 0.16), transparent 26%),
+    radial-gradient(circle at 50% 50%, rgba(61, 92, 196, 0.12), transparent 46%);
+  filter: blur(18px);
+  opacity: 0.95;
+  animation: auroraShift 18s ease-in-out infinite alternate;
+}
+
+.cinematic-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.7) 22%, black 100%);
+  opacity: 0.22;
+  transform: perspective(1000px) rotateX(76deg) scale(1.9) translateY(16%);
+  transform-origin: center bottom;
+}
+
+.cinematic-beam {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(0.5px);
+  opacity: 0.7;
+  mix-blend-mode: screen;
+}
+
+.cinematic-beam-left {
+  left: -12%;
+  top: 10%;
+  width: 46%;
+  height: 140%;
+  background: linear-gradient(180deg, rgba(110, 132, 255, 0.34) 0%, rgba(110, 132, 255, 0.06) 52%, rgba(110, 132, 255, 0) 100%);
+  transform: rotate(18deg);
+  animation: beamLeftMove 11s ease-in-out infinite alternate;
+}
+
+.cinematic-beam-right {
+  right: -10%;
+  top: -6%;
+  width: 38%;
+  height: 128%;
+  background: linear-gradient(180deg, rgba(255, 171, 92, 0.22) 0%, rgba(255, 171, 92, 0.04) 54%, rgba(255, 171, 92, 0) 100%);
+  transform: rotate(-16deg);
+  animation: beamRightMove 13s ease-in-out infinite alternate;
+}
+
+.cinematic-orb {
+  position: absolute;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+  filter: blur(6px);
+}
+
+.cinematic-orb-one {
+  left: 10%;
+  top: 14%;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(117, 160, 255, 0.28) 0%, rgba(117, 160, 255, 0.08) 48%, rgba(117, 160, 255, 0) 72%);
+  animation: orbPulse 8s ease-in-out infinite;
+}
+
+.cinematic-orb-two {
+  right: 8%;
+  bottom: 8%;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(255, 149, 94, 0.22) 0%, rgba(255, 149, 94, 0.08) 44%, rgba(255, 149, 94, 0) 72%);
+  animation: orbPulse 10s ease-in-out infinite reverse;
+}
+
+.cinematic-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.cinematic-particle {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  left: var(--x);
+  top: var(--y);
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0%, rgba(157, 187, 255, 0.75) 38%, rgba(157, 187, 255, 0) 100%);
+  box-shadow: 0 0 10px rgba(157, 187, 255, 0.65);
+  opacity: 0.2;
+  animation:
+    particleFloat var(--duration) ease-in-out infinite alternate,
+    particleBlink calc(var(--duration) * 0.45) ease-in-out infinite;
+  animation-delay: var(--delay), calc(var(--delay) * 0.55);
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(13, 18, 56, 0.72) 0%, rgba(17, 23, 68, 0.58) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.hero-shine {
+  position: relative;
+}
+
+.hero-shine::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.02) 30%, rgba(121, 146, 255, 0.28) 55%, rgba(255, 173, 110, 0.24) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes auroraShift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(2%, 1%, 0) scale(1.08);
+  }
+}
+
+@keyframes beamLeftMove {
+  0% {
+    transform: rotate(18deg) translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  100% {
+    transform: rotate(24deg) translate3d(6%, -2%, 0);
+    opacity: 0.78;
+  }
+}
+
+@keyframes beamRightMove {
+  0% {
+    transform: rotate(-16deg) translate3d(0, 0, 0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotate(-22deg) translate3d(-6%, 3%, 0);
+    opacity: 0.72;
+  }
+}
+
+@keyframes orbPulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.9);
+  }
+  50% {
+    transform: translate3d(var(--dx), calc(var(--dy) * -0.6), 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(calc(var(--dx) * -0.5), var(--dy), 0) scale(0.95);
+  }
+}
+
+@keyframes particleBlink {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  40% {
+    opacity: 0.75;
+  }
+  70% {
+    opacity: 0.35;
+  }
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6C72FF #1a163a;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background-color: #1a163a;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(to right, #6C72FF, #4a72d7);
+  background-color: #6C72FF;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-image: linear-gradient(to right, #7b80ff, #5c85f1);
+  background-color: #5c85f1;
+}
+
+.veplayer-raised-subtitle xg-text-track.xg-text-track {
+  bottom: 25%;
+}
