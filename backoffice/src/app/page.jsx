@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 
-const cinematicParticles = Array.from({ length: 20 }, (_, index) => ({
+const cinematicParticles = Array.from({ length: 34 }, (_, index) => ({
   id: `particle-${index + 1}`,
-  size: `${4 + (index % 4) * 2}px`,
-  duration: `${10 + (index % 5) * 2.4}s`,
-  delay: `${index * -0.8}s`,
+  size: `${2 + (index % 5) * 1.4}px`,
+  duration: `${9 + (index % 6) * 2.2}s`,
+  delay: `${index * -0.65}s`,
   x: `${6 + ((index * 11) % 88)}%`,
   y: `${8 + ((index * 9) % 80)}%`,
-  dx: `${(index % 2 === 0 ? 1 : -1) * (18 + (index % 4) * 8)}px`,
-  dy: `${(index % 3 === 0 ? -1 : 1) * (24 + (index % 5) * 6)}px`,
+  dx: `${(index % 2 === 0 ? 1 : -1) * (16 + (index % 4) * 10)}px`,
+  dy: `${(index % 3 === 0 ? -1 : 1) * (22 + (index % 5) * 7)}px`,
 }));
 
 export default function Home() {
@@ -92,12 +92,12 @@ export default function Home() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L22 20H2L12 2ZM11 16V18H13V16H11ZM11 10V14H13V10H11Z" />
           </svg>
-          <span className="font-medium tracking-wide">{error}</span>
+          <span className="font-medium">{error}</span>
         </div>
       </div>
 
-      <div className="flex lg:hidden min-h-screen items-center justify-center bg-gradient-to-br from-[#11154D] to-[#291337]">
-        <div className="text-center px-6 flex flex-col items-center">
+      <div className="flex lg:hidden min-h-screen items-center justify-center bg-gradient-to-br from-[#03081f] via-[#10194f] to-[#3b1238]">
+        <div className="flex flex-col items-center px-6 text-center">
           <div className="relative w-[280px] h-[80px] mb-8">
             <Image
               src="/minchap_tiktok.svg"
@@ -107,10 +107,10 @@ export default function Home() {
               priority
             />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="mb-2 text-2xl font-bold text-white">
             ไม่รองรับการใช้งานบนอุปกรณ์นี้
           </h1>
-          <p className="text-gray-300 font-light mb-8">
+          <p className="mb-8 font-light text-gray-300">
             กรุณาเข้าใช้งานผ่านคอมพิวเตอร์ (PC) เท่านั้น
           </p>
           <a
@@ -122,16 +122,18 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="hidden lg:flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#090d2b_0%,#11154D_32%,#1f255f_64%,#241230_100%)] relative overflow-hidden px-8">
+      <div className="hidden lg:flex min-h-screen items-center justify-center bg-[linear-gradient(135deg,#03071d_0%,#070d35_32%,#150829_68%,#080314_100%)] relative overflow-hidden px-8">
         <div className="cinematic-stage" aria-hidden="true">
           <div className="cinematic-aurora" />
-          <div className="cinematic-grid" />
-          <div className="cinematic-beam cinematic-beam-left" />
-          <div className="cinematic-beam cinematic-beam-right" />
-          <div className="cinematic-orb cinematic-orb-one" />
-          <div className="cinematic-orb cinematic-orb-two" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_transparent_38%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(7,10,28,0.08),_rgba(7,10,28,0.44))]" />
+          <div className="cinematic-nebula cinematic-nebula-blue" />
+          <div className="cinematic-nebula cinematic-nebula-pink" />
+          <div className="cinematic-planet cinematic-planet-left" />
+          <div className="cinematic-planet cinematic-planet-right" />
+          <div className="cinematic-sunburst cinematic-sunburst-blue" />
+          <div className="cinematic-sunburst cinematic-sunburst-pink" />
+          <div className="cinematic-sunburst cinematic-sunburst-gold" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_transparent_36%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,_rgba(2,5,20,0.08),_rgba(2,4,16,0.6))]" />
 
           <div className="cinematic-particles">
             {cinematicParticles.map((particle) => (
@@ -152,48 +154,48 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_rgba(103,132,255,0.1),_transparent_55%)]" />
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,_rgba(103,132,255,0.08),_transparent_55%)]" />
 
-        <div className="glass-panel hero-shine relative z-10 flex items-stretch justify-center max-w-6xl w-full rounded-[32px] overflow-hidden">
-          <div className="flex flex-col justify-center flex-1 px-16 py-18 min-h-[680px] relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.08),_transparent_35%)] pointer-events-none" />
+        <div className="glass-panel hero-shine relative z-10 flex items-stretch justify-center max-w-6xl w-full rounded-[30px] overflow-hidden">
+          <div className="flex flex-col justify-center flex-1 px-16 py-[48px] min-h-[560px] relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(75,183,255,0.1),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(255,76,201,0.09),_transparent_36%)] pointer-events-none" />
 
             <div className="relative z-10 max-w-[520px]">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/12 bg-white/6 text-[12px] uppercase tracking-[0.32em] text-blue-100/90 mb-8">
-                MinChap Studio
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-cyan-300/55 bg-[#08123d]/65 text-[12px] uppercase text-blue-100/90 mb-8 shadow-[0_0_22px_rgba(55,196,255,0.28)]">
+                Love Drama Studio
               </div>
 
-              <div className="relative w-[360px] h-[100px] mb-4">
+              <div className="relative w-[526px] h-[273px] mb-4 max-w-full">
                 <Image
-                  src="/minchaplogo_main.webp"
-                  alt="minChap Logo"
+                  src="/klickshotlogo.webp"
+                  alt="klickshot Logo"
                   fill
-                  sizes="360px"
+                  sizes="480px"
                   style={{ objectFit: "contain" }}
                   priority
                 />
               </div>
 
-              <p className="text-blue-100/80 text-[15px] tracking-[0.3em] uppercase mb-5">
+              <p className="text-[#b7a8ff] text-[15px] uppercase mb-5">
                 TikTok Minis CMS
               </p>
 
-              <h1 className="text-white text-[48px] leading-[1.05] font-semibold tracking-[-0.03em] mb-6">
+              <h1 className="text-white text-[46px] leading-[1.08] font-semibold mb-6">
                 Behind every short film,
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-[#a9bbff] to-[#ffbf96]">
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-[#a9bbff] to-[#ff6ed0]">
                   there is a beautiful control room.
                 </span>
               </h1>
             </div>
           </div>
 
-          <div className="w-px bg-gradient-to-b from-transparent via-white/16 to-transparent" />
+          <div className="w-px bg-gradient-to-b from-transparent via-cyan-300/28 to-transparent" />
 
-          <div className="flex flex-col justify-center w-[440px] px-12 py-14 relative bg-[linear-gradient(180deg,rgba(10,14,44,0.56),rgba(9,13,34,0.7))]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(125,144,255,0.14),_transparent_36%)] pointer-events-none" />
+          <div className="flex flex-col justify-center w-[440px] px-12 py-10 relative bg-[linear-gradient(180deg,rgba(5,10,38,0.54),rgba(9,6,33,0.76))]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(74,215,255,0.12),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(255,178,88,0.1),_transparent_40%)] pointer-events-none" />
 
             <div className="relative z-10">
-              <h2 className="text-[29px] font-semibold text-white text-center mb-2 tracking-wide">
+              <h2 className="text-[29px] font-semibold text-white text-center mb-8">
                 ยินดีต้อนรับ
               </h2>
 
@@ -201,7 +203,7 @@ export default function Home() {
                 <div>
                   <label
                     htmlFor="username"
-                    className="block text-sm font-light text-gray-200 mb-2"
+                    className="block mb-2 text-sm font-light text-gray-100"
                   >
                     ชื่อผู้ใช้งาน
                   </label>
@@ -213,7 +215,7 @@ export default function Home() {
                       setUsername(e.target.value);
                       setError("");
                     }}
-                    className="w-full h-12 px-4 bg-white/88 border border-white/15 rounded-xl text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7b9cff] focus:border-transparent"
+                    className="w-full h-[52px] px-4 bg-[#070b2b]/54 border border-[#4b5fc5]/70 rounded-xl text-white placeholder:text-slate-300/60 focus:outline-none focus:ring-2 focus:ring-[#35d8ff] focus:border-transparent shadow-[inset_0_0_18px_rgba(56,108,255,0.12)]"
                     autoComplete="username"
                     placeholder="กรอกชื่อผู้ใช้งาน"
                   />
@@ -222,7 +224,7 @@ export default function Home() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-light text-gray-200 mb-2"
+                    className="block mb-2 text-sm font-light text-gray-100"
                   >
                     รหัสผ่าน
                   </label>
@@ -235,14 +237,14 @@ export default function Home() {
                         setPassword(e.target.value);
                         setError("");
                       }}
-                      className="w-full h-12 px-4 pr-11 bg-white/88 border border-white/15 rounded-xl text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7b9cff] focus:border-transparent"
+                      className="w-full h-[52px] px-4 pr-11 bg-[#070b2b]/54 border border-[#6b458e]/75 rounded-xl text-white placeholder:text-slate-300/60 focus:outline-none focus:ring-2 focus:ring-[#ff59d2] focus:border-transparent shadow-[inset_0_0_18px_rgba(255,76,201,0.1)]"
                       autoComplete="current-password"
                       placeholder="กรอกรหัสผ่าน"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                      className="absolute transition-colors -translate-y-1/2 cursor-pointer text-slate-300/70 right-3 top-1/2 hover:text-white"
                       aria-label={
                         showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"
                       }
@@ -289,7 +291,7 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex items-center justify-center w-full h-12 rounded-xl text-white font-medium text-[15px] bg-[linear-gradient(90deg,#6f8fff_0%,#7a75ff_45%,#f09b67_100%)] hover:brightness-110 transition-all duration-300 shadow-[0_12px_32px_rgba(104,121,255,0.38)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-full h-[52px] rounded-xl text-white font-semibold text-[15px] bg-[linear-gradient(90deg,#45dbff_0%,#6b6cff_34%,#ff48c8_68%,#ffd24f_100%)] hover:brightness-110 transition-all duration-300 shadow-[0_16px_36px_rgba(255,72,200,0.24),0_10px_28px_rgba(69,219,255,0.22)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                   </button>
@@ -299,7 +301,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="absolute bottom-6 right-8 text-sm text-gray-300 font-light z-10">
+        <div className="absolute z-10 text-sm font-light text-gray-300 bottom-6 right-8">
           {sysVersion.toLowerCase().startsWith("v")
             ? sysVersion
             : `v${sysVersion}`}
