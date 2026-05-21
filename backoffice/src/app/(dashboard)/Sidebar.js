@@ -94,7 +94,7 @@ export default function Sidebar() {
           <div className="flex flex-col items-center justify-center p-4 pb-2">
             <div className="relative w-[210px] h-[92px]">
               <Image
-                src="/klickshotw.svg"
+                src="/klickshotlogo.webp"
                 alt="Klick Shot Logo"
                 fill
                 sizes="210px"
@@ -102,9 +102,9 @@ export default function Sidebar() {
                 priority
               />
             </div>
-            <p className="text-xs text-gray-300 font-light tracking-wider mt-[-6px]">
+            {/* <p className="text-xs text-gray-300 font-light tracking-wider mt-[-6px]">
               TikTok Minis CMS
-            </p>
+            </p> */}
           </div>
 
           <nav className="flex flex-col mt-2">
