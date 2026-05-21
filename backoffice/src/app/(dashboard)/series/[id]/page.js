@@ -31,6 +31,8 @@ export default function EditSeriesPage() {
   // State
   const [genres, setGenres] = useState([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
+  const [contentProducers, setContentProducers] = useState([]);
+  const [loadingContentProducers, setLoadingContentProducers] = useState(true);
   const [loadingSeries, setLoadingSeries] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -38,6 +40,7 @@ export default function EditSeriesPage() {
     title_en: '',
     title_jp: '',
     title_cn: '',
+    content_producer_id: '',
     genre_ids: [],
     total_episodes: 1,
     dub_th: false,
@@ -90,6 +93,8 @@ export default function EditSeriesPage() {
   // Fetch Genres & Series Data
   useEffect(() => {
     async function fetchData() {
+      if (!user?.id) return;
+
       // Fetch genres
       const { data: gData, error: gError } = await backofficeQuery(user, 'genres');
 
@@ -97,6 +102,14 @@ export default function EditSeriesPage() {
         setGenres(gData);
       }
       setLoadingGenres(false);
+
+      // Fetch content producers
+      const { data: producerData, error: producerError } = await backofficeQuery(user, 'content_producers');
+
+      if (!producerError && producerData) {
+        setContentProducers(producerData);
+      }
+      setLoadingContentProducers(false);
 
       // Fetch series by ID
       if (seriesId) {
@@ -117,6 +130,7 @@ export default function EditSeriesPage() {
           title_en: sData.title_en || '',
           title_jp: sData.title_jp || '',
           title_cn: sData.title_cn || '',
+          content_producer_id: sData.content_producer_id ? String(sData.content_producer_id) : '',
           genre_ids: sData.genre_ids || [],
           total_episodes: sData.total_episodes || 1,
           dub_th: !!sData.dub_th,
@@ -136,7 +150,7 @@ export default function EditSeriesPage() {
       setLoadingSeries(false);
     }
     fetchData();
-  }, [seriesId, router]);
+  }, [user, seriesId, router]);
 
   // Handlers
   const handleInputChange = (field, value) => {
@@ -191,6 +205,11 @@ export default function EditSeriesPage() {
       return;
     }
 
+    if (!formData.content_producer_id) {
+      showError('กรุณาเลือกผู้ผลิต');
+      return;
+    }
+
     if (!formData.dub_th && !formData.dub_en && !formData.dub_jp && !formData.dub_cn) {
       showError('กรุณาเลือกเสียงพากย์อย่างน้อย 1 ภาษา');
       return;
@@ -208,6 +227,7 @@ export default function EditSeriesPage() {
       title_en: formData.title_en,
       title_jp: formData.title_jp,
       title_cn: formData.title_cn,
+      content_producer_id: parseInt(formData.content_producer_id, 10),
       genre_ids: formData.genre_ids,
       total_episodes: parseInt(formData.total_episodes),
       dub_th: formData.dub_th,
@@ -477,6 +497,31 @@ export default function EditSeriesPage() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <span className="w-[120px] text-base font-light text-white shrink-0">ผู้ผลิต</span>
+            <div className="flex-1">
+              <select
+                value={formData.content_producer_id}
+                onChange={(e) => handleInputChange('content_producer_id', e.target.value)}
+                disabled={loadingContentProducers || contentProducers.length === 0}
+                className="w-full h-9 pl-3 pr-8 bg-white rounded text-black font-medium focus:outline-none focus:ring-2 focus:ring-[#709bf0] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239CA3AF%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1rem_1rem]"
+              >
+                <option value="">
+                  {loadingContentProducers
+                    ? 'กำลังโหลด...'
+                    : contentProducers.length === 0
+                      ? 'ยังไม่มีผู้ผลิต'
+                      : 'เลือกผู้ผลิต'}
+                </option>
+                {contentProducers.map((producer) => (
+                  <option key={producer.id} value={producer.id}>
+                    {producer.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

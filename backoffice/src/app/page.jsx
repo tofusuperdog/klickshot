@@ -100,8 +100,8 @@ export default function Home() {
         <div className="flex flex-col items-center px-6 text-center">
           <div className="relative w-[280px] h-[80px] mb-8">
             <Image
-              src="/minchap_tiktok.svg"
-              alt="minChap TikTok"
+              src="/klickshotlogo.webp"
+              alt="KlingShot"
               fill
               style={{ objectFit: "contain" }}
               priority

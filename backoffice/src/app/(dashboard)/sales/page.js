@@ -79,6 +79,19 @@ export default function SalesPage() {
   };
 
   const handleSaveVip = async () => {
+    const invalidPackage = vipPackages.find((pkg) =>
+      !pkg.type?.trim() ||
+      !Number.isInteger(Number(pkg.bean_amount)) ||
+      Number(pkg.bean_amount) < 0 ||
+      !Number.isInteger(Number(pkg.duration_days)) ||
+      Number(pkg.duration_days) <= 0
+    );
+
+    if (invalidPackage) {
+      alert('กรุณากรอกประเภท ราคา Beans และจำนวนวันให้ถูกต้อง');
+      return;
+    }
+
     setIsSaving(true);
     for (const pkg of vipPackages) {
       await backofficeMutation(
@@ -86,10 +99,9 @@ export default function SalesPage() {
         'vip_package',
         'update',
         {
-          price_thb: pkg.price_thb === '' ? 0 : pkg.price_thb,
-          price_usd: pkg.price_usd === '' ? 0 : pkg.price_usd,
-          price_jpy: pkg.price_jpy === '' ? 0 : pkg.price_jpy,
-          price_cny: pkg.price_cny === '' ? 0 : pkg.price_cny,
+          type: pkg.type?.trim() || '',
+          bean_amount: pkg.bean_amount === '' ? 0 : parseInt(pkg.bean_amount, 10),
+          duration_days: pkg.duration_days === '' ? 0 : parseInt(pkg.duration_days, 10),
           is_recommended: pkg.is_recommended
         },
         { id: pkg.id }
@@ -159,7 +171,7 @@ export default function SalesPage() {
 
                         <div className="flex flex-col items-end justify-center pl-4 pr-0.5 relative z-0">
                           <div className="text-[25px] font-bold text-white tracking-normal leading-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)] whitespace-nowrap">
-                            {pkg.price_thb} <span className="text-[18px] font-medium ml-1">บาท</span>
+                            {pkg.bean_amount} <span className="text-[18px] font-medium ml-1">Beans</span>
                           </div>
                         </div>
                       </div>
@@ -169,59 +181,48 @@ export default function SalesPage() {
               </div>
 
               <div className="flex-1 w-full bg-[#12102f]/40 rounded-xl p-4 overflow-x-auto border border-[#2d2252]/50">
-                <table className="w-full text-center text-[13px] font-medium text-white border-collapse min-w-[600px]">
+                <table className="w-full text-center text-[13px] font-medium text-white border-collapse min-w-[560px]">
                   <thead>
                     <tr className="border-b-[0.5px] border-b-gray-700 bg-[#0c0a1b]/60">
                       <th className="py-3 px-2 font-medium tracking-wide">ประเภท</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">ไทย (THB)</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">USA (USD)</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">ญี่ปุ่น (JPY)</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">จีน (CNY)</th>
+                      <th className="py-3 px-2 font-medium tracking-wide">จำนวนวัน</th>
+                      <th className="py-3 px-2 font-medium tracking-wide">ราคา (Beans)</th>
                       <th className="py-3 px-2 font-medium tracking-wide">แพ็กเกจแนะนำ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="py-10 text-gray-500 font-light text-[14px]">กำลังโหลดแพ็กเกจ...</td>
+                        <td colSpan={4} className="py-10 text-gray-500 font-light text-[14px]">กำลังโหลดแพ็กเกจ...</td>
                       </tr>
                     ) : vipPackages.map((pkg, idx) => (
                       <tr key={pkg.id} className={`${idx % 2 === 0 ? 'bg-[#28214f]/30' : 'bg-[#28214f]/10'} hover:bg-[#3d3278]/20 transition-colors`}>
-                        <td className="py-2 px-2 text-gray-200">{pkg.type}</td>
                         <td className="py-2 px-2">
                           <input
-                            type="number"
-                            step="0.01"
-                            value={pkg.price_thb}
-                            onChange={(e) => handleVipChange(pkg.id, 'price_thb', e.target.value)}
-                            className="w-full max-w-[75px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            type="text"
+                            value={pkg.type}
+                            onChange={(e) => handleVipChange(pkg.id, 'type', e.target.value)}
+                            className="w-full max-w-[180px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
                           />
                         </td>
                         <td className="py-2 px-2">
                           <input
                             type="number"
-                            step="0.01"
-                            value={pkg.price_usd}
-                            onChange={(e) => handleVipChange(pkg.id, 'price_usd', e.target.value)}
-                            className="w-full max-w-[75px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            step="1"
+                            min="1"
+                            value={pkg.duration_days ?? 0}
+                            onChange={(e) => handleVipChange(pkg.id, 'duration_days', e.target.value)}
+                            className="w-full max-w-[90px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
                           />
                         </td>
                         <td className="py-2 px-2">
                           <input
                             type="number"
-                            step="0.01"
-                            value={pkg.price_jpy}
-                            onChange={(e) => handleVipChange(pkg.id, 'price_jpy', e.target.value)}
-                            className="w-full max-w-[75px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
-                          />
-                        </td>
-                        <td className="py-2 px-2">
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={pkg.price_cny}
-                            onChange={(e) => handleVipChange(pkg.id, 'price_cny', e.target.value)}
-                            className="w-full max-w-[75px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            step="1"
+                            min="0"
+                            value={pkg.bean_amount ?? 0}
+                            onChange={(e) => handleVipChange(pkg.id, 'bean_amount', e.target.value)}
+                            className="w-full max-w-[110px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
                           />
                         </td>
                         <td className="py-2 px-2">

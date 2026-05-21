@@ -56,3 +56,11 @@ export async function backofficeUserMutation(user, action, payload = {}) {
 
   return postBackoffice('/api/backoffice/users', { action, ...payload });
 }
+
+export async function backofficeContentProducerMutation(user, action, payload = {}) {
+  if (!user) {
+    return { data: null, error: { message: 'Missing back office session' } };
+  }
+
+  return postBackoffice('/api/backoffice/content-producers', { action, ...payload });
+}

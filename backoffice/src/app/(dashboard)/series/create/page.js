@@ -44,12 +44,15 @@ export default function CreateSeriesPage() {
 
   const [genres, setGenres] = useState([]);
   const [loadingGenres, setLoadingGenres] = useState(true);
+  const [contentProducers, setContentProducers] = useState([]);
+  const [loadingContentProducers, setLoadingContentProducers] = useState(true);
   
   const [formData, setFormData] = useState({
     title_th: '',
     title_en: '',
     title_jp: '',
     title_cn: '',
+    content_producer_id: '',
     genre_ids: [],
     total_episodes: 1,
     dub_th: false,
@@ -70,18 +73,27 @@ export default function CreateSeriesPage() {
   
   const fileInputRef = useRef(null);
 
-  // Fetch Genres
+  // Fetch Genres and content producers
   useEffect(() => {
-    async function fetchGenres() {
-      const { data, error } = await backofficeQuery(user, 'genres');
+    async function fetchOptions() {
+      if (!user?.id) return;
+
+      const { data: genresData, error: genresError } = await backofficeQuery(user, 'genres');
         
-      if (!error && data) {
-        setGenres(data);
+      if (!genresError && genresData) {
+        setGenres(genresData);
       }
       setLoadingGenres(false);
+
+      const { data: producerData, error: producerError } = await backofficeQuery(user, 'content_producers');
+
+      if (!producerError && producerData) {
+        setContentProducers(producerData);
+      }
+      setLoadingContentProducers(false);
     }
-    fetchGenres();
-  }, []);
+    fetchOptions();
+  }, [user]);
 
   // Handlers
   const handleInputChange = (field, value) => {
@@ -123,6 +135,11 @@ export default function CreateSeriesPage() {
 
     if (formData.genre_ids.length === 0) {
       showError('กรุณาเลือกแนวหนังอย่างน้อย 1 แนว');
+      return;
+    }
+
+    if (!formData.content_producer_id) {
+      showError('กรุณาเลือกผู้ผลิต');
       return;
     }
 
@@ -174,6 +191,7 @@ export default function CreateSeriesPage() {
         title_en: formData.title_en,
         title_jp: formData.title_jp,
         title_cn: formData.title_cn,
+        content_producer_id: parseInt(formData.content_producer_id, 10),
         genre_ids: formData.genre_ids,
         total_episodes: parseInt(formData.total_episodes),
         dub_th: formData.dub_th,
@@ -325,6 +343,31 @@ export default function CreateSeriesPage() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <span className="w-[120px] text-base font-light text-white shrink-0">ผู้ผลิต</span>
+            <div className="flex-1">
+              <select
+                value={formData.content_producer_id}
+                onChange={(e) => handleInputChange('content_producer_id', e.target.value)}
+                disabled={loadingContentProducers || contentProducers.length === 0}
+                className="w-full h-9 pl-3 pr-8 bg-white rounded text-black font-medium focus:outline-none focus:ring-2 focus:ring-[#709bf0] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239CA3AF%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1rem_1rem]"
+              >
+                <option value="">
+                  {loadingContentProducers
+                    ? 'กำลังโหลด...'
+                    : contentProducers.length === 0
+                      ? 'ยังไม่มีผู้ผลิต'
+                      : 'เลือกผู้ผลิต'}
+                </option>
+                {contentProducers.map((producer) => (
+                  <option key={producer.id} value={producer.id}>
+                    {producer.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -78,6 +78,7 @@ export default function SeriesPage() {
   const { user } = useAuth();
   const [series, setSeries] = useState([]);
   const [genres, setGenres] = useState([]);
+  const [contentProducers, setContentProducers] = useState([]);
   const [episodeCounts, setEpisodeCounts] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -110,6 +111,10 @@ export default function SeriesPage() {
       // Fetch genres
       const { data: genresData } = await backofficeQuery(user, 'genres');
       if (genresData) setGenres(genresData);
+
+      // Fetch content producers
+      const { data: producerData } = await backofficeQuery(user, 'content_producers');
+      if (producerData) setContentProducers(producerData);
 
       // Fetch series
       const { data: seriesData } = await backofficeQuery(user, 'series');
@@ -181,6 +186,11 @@ export default function SeriesPage() {
   const getGenreNames = (genreIds) => {
     if (!genreIds || !Array.isArray(genreIds)) return [];
     return genreIds.map(id => genres.find(g => g.id === id)?.name_th).filter(Boolean);
+  };
+
+  const getContentProducerName = (producerId) => {
+    if (!producerId) return '';
+    return contentProducers.find((producer) => String(producer.id) === String(producerId))?.name || '';
   };
 
   const filteredSeries = useMemo(() => {
@@ -295,13 +305,14 @@ export default function SeriesPage() {
         ) : (
           <>
             <div className="space-y-4">
-              {filteredSeries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((s) => {
+              {filteredSeries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((s, index) => {
               const readyEpisodes = episodeCounts[s.id] || 0;
               const missingEpisodes = Math.max(0, s.total_episodes - readyEpisodes);
               let computedStatus = s.status;
               if (s.status !== 'published') {
                 computedStatus = missingEpisodes <= 0 ? 'ready' : 'not_ready';
               }
+              const contentProducerName = getContentProducerName(s.content_producer_id);
 
               return (
                 <div key={s.id} className="bg-[#181236]/60 border border-[#2d2252] rounded-lg p-5 flex gap-6 hover:bg-[#181236]/90 transition-colors shadow-lg">
@@ -309,7 +320,14 @@ export default function SeriesPage() {
                   {/* Poster */}
                   <div className="w-[120px] h-[168px] shrink-0 bg-[#0d0a1b] rounded overflow-hidden relative border border-gray-700">
                     {s.poster_url ? (
-                      <Image src={s.poster_url} alt={s.title_th} fill sizes="120px" style={{ objectFit: 'cover' }} />
+                      <Image
+                        src={s.poster_url}
+                        alt={s.title_th}
+                        fill
+                        sizes="120px"
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        style={{ objectFit: 'cover' }}
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No Image</div>
                     )}
@@ -323,6 +341,9 @@ export default function SeriesPage() {
                         {s.title_en && <div className="text-[16px] text-gray-300 font-light"><span className="text-gray-500 tracking-wider">EN:</span> {s.title_en}</div>}
                         {s.title_jp && <div className="text-[16px] text-gray-300 font-light"><span className="text-gray-500 tracking-wider">JP:</span> {s.title_jp}</div>}
                         {s.title_cn && <div className="text-[16px] text-gray-300 font-light"><span className="text-gray-500 tracking-wider">CN:</span> {s.title_cn}</div>}
+                        <div className="text-[15px] text-gray-300 font-light">
+                          <span className="text-gray-500 tracking-wider">ผู้ผลิต:</span> {contentProducerName || '-'}
+                        </div>
                       </div>
                     </div>
 

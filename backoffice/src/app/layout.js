@@ -9,18 +9,18 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata = {
-  title: "minChap TikTok Minis CMS",
-  description: "ระบบจัดการเนื้อหา (CMS) สำหรับ minChap TikTok Minis",
-  keywords: ["minChap", "TikTok", "Minis", "CMS", "Content Management System", "Series"],
-  authors: [{ name: "minChap" }],
+  title: "KlingShot TikTok Minis CMS",
+  description: "ระบบจัดการเนื้อหา (CMS) สำหรับ KlingShot TikTok Minis",
+  keywords: ["KlingShot", "TikTok", "Minis", "CMS", "Content Management System", "Series"],
+  authors: [{ name: "KlingShot" }],
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
   },
   openGraph: {
-    title: "minChap TikTok Minis CMS",
-    description: "ระบบจัดการเนื้อหา (CMS) สำหรับ minChap TikTok Minis",
+    title: "KlingShot TikTok Minis CMS",
+    description: "ระบบจัดการเนื้อหา (CMS) สำหรับ KlingShot TikTok Minis",
     type: "website",
   },
 };

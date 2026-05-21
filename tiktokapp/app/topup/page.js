@@ -65,20 +65,15 @@ export default function TopupPage() {
   };
 
   const getPriceInfo = (pkg) => {
-    switch(language) {
-      case "EN": return { price: pkg.price_usd, unit: "USD" };
-      case "JP": return { price: pkg.price_jpy, unit: "JPY" };
-      case "CN": return { price: pkg.price_cny, unit: "CNY" };
-      default: return { price: pkg.price_thb, unit: t("price_baht") };
-    }
+    return { price: Number(pkg.bean_amount || 0), unit: "Beans" };
   };
 
   const getThaiVipPackageTitle = (pkg) => {
     const type = pkg.type.toLowerCase();
-    if (type.includes("à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ") || type.includes("weekly") || Number(pkg.price_thb) === 129) {
+    if (type.includes("à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ") || type.includes("weekly")) {
       return "รายสัปดาห์ - VIP";
     }
-    if (type.includes("à¹€à¸”à¸·à¸­à¸™") || type.includes("monthly") || Number(pkg.price_thb) === 359) {
+    if (type.includes("à¹€à¸”à¸·à¸­à¸™") || type.includes("monthly")) {
       return "รายเดือน - VIP";
     }
     return pkg.type;
@@ -86,7 +81,7 @@ export default function TopupPage() {
 
   const getVipPaymentNotice = (pkg) => {
     const title = getThaiVipPackageTitle(pkg);
-    return `แพ็กเกจ ${title} ราคา ${pkg.price_thb} บาท`;
+    return `แพ็กเกจ ${title} ราคา ${Number(pkg.bean_amount || 0)} Beans`;
   };
 
   const replaceUnlockText = (n) => {

@@ -54,16 +54,7 @@ function getTikTokError(payload) {
 }
 
 function getBeanAmount(vipPackage) {
-  return Number(
-    vipPackage?.bean_amount ??
-      vipPackage?.beans_amount ??
-      vipPackage?.price_beans ??
-      vipPackage?.price_bean ??
-      vipPackage?.beans ??
-      vipPackage?.price ??
-      vipPackage?.price_thb ??
-      0,
-  );
+  return Number(vipPackage?.bean_amount ?? 0);
 }
 
 function getProductName(vipPackage) {

@@ -53,32 +53,21 @@ export default function VipPage() {
       return t("weekly_vip");
     if (type.includes("เดือน") || type.includes("monthly"))
       return t("monthly_vip");
-    if (Number(pkg.price_thb) === 129) return t("weekly_vip");
-    if (Number(pkg.price_thb) === 359) return t("monthly_vip");
     return pkg.type;
   };
 
   const getPackageDescription = (pkg) => {
     const type = pkg.type.toLowerCase();
-    if (type.includes("weekly") || Number(pkg.price_thb) === 129)
+    if (type.includes("weekly"))
       return t("weekly_vip_desc");
-    if (type.includes("monthly") || Number(pkg.price_thb) === 359)
+    if (type.includes("monthly"))
       return t("monthly_vip_desc");
     return t("unlimited_watch");
   };
 
   // TikTok Minis payments use Beans as the payment unit.
   const getBeanAmount = (pkg) => {
-    const value =
-      pkg.bean_amount ??
-      pkg.beans_amount ??
-      pkg.price_beans ??
-      pkg.price_bean ??
-      pkg.beans ??
-      pkg.price ??
-      pkg.price_thb;
-
-    return Number(value || 0);
+    return Number(pkg.bean_amount || 0);
   };
 
   const getBeanPriceInfo = (pkg) => ({
@@ -90,15 +79,13 @@ export default function VipPage() {
     const type = pkg.type.toLowerCase();
     if (
       type.includes("à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ") ||
-      type.includes("weekly") ||
-      Number(pkg.price_thb) === 129
+      type.includes("weekly")
     ) {
       return "รายสัปดาห์ - VIP";
     }
     if (
       type.includes("à¹€à¸”à¸·à¸­à¸™") ||
-      type.includes("monthly") ||
-      Number(pkg.price_thb) === 359
+      type.includes("monthly")
     ) {
       return "รายเดือน - VIP";
     }

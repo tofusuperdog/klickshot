@@ -196,7 +196,7 @@ export default function VersionManager() {
       </div>
 
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-[17px] font-semibold text-white tracking-wide">บันทึกการอัปเดตระบบ</h2>
+        <h2 className="text-[17px] font-semibold text-white tracking-wide">การอัปเดตระบบ</h2>
         <button
           onClick={handleOpenModal}
           className="w-9 h-9 bg-gradient-to-r from-[#6C72FF] to-[#8C6DFF] hover:from-[#5b61f2] hover:to-[#7c5de8] text-white rounded-full transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center cursor-pointer"

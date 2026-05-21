@@ -137,7 +137,7 @@ export async function getVipPackageById(packageId) {
 
   const response = await fetch(
     getSupabaseRestUrl(
-      `vip_package?id=eq.${encodeURIComponent(packageId)}&select=id,type,bean_amount,duration_days,price_thb,sort_order&limit=1`,
+      `vip_package?id=eq.${encodeURIComponent(packageId)}&select=id,type,bean_amount,duration_days,sort_order&limit=1`,
     ),
     {
       method: "GET",
@@ -184,9 +184,7 @@ export async function activateCustomerVipSubscription({
       : now;
   const durationDays = Number(vipPackage.duration_days || 7);
   const expiresAt = new Date(startsAt.getTime() + durationDays * 86400000);
-  const beanAmount = Number(
-    vipPackage.bean_amount ?? vipPackage.price_thb ?? 0,
-  );
+  const beanAmount = Number(vipPackage.bean_amount ?? 0);
 
   const response = await fetch(
     getSupabaseRestUrl("customer_vip_subscriptions?select=id,customer_id,vip_package_id,package_type,duration_days,bean_amount,starts_at,expires_at,status"),
