@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Terms of Service | minchap',
-  description: 'Terms of Service for the minchap application.',
+  title: 'Terms of Service | klingshot',
+  description: 'Terms of Service for the klingshot application.',
 };
 
 export default function TermsOfService() {
@@ -24,7 +24,7 @@ export default function TermsOfService() {
 
         <div className="space-y-8 text-sm md:text-base leading-relaxed text-gray-300">
           <p className="text-lg text-gray-200">
-            These Terms of Service govern your use of the minchap application. Please read and understand them before you begin using the application.
+            These Terms of Service govern your use of the klingshot application. Please read and understand them before you begin using the application.
           </p>
 
           <section className="md:bg-white/5 md:rounded-2xl py-4 md:p-6 md:border md:border-white/5">
@@ -33,7 +33,7 @@ export default function TermsOfService() {
               Acceptance of Terms
             </h2>
             <p>
-              By accessing and using the minchap application, you agree to and accept these Terms of Service. If you do not agree to these terms, please refrain from using the application.
+              By accessing and using the klingshot application, you agree to and accept these Terms of Service. If you do not agree to these terms, please refrain from using the application.
             </p>
           </section>
 

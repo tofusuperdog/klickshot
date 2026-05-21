@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import packageJson from "../../package.json";
 
 const MagicEffect = () => {
   const canvasRef = useRef(null);
@@ -36,7 +37,7 @@ const MagicEffect = () => {
           speedY: Math.random() * 4 - 2,
           hue: Math.random() * 40 + 200, // Deep blues and Purples
           life: 1,
-          thickness: Math.random() * 2 + 1
+          thickness: Math.random() * 2 + 1,
         });
       }
     };
@@ -56,7 +57,7 @@ const MagicEffect = () => {
             speedY: Math.random() * 4 - 2,
             hue: Math.random() * 40 + 200,
             life: 1,
-            thickness: Math.random() * 2 + 1
+            thickness: Math.random() * 2 + 1,
           });
         }
       }
@@ -70,9 +71,19 @@ const MagicEffect = () => {
         let p = particles[i];
 
         // Draw particle as a glowing soft orb or a streak
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+        const gradient = ctx.createRadialGradient(
+          p.x,
+          p.y,
+          0,
+          p.x,
+          p.y,
+          p.size,
+        );
         gradient.addColorStop(0, `hsla(${p.hue}, 100%, 80%, ${p.life})`);
-        gradient.addColorStop(0.2, `hsla(${p.hue}, 100%, 70%, ${p.life * 0.5})`);
+        gradient.addColorStop(
+          0.2,
+          `hsla(${p.hue}, 100%, 70%, ${p.life * 0.5})`,
+        );
         gradient.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
 
         ctx.fillStyle = gradient;
@@ -90,7 +101,7 @@ const MagicEffect = () => {
 
         p.x += p.speedX;
         p.y += p.speedY;
-        p.life -= 0.012; 
+        p.life -= 0.012;
         p.size *= 0.98;
 
         if (p.size <= 0.5 || p.life <= 0) {
@@ -114,12 +125,12 @@ const MagicEffect = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-50 mix-blend-screen"
+      className="fixed inset-0 z-50 pointer-events-none mix-blend-screen"
     />
   );
 };
 export default function Home() {
-  const [version, setVersion] = useState("");
+  const [version, setVersion] = useState(packageJson.version);
   const logoRef = useRef(null);
 
   useEffect(() => {
@@ -129,10 +140,10 @@ export default function Home() {
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/system_versions?system_type=eq.website&select=version_number&order=release_date.desc&limit=1`,
           {
             headers: {
-              'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
-            }
-          }
+              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+          },
         );
         const data = await response.json();
         if (data && data.length > 0) {
@@ -159,11 +170,10 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#0a0c2e] via-[#11154D] to-[#291337] flex items-center justify-center font-sans">
-      
       {/* Cinematic Overlays */}
       <div className="grain-overlay" />
       <div className="cinematic-vignette" />
-      <div className="absolute inset-0 animate-flicker pointer-events-none z-40 bg-white/1" />
+      <div className="absolute inset-0 z-40 pointer-events-none animate-flicker bg-white/1" />
 
       {/* Floating Bokeh / Atmosphere */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -173,24 +183,23 @@ export default function Home() {
       </div>
 
       {/* Background glow behind center content */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
         <div className="w-[800px] h-[800px] bg-[#6a90f1] rounded-full blur-[180px] scale-110"></div>
       </div>
 
       <MagicEffect />
 
-      <h1 className="sr-only">minChap - ดูซีรีส์และหนังแนวตั้งบน TikTok</h1>
+      <h1 className="sr-only">klingshot - ดูซีรีส์และหนังแนวตั้งบน TikTok</h1>
 
-      <div 
+      <div
         ref={logoRef}
         className="relative z-10 flex flex-col items-center gap-1 w-full max-w-sm md:max-w-[500px] px-6 transition-transform duration-300 ease-out"
       >
-
-        {/* Minchap Logo Area */}
-        <div className="relative w-full h-[80px] md:h-[140px] flex items-center justify-center drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] animate-logo">
+        {/* Klingshot Logo Area */}
+        <div className="relative w-full h-[140px] md:h-[280px] flex items-center justify-center drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] animate-logo">
           <Image
-            src="/minchap.svg"
-            alt="minChap"
+            src="/klickshotlogo.webp"
+            alt="klingshot"
             fill
             className="object-contain"
             priority
@@ -219,22 +228,30 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-8 w-full text-center text-xs md:text-sm font-light tracking-widest z-10 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-1000 [animation-delay:1.5s]">
-        <div className="text-gray-400/80 pointer-events-none mb-3 uppercase text-[10px] border-b border-gray-500/20 pb-1 flex items-center gap-2">
+      <div className="absolute bottom-8 w-full text-center text-[13px] md:text-sm font-light tracking-widest z-10 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-1000 [animation-delay:1.5s]">
+        <div className="text-white/95 md:text-gray-200/90 pointer-events-none mb-3 uppercase text-[11px] md:text-[10px] border-b border-white/70 md:border-gray-300/50 pb-1 flex items-center gap-2 [text-shadow:0_1px_10px_rgba(0,0,0,0.85)] md:[text-shadow:none]">
           <span>Developed by Love Drama Co.,ltd</span>
           {version && (
             <>
-              <span className="w-1 h-1 bg-gray-500/40 rounded-full"></span>
-              <span className="text-gray-500/60 font-mono tracking-normal lowercase">v{version}</span>
+              <span className="w-1 h-1 rounded-full bg-white/80 md:bg-gray-300/70"></span>
+              <span className="font-mono tracking-normal lowercase text-white/90 md:text-gray-300/80">
+                v{version}
+              </span>
             </>
           )}
         </div>
-        <div className="flex gap-6 items-center">
-          <Link href="/terms-of-service" className="text-gray-500 hover:text-white transition-all duration-300 underline-offset-8 decoration-gray-700 hover:decoration-white">
+        <div className="flex items-center gap-6">
+          <Link
+            href="/terms-of-service"
+            className="text-white/95 md:text-gray-200/90 transition-all duration-300 hover:text-white underline-offset-8 decoration-white/80 md:decoration-gray-300/80 hover:decoration-white [text-shadow:0_1px_10px_rgba(0,0,0,0.85)] md:[text-shadow:none]"
+          >
             Terms of Service
           </Link>
-          <span className="text-gray-700 w-1 h-1 bg-gray-700 rounded-full"></span>
-          <Link href="/privacy-policy" className="text-gray-500 hover:text-white transition-all duration-300 underline-offset-8 decoration-gray-700 hover:decoration-white">
+          <span className="w-1 h-1 text-white bg-white/90 md:text-gray-300 md:bg-gray-300/80 rounded-full"></span>
+          <Link
+            href="/privacy-policy"
+            className="text-white/95 md:text-gray-200/90 transition-all duration-300 hover:text-white underline-offset-8 decoration-white/80 md:decoration-gray-300/80 hover:decoration-white [text-shadow:0_1px_10px_rgba(0,0,0,0.85)] md:[text-shadow:none]"
+          >
             Privacy Policy
           </Link>
         </div>

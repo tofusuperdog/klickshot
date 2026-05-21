@@ -12,15 +12,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "minChap - ดูซีรีส์และหนังแนวตั้งบน TikTok",
-  description: "minChap แพลตฟอร์มดูซีรีส์และหนังภาพยนตร์แนวตั้งแบบสั้น (Vertical Short Drama) ที่จะมามอบความบันเทิงรูปแบบใหม่บน TikTok ให้คุณรับชมได้อย่างเพลิดเพลิน",
-  keywords: ["minChap", "มินแชป", "หนังแนวตั้ง", "ซีรีส์แนวตั้ง", "TikTok", "Short Drama", "มินิซีรีส์"],
+  title: "klingshot - ดูซีรีส์และหนังแนวตั้งบน TikTok",
+  description: "klingshot แพลตฟอร์มดูซีรีส์และหนังภาพยนตร์แนวตั้งแบบสั้น (Vertical Short Drama) ที่จะมามอบความบันเทิงรูปแบบใหม่บน TikTok ให้คุณรับชมได้อย่างเพลิดเพลิน",
+  keywords: ["klingshot", "หนังแนวตั้ง", "ซีรีส์แนวตั้ง", "TikTok", "Short Drama", "มินิซีรีส์"],
   openGraph: {
-    title: "minChap - ดูซีรีส์และหนังแนวตั้ง",
-    description: "แอปพลิเคชันดูหนังและมินิซีรีส์แนวตั้งแบบสั้นสุดฮิต สนุกครบทุกอารมณ์ ค้นหาความบันเทิงได้แล้วที่ minChap บน TikTok",
+    title: "klingshot - ดูซีรีส์และหนังแนวตั้ง",
+    description: "แอปพลิเคชันดูหนังและมินิซีรีส์แนวตั้งแบบสั้นสุดฮิต สนุกครบทุกอารมณ์ ค้นหาความบันเทิงได้แล้วที่ klingshot บน TikTok",
     type: "website",
     locale: "th_TH",
-    siteName: "minChap",
+    siteName: "klingshot",
   },
   icons: {
     icon: "/favicon.svg",

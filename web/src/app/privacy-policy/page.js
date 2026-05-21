@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Privacy Policy | minchap',
-  description: 'Privacy Policy for the minchap application.',
+  title: 'Privacy Policy | klingshot',
+  description: 'Privacy Policy for the klingshot application.',
 };
 
 export default function PrivacyPolicy() {
@@ -24,7 +24,7 @@ export default function PrivacyPolicy() {
 
         <div className="space-y-8 text-sm md:text-base leading-relaxed text-gray-300">
           <p className="text-lg text-gray-200">
-            The minchap app respects user privacy. We are committed to securing and protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
+            The klingshot app respects user privacy. We are committed to securing and protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
           </p>
 
           <section className="md:bg-white/5 md:rounded-2xl py-4 md:p-6 md:border md:border-white/5">
@@ -91,7 +91,7 @@ export default function PrivacyPolicy() {
               User Rights
             </h2>
             <p>
-              You have the right to access, modify, or request the deletion of your personal information at any time. You may contact us to make such requests using the information provided in the "Contact Us" section.
+              You have the right to access, modify, or request the deletion of your personal information at any time. You may contact us to make such requests using the information provided in the &quot;Contact Us&quot; section.
             </p>
           </section>
 
