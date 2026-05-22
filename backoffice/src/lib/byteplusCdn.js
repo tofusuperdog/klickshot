@@ -1,6 +1,32 @@
 import crypto from 'crypto';
 
 export const DEFAULT_PLAY_DOMAIN = 'vod.minchapseries.com';
+const LEGACY_PLAY_DOMAIN = 'vod.klickshotseries.com';
+
+export function normalizeVodPlayDomain(domain) {
+  const trimmedDomain = String(domain || DEFAULT_PLAY_DOMAIN).trim();
+  const domainUrl = new URL(
+    trimmedDomain.includes('://') ? trimmedDomain : `https://${trimmedDomain}`
+  );
+
+  if (domainUrl.hostname === LEGACY_PLAY_DOMAIN) {
+    domainUrl.hostname = DEFAULT_PLAY_DOMAIN;
+  }
+
+  return domainUrl.host;
+}
+
+export function normalizeVodUrl(value) {
+  if (!value) return value;
+
+  const sourceUrl = value instanceof URL ? new URL(value.href) : new URL(value);
+
+  if (sourceUrl.hostname === LEGACY_PLAY_DOMAIN) {
+    sourceUrl.hostname = DEFAULT_PLAY_DOMAIN;
+  }
+
+  return value instanceof URL ? sourceUrl : sourceUrl.href;
+}
 
 function getCdnSigningKey() {
   return (
@@ -29,10 +55,17 @@ function getCdnSigningUid() {
 export function signCdnUrl(playbackUrl) {
   const signingKey = getCdnSigningKey();
 
-  if (!playbackUrl || !signingKey) return playbackUrl;
+  if (!playbackUrl) return playbackUrl;
 
   const signedUrl =
-    playbackUrl instanceof URL ? new URL(playbackUrl.href) : new URL(playbackUrl);
+    playbackUrl instanceof URL
+      ? normalizeVodUrl(playbackUrl)
+      : new URL(normalizeVodUrl(playbackUrl));
+
+  if (!signingKey) {
+    return playbackUrl instanceof URL ? signedUrl : signedUrl.href;
+  }
+
   const signingParameterName = getCdnSigningParameterName();
   const timestamp = Math.floor(Date.now() / 1000);
   const rand = getCdnSigningRand();

@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useImperativeHandle, useState, useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -30,6 +30,29 @@ const normalizeSubtitle = (sub, idx) => ({
   default: Boolean(sub.default || sub.isDefault) || idx === 0,
 });
 
+const getAudioTrackId = (track, idx) =>
+  String(track?.id ?? track?.lang ?? track?.language ?? track?.name ?? track?.text ?? idx);
+
+const getAudioTrackLabel = (track, idx) => {
+  const language = String(track?.lang || track?.language || '').toLowerCase();
+
+  if (language === 'th' || language === 'tha') return 'TH';
+  if (language === 'zh' || language === 'zh-cn' || language === 'zho' || language === 'chi') return 'CN';
+  if (language === 'en' || language === 'eng') return 'EN';
+  if (language === 'ja' || language === 'jp' || language === 'jpn') return 'JP';
+
+  return track?.text || track?.name || `Audio ${idx + 1}`;
+};
+
+const normalizeAudioTrack = (track, idx) => ({
+  id: getAudioTrackId(track, idx),
+  playerId: track?.playerId ?? track?.id,
+  text: getAudioTrackLabel(track, idx),
+  lang: track?.lang || track?.language || '',
+  default: Boolean(track.default || track.isDefault) || idx === 0,
+  selected: Boolean(track.selected),
+});
+
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
 
 // Helper component for BytePlus VePlayer
@@ -39,11 +62,17 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
   lineAppId,
   lineUserId,
   subtitles,
+  onAudioTracksChange,
 }, ref) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const subtitlePluginRef = useRef(null);
   const pendingSubtitleRef = useRef(undefined);
+  const onAudioTracksChangeRef = useRef(onAudioTracksChange);
+
+  useEffect(() => {
+    onAudioTracksChangeRef.current = onAudioTracksChange;
+  }, [onAudioTracksChange]);
 
   const resolveSubtitlePlugin = () => {
     if (subtitlePluginRef.current) return subtitlePluginRef.current;
@@ -99,11 +128,154 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
     return true;
   };
 
+  const getPlayerAudioTracks = () => {
+    const player = playerRef.current;
+
+    if (!player || typeof player.getAudioTracks !== 'function') return [];
+
+    return player.getAudioTracks() || [];
+  };
+
+  const getCurrentPlayerAudioTrack = () => {
+    const player = playerRef.current;
+
+    if (!player || typeof player.getCurrentAudioTrack !== 'function') return null;
+
+    return player.getCurrentAudioTrack();
+  };
+
+  const emitAudioTracks = (audioTracks = getPlayerAudioTracks()) => {
+    const currentTrack = getCurrentPlayerAudioTrack();
+
+    onAudioTracksChangeRef.current?.(
+      audioTracks.map((track) => ({
+        ...track,
+        selected:
+          Boolean(track.selected) ||
+          (currentTrack ? String(track.id) === String(currentTrack.id) : false),
+      }))
+    );
+  };
+
+  const findInternalHls = (value, depth = 0, seen = new Set()) => {
+    if (!value || typeof value !== 'object' || seen.has(value) || depth > 8) {
+      return null;
+    }
+
+    seen.add(value);
+
+    if (Array.isArray(value.audioTracks) && 'audioTrack' in value) {
+      return value;
+    }
+
+    return Object.values(value).reduce(
+      (found, item) => found || findInternalHls(item, depth + 1, seen),
+      null
+    );
+  };
+
+  const switchNativeAudioTrack = (audioTrack) => {
+    const player = playerRef.current;
+    const nativeTracks =
+      player?.video?.audioTracks ||
+      player?.media?.audioTracks ||
+      player?.root?.querySelector?.('video')?.audioTracks;
+
+    if (!nativeTracks?.length) return false;
+
+    let switched = false;
+
+    for (let idx = 0; idx < nativeTracks.length; idx += 1) {
+      const nativeTrack = nativeTracks[idx];
+      const isTarget =
+        String(nativeTrack.id) === String(audioTrack.playerId ?? audioTrack.id) ||
+        String(nativeTrack.language || '').toLowerCase() === String(audioTrack.lang || '').toLowerCase() ||
+        String(nativeTrack.label || nativeTrack.name || '') === String(audioTrack.name || audioTrack.text || '');
+
+      nativeTrack.enabled = isTarget;
+      switched = switched || isTarget;
+    }
+
+    return switched;
+  };
+
+  const switchHlsAudioTrack = (audioTrack) => {
+    const hls = findInternalHls(playerRef.current);
+    const targetId = audioTrack.playerId ?? audioTrack.id;
+
+    if (!hls?.audioTracks?.length) return false;
+
+    const targetIndex = hls.audioTracks.findIndex(
+      (track, idx) =>
+        idx === targetId ||
+        String(idx) === String(targetId) ||
+        String(track.id) === String(targetId) ||
+        String(track.lang || '').toLowerCase() === String(audioTrack.lang || '').toLowerCase() ||
+        String(track.name || '') === String(audioTrack.name || audioTrack.text || '')
+    );
+
+    if (targetIndex < 0) return false;
+
+    hls.audioTrack = targetIndex;
+    return true;
+  };
+
+  const applyAudioTrack = (audioTrack) => {
+    const player = playerRef.current;
+
+    if (!player || !audioTrack) {
+      return false;
+    }
+
+    const currentTracks = getPlayerAudioTracks();
+    const targetTrack =
+      currentTracks.find((track) => String(track.id) === String(audioTrack.playerId ?? audioTrack.id)) ||
+      currentTracks.find(
+        (track) =>
+          audioTrack.lang &&
+          String(track.lang || '').toLowerCase() === String(audioTrack.lang).toLowerCase()
+      ) ||
+      currentTracks.find(
+        (track) =>
+          String(track.name || '') === String(audioTrack.name || audioTrack.text || '')
+      ) ||
+      audioTrack;
+    const targetId = targetTrack.id ?? audioTrack.playerId ?? audioTrack.id;
+    const switchPayload = {
+      ...targetTrack,
+      id: targetId,
+      lang: targetTrack.lang || audioTrack.lang,
+      name: targetTrack.name || audioTrack.name || audioTrack.text,
+    };
+
+    player.switchAudioTrack?.(switchPayload);
+    switchNativeAudioTrack(switchPayload);
+    switchHlsAudioTrack(switchPayload);
+
+    window.setTimeout(() => {
+      const currentTrack = getCurrentPlayerAudioTrack();
+
+      if (currentTrack && String(currentTrack.id) !== String(targetId)) {
+        console.warn('VePlayer audio track did not switch to requested track', {
+          requested: switchPayload,
+          current: currentTrack,
+          available: getPlayerAudioTracks(),
+        });
+      }
+
+      emitAudioTracks();
+    }, 800);
+    return true;
+  };
+
   useImperativeHandle(
     ref,
     () => ({
       switchSubtitle(subtitle) {
         applySubtitle(subtitle);
+      },
+      switchAudioTrack(audioTrack) {
+        applyAudioTrack(audioTrack);
       },
     }),
     []
@@ -173,6 +345,19 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
           autoplay: true,
           enableMenu: true,
           controls: true,
+          enableHlsMSE: true,
+          defaultAudioLang: 'th',
+          audioPreference: { lang: 'th' },
+          AudioTrack: {
+            index: 70,
+            isShowIcon: false,
+            showNameSuffix: true,
+          },
+          AudioTrackMobile: {
+            index: 2.6,
+            isShowIcon: false,
+            showNameSuffix: true,
+          },
           controlBar: {
             visible: true,
           },
@@ -180,7 +365,11 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
         };
 
         if (normalizedSubtitles.length > 0 && VePlayer.Subtitle) {
-          playerConfig.plugins = [VePlayer.Subtitle];
+          playerConfig.plugins = [
+            VePlayer.Subtitle,
+            VePlayer.AudioTrack,
+            VePlayer.AudioTrackMobile,
+          ].filter(Boolean);
 
           playerConfig.Subtitle = {
             isDefaultOpen: true,
@@ -198,6 +387,21 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
 
         playerRef.current = new VePlayer(playerConfig);
         subtitlePluginRef.current = null;
+
+        const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
+        const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
+
+        if (audioTracksUpdatedEvent) {
+          playerRef.current.on?.(audioTracksUpdatedEvent, ({ audioTracks } = {}) => {
+            emitAudioTracks(audioTracks || getPlayerAudioTracks());
+          });
+        }
+
+        if (audioTrackChangeEvent) {
+          playerRef.current.on?.(audioTrackChangeEvent, () => {
+            emitAudioTracks();
+          });
+        }
 
         const retryResolvePlugin = (attempt = 0) => {
           if (cancelled) return;
@@ -217,6 +421,19 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
         };
 
         retryResolvePlugin();
+
+        const retryAudioTracks = (attempt = 0) => {
+          if (cancelled) return;
+
+          const audioTracks = getPlayerAudioTracks();
+          emitAudioTracks(audioTracks);
+
+          if (audioTracks.length === 0 && attempt < 20) {
+            window.setTimeout(() => retryAudioTracks(attempt + 1), 250);
+          }
+        };
+
+        retryAudioTracks();
       } catch (error) {
         console.error('Failed to initialize BytePlus player:', error);
       }
@@ -370,6 +587,10 @@ export default function EpisodesPage() {
   const [playUrl, setPlayUrl] = useState('');
   const [playingSubtitles, setPlayingSubtitles] = useState([]);
   const [activeSubtitleId, setActiveSubtitleId] = useState(null);
+  const [playingAudioTracks, setPlayingAudioTracks] = useState([]);
+  const [activeAudioTrackId, setActiveAudioTrackId] = useState(null);
+  const [selectedAudioLang, setSelectedAudioLang] = useState('th');
+  const selectedAudioLangRef = useRef('th');
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState('');
 
@@ -397,6 +618,10 @@ export default function EpisodesPage() {
     setPlayUrl('');
     setPlayingSubtitles([]);
     setActiveSubtitleId(null);
+    setPlayingAudioTracks([]);
+    setActiveAudioTrackId(null);
+    setSelectedAudioLang('th');
+    selectedAudioLangRef.current = 'th';
   };
 
   const playVideo = async (episode) => {
@@ -410,6 +635,10 @@ export default function EpisodesPage() {
     setPlayingEpisode(episode);
     setPlayingSubtitles([]);
     setActiveSubtitleId(null);
+    setPlayingAudioTracks([]);
+    setActiveAudioTrackId(null);
+    setSelectedAudioLang('th');
+    selectedAudioLangRef.current = 'th';
     setPlayUrl('');
 
     try {
@@ -434,7 +663,6 @@ export default function EpisodesPage() {
               (sub.url || sub.src).trim().length > 0
           )
           : [];
-
         setPlayingSubtitles(validSubtitles);
         setActiveSubtitleId(
           validSubtitles.length > 0 ? getSubtitleId(validSubtitles[0], 0) : null
@@ -471,6 +699,36 @@ export default function EpisodesPage() {
     playerControlRef.current?.switchSubtitle(subtitle);
     setActiveSubtitleId(subtitle ? subtitle.id : null);
   };
+
+  const switchPlayerAudio = (track) => {
+    if (!track) return;
+
+    setActiveAudioTrackId(track.id);
+    setSelectedAudioLang(track.lang || '');
+    selectedAudioLangRef.current = track.lang || '';
+    playerControlRef.current?.switchAudioTrack(track);
+  };
+
+  const handleAudioTracksChange = useCallback((audioTracks) => {
+    const normalizedAudioTracks = Array.isArray(audioTracks)
+      ? audioTracks.map(normalizeAudioTrack)
+      : [];
+
+    if (normalizedAudioTracks.length === 0) {
+      setPlayingAudioTracks([]);
+      setActiveAudioTrackId(null);
+      return;
+    }
+
+    const activeAudioTrack =
+      normalizedAudioTracks.find((track) => track.selected) ||
+      normalizedAudioTracks.find((track) => track.default) ||
+      normalizedAudioTracks[0] ||
+      null;
+
+    setPlayingAudioTracks(normalizedAudioTracks);
+    setActiveAudioTrackId(activeAudioTrack?.id || null);
+  }, []);
 
   const confirmDeleteEpisode = async () => {
     if (!episodeToDelete) return;
@@ -638,6 +896,7 @@ export default function EpisodesPage() {
     (_, i) => i + 1
   );
   const availableSubtitles = playingSubtitles.map(normalizeSubtitle);
+  const availableAudioTracks = playingAudioTracks;
 
   return (
     <div className="w-full pb-20 relative">
@@ -1207,6 +1466,28 @@ export default function EpisodesPage() {
               </div>
             </div>
 
+            {availableAudioTracks.length > 1 && (
+              <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
+                <span className="mr-1 text-[13px] text-gray-200">
+                  เสียงพากย์
+                </span>
+
+                {availableAudioTracks.map((track) => (
+                  <button
+                    key={track.id}
+                    type="button"
+                    onClick={() => switchPlayerAudio(track)}
+                    className={`h-8 min-w-12 cursor-pointer rounded border px-3 text-[12px] transition-colors ${activeAudioTrackId === track.id
+                        ? 'border-white bg-white text-[#101a3c]'
+                        : 'border-white/40 text-white hover:bg-white/10'
+                      }`}
+                  >
+                    {track.text}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {availableSubtitles.length > 0 && (
               <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="mr-1 text-[13px] text-gray-200">
@@ -1253,6 +1534,7 @@ export default function EpisodesPage() {
                   lineAppId={1006938}
                   lineUserId={currentUserId}
                   subtitles={playingSubtitles}
+                  onAudioTracksChange={handleAudioTracksChange}
                 />
               )}
             </div>

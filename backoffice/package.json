@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@byteplus/vcloud-sdk-nodejs": "^1.0.7",
-    "@byteplus/veplayer": "^1.16.0",
+    "@byteplus/veplayer": "^1.17.0",
     "@supabase/supabase-js": "^2.102.1",
     "next": "16.2.6",
     "react": "19.2.4",

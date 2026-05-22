@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { normalizeVodUrl, signCdnUrl } from '@/lib/byteplusCdn';
 
 const ALLOWED_HOST_SUFFIXES = [
   'bytepluscdn.com',
@@ -113,7 +114,7 @@ export async function GET(request) {
   let subtitleUrl;
 
   try {
-    subtitleUrl = new URL(source);
+    subtitleUrl = signCdnUrl(normalizeVodUrl(new URL(source)));
   } catch {
     return NextResponse.json(
       { error: 'Invalid subtitle URL' },

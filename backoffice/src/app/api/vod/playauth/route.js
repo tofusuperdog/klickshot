@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import vod from '@byteplus/vcloud-sdk-nodejs';
 import {
   DEFAULT_PLAY_DOMAIN,
+  normalizeVodPlayDomain,
+  normalizeVodUrl,
   shouldUseHlsProxy,
   signCdnUrl,
 } from '@/lib/byteplusCdn';
@@ -27,13 +29,19 @@ const DEFAULT_PLAYBACK_CANDIDATES = [
 ];
 
 function getSubtitleProxyUrl(subtitleUrl) {
-  return `/api/vod/subtitle?url=${encodeURIComponent(subtitleUrl)}`;
+  return `/api/vod/subtitle?url=${encodeURIComponent(
+    signCdnUrl(normalizeVodUrl(subtitleUrl))
+  )}`;
 }
 
 function getHlsProxyUrl(playUrl, origin = '') {
   if (!playUrl) return '';
 
-  return `${origin}/api/vod/hls?url=${encodeURIComponent(playUrl)}`;
+  const params = new URLSearchParams({
+    url: normalizeVodUrl(playUrl),
+  });
+
+  return `${origin}/api/vod/hls?${params.toString()}`;
 }
 
 function getPlayInfoList(playInfoRes) {
@@ -235,10 +243,14 @@ export async function GET(request) {
   vodService.setSecretKey(secretAccessKey);
 
   try {
+    const playDomain = normalizeVodPlayDomain(
+      process.env.BYTEPLUS_VOD_PLAY_DOMAIN || DEFAULT_PLAY_DOMAIN
+    );
+
     const baseParams = {
       Vid: vid,
       ...(spaceName ? { SpaceName: spaceName } : {}),
-      PlayDomain: process.env.BYTEPLUS_VOD_PLAY_DOMAIN || DEFAULT_PLAY_DOMAIN,
+      PlayDomain: playDomain,
     };
 
     const defaultPlayback = await resolveDefaultPlayback(baseParams);
@@ -259,7 +271,7 @@ export async function GET(request) {
       );
     }
 
-    const signedPlaybackUrl = signCdnUrl(defaultPlayback.playbackUrl);
+    const signedPlaybackUrl = signCdnUrl(normalizeVodUrl(defaultPlayback.playbackUrl));
     const proxiedPlaybackSource = getHlsProxyUrl(
       signedPlaybackUrl,
       request.nextUrl.origin
@@ -329,7 +341,7 @@ export async function GET(request) {
       preferredPlaybackStreamType: defaultPlayback.streamType,
       playFormat: defaultPlayback.streamType,
       playUrl,
-      playDomain: process.env.BYTEPLUS_VOD_PLAY_DOMAIN || DEFAULT_PLAY_DOMAIN,
+      playDomain,
       subtitles,
     }, {
       headers: {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { signCdnUrl } from '@/lib/byteplusCdn';
+import { normalizeVodUrl, signCdnUrl } from '@/lib/byteplusCdn';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +32,7 @@ function resolvePlaylistUrl(value, baseUrl) {
     return value;
   }
 
-  const resolvedUrl = new URL(trimmedValue, baseUrl);
+  const resolvedUrl = normalizeVodUrl(new URL(trimmedValue, baseUrl));
 
   if (!isAllowedVodUrl(resolvedUrl)) {
     return value;
@@ -43,7 +43,7 @@ function resolvePlaylistUrl(value, baseUrl) {
 
 function rewriteAttributeUris(line, baseUrl) {
   return line.replace(/URI="([^"]+)"/g, (_match, value) => {
-    const resolvedUrl = new URL(value, baseUrl);
+    const resolvedUrl = normalizeVodUrl(new URL(value, baseUrl));
 
     if (!isAllowedVodUrl(resolvedUrl)) {
       return `URI="${value}"`;
@@ -84,7 +84,7 @@ export async function GET(request) {
   let sourceUrl;
 
   try {
-    sourceUrl = new URL(source);
+    sourceUrl = signCdnUrl(normalizeVodUrl(new URL(source)));
   } catch {
     return NextResponse.json(
       { error: 'Invalid HLS URL' },
