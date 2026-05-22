@@ -51,17 +51,23 @@ export function AuthProvider({ children }) {
     if (!user) return false;
     // Dashboard is always accessible
     if (path === '/dashboard') return true;
+    if (user.is_admin) return true;
 
-    const permMap = {
-      '/series': 'perm_series',
-      '/genres': 'perm_genres',
-      '/displays': 'perm_displays',
-      '/sales': 'perm_sales',
-      '/customers': 'perm_customers',
-      '/users': 'perm_users',
-    };
+    const routePermissions = [
+      { path: '/series', permKey: 'perm_series' },
+      { path: '/genres', permKey: 'perm_genres' },
+      { path: '/displays', permKey: 'perm_displays' },
+      { path: '/content-producers', permKey: 'perm_content_producers' },
+      { path: '/sales', permKey: 'perm_sales' },
+      { path: '/reports', permKey: 'perm_reports' },
+      { path: '/customers', permKey: 'perm_customers' },
+      { path: '/users', permKey: 'perm_users' },
+    ];
 
-    const permKey = permMap[path];
+    const matchedRoute = routePermissions.find(
+      (item) => path === item.path || path.startsWith(`${item.path}/`)
+    );
+    const permKey = matchedRoute?.permKey;
     if (!permKey) return true; // Unknown path, allow
     return !!user[permKey];
   };

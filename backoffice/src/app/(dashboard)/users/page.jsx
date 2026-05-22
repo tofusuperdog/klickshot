@@ -9,7 +9,9 @@ const permissionColumns = [
   { key: 'perm_series', label: 'ซีรีส์', icon: '/series.svg' },
   { key: 'perm_genres', label: 'แนวเรื่อง', icon: '/genres.svg' },
   { key: 'perm_displays', label: 'การแสดงผล', icon: '/displays.svg' },
+  { key: 'perm_content_producers', label: 'ผู้ผลิตคอนเทนต์', icon: '/film.svg' },
   { key: 'perm_sales', label: 'การขาย', icon: '/sales.svg' },
+  { key: 'perm_reports', label: 'รายงาน', icon: '/report.svg' },
   { key: 'perm_customers', label: 'ลูกค้า', icon: '/customers.svg' },
   { key: 'perm_users', label: 'ผู้ใช้งาน', icon: '/users.svg' },
 ];
@@ -18,10 +20,12 @@ const modalPermissionsLeft = [
   { key: 'perm_series', label: 'ซีรีส์', icon: '/series.svg' },
   { key: 'perm_genres', label: 'แนวเรื่อง', icon: '/genres.svg' },
   { key: 'perm_displays', label: 'การแสดงผล', icon: '/displays.svg' },
+  { key: 'perm_content_producers', label: 'ผู้ผลิตคอนเทนต์', icon: '/film.svg' },
 ];
 
 const modalPermissionsRight = [
   { key: 'perm_sales', label: 'การขาย', icon: '/sales.svg' },
+  { key: 'perm_reports', label: 'รายงาน', icon: '/report.svg' },
   { key: 'perm_customers', label: 'ลูกค้า', icon: '/customers.svg' },
   { key: 'perm_users', label: 'ผู้ใช้งาน', icon: '/users.svg' },
 ];
@@ -33,6 +37,8 @@ const defaultPermissions = {
   perm_series: false,
   perm_genres: false,
   perm_displays: false,
+  perm_content_producers: false,
+  perm_reports: false,
 };
 
 function CheckIcon({ active }) {
@@ -258,6 +264,8 @@ export default function UsersPage() {
       perm_series: user.perm_series,
       perm_genres: user.perm_genres,
       perm_displays: user.perm_displays,
+      perm_content_producers: user.perm_content_producers,
+      perm_reports: user.perm_reports,
     });
     setModalMode('edit');
   };
@@ -326,6 +334,8 @@ export default function UsersPage() {
         perm_series: formData.perm_series,
         perm_genres: formData.perm_genres,
         perm_displays: formData.perm_displays,
+        perm_content_producers: formData.perm_content_producers,
+        perm_reports: formData.perm_reports,
         perm_sales: formData.perm_sales,
         perm_customers: formData.perm_customers,
         perm_users: formData.perm_users,
@@ -345,6 +355,8 @@ export default function UsersPage() {
         perm_series: formData.perm_series,
         perm_genres: formData.perm_genres,
         perm_displays: formData.perm_displays,
+        perm_content_producers: formData.perm_content_producers,
+        perm_reports: formData.perm_reports,
         perm_sales: formData.perm_sales,
         perm_customers: formData.perm_customers,
         perm_users: formData.perm_users,
@@ -428,7 +440,7 @@ export default function UsersPage() {
         /* User List */
         <div className="bg-[#181236] border border-[#2d2252] rounded-lg">
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_repeat(7,1fr)_0.5fr_0.5fr] items-center border-b border-[#2d2252] text-base text-gray-300 font-light bg-[#181236] rounded-t-lg">
+          <div className="grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center border-b border-[#2d2252] text-base text-gray-300 font-light bg-[#181236] rounded-t-lg">
             <div className="px-6 py-4 font-medium">ชื่อผู้ใช้งาน</div>
             {permissionColumns.map((col) => (
               <div key={col.key} className="px-4 py-4 flex justify-center items-center">
@@ -476,11 +488,11 @@ export default function UsersPage() {
               const rowBg = index % 2 === 0 ? 'bg-white/[0.04]' : 'bg-[#181236]';
 
               return (
-                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(7,1fr)_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#2d2252]/50 text-base`}>
+                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#2d2252]/50 text-base`}>
                   <div className="px-6 py-4 text-gray-300">{user.username}</div>
                   {permissionColumns.map((col) => (
                     <div key={col.key} className="px-4 py-4 flex justify-center items-center">
-                      <CheckIcon active={col.alwaysOn ? true : !!user[col.key]} />
+                      <CheckIcon active={col.alwaysOn || user.is_admin || !!user[col.key]} />
                     </div>
                   ))}
                   <div className="px-4 py-4 flex justify-center items-center">

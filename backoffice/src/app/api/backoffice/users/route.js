@@ -30,7 +30,9 @@ export async function POST(request) {
       p_perm_series: !!body.perm_series,
       p_perm_genres: !!body.perm_genres,
       p_perm_displays: !!body.perm_displays,
+      p_perm_content_producers: !!body.perm_content_producers,
       p_perm_sales: !!body.perm_sales,
+      p_perm_reports: !!body.perm_reports,
       p_perm_customers: !!body.perm_customers,
       p_perm_users: !!body.perm_users,
     };
@@ -44,7 +46,9 @@ export async function POST(request) {
       p_perm_series: !!body.perm_series,
       p_perm_genres: !!body.perm_genres,
       p_perm_displays: !!body.perm_displays,
+      p_perm_content_producers: !!body.perm_content_producers,
       p_perm_sales: !!body.perm_sales,
+      p_perm_reports: !!body.perm_reports,
       p_perm_customers: !!body.perm_customers,
       p_perm_users: !!body.perm_users,
     };

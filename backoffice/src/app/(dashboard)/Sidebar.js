@@ -37,7 +37,7 @@ const menuItems = [
   {
     name: "ผู้ผลิตคอนเทนต์",
     path: "/content-producers",
-    permKey: null,
+    permKey: "perm_content_producers",
     iconInactive: "/film.svg",
     iconActive: "/film_b.svg",
   },
@@ -51,7 +51,7 @@ const menuItems = [
   {
     name: "รายงาน",
     path: "/reports",
-    permKey: null,
+    permKey: "perm_reports",
     iconInactive: "/report.svg",
     iconActive: "/report_b.svg",
   },
@@ -79,6 +79,7 @@ export default function Sidebar() {
 
   const visibleMenus = menuItems.filter((item) => {
     if (!item.permKey) return true;
+    if (user?.is_admin) return true;
     return user && user[item.permKey];
   });
 
