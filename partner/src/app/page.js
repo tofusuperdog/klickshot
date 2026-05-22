@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [partnerVersion, setPartnerVersion] = useState("");
 
   useEffect(() => {
     const checkSession = async () => {
@@ -30,6 +31,25 @@ export default function LoginPage() {
 
     checkSession();
   }, [router]);
+
+  useEffect(() => {
+    const fetchPartnerVersion = async () => {
+      const response = await fetch("/api/partner/version", {
+        cache: "no-store",
+      }).catch(() => null);
+
+      if (!response?.ok) {
+        return;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (data.version) {
+        setPartnerVersion(data.version);
+      }
+    };
+
+    fetchPartnerVersion();
+  }, []);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -184,6 +204,9 @@ export default function LoginPage() {
               klickshot.official@gmail.com
             </a>
           </p>
+          {partnerVersion ? (
+            <p className="partner-version-note">Partner Portal v{partnerVersion}</p>
+          ) : null}
         </div>
       </section>
     </main>

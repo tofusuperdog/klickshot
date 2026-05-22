@@ -4,15 +4,27 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { backofficeMutation, backofficeQuery } from '@/lib/backoffice';
 
+const SYSTEM_TABS = [
+  { id: 'back_office', label: 'ระบบหลังบ้าน' },
+  { id: 'partner', label: 'ระบบพาร์ทเนอร์' },
+  { id: 'website', label: 'เว็บไซด์' },
+  { id: 'app', label: 'แอปดูวีดีโอ' }
+];
+
 export default function VersionManager() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('back_office'); // back_office, website, app
+  const [activeTab, setActiveTab] = useState('back_office');
   const [versions, setVersions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [latestVersions, setLatestVersions] = useState({ back_office: '', website: '', app: '' });
+  const [latestVersions, setLatestVersions] = useState({
+    back_office: '',
+    partner: '',
+    website: '',
+    app: ''
+  });
   const [showDetailId, setShowDetailId] = useState(null);
 
   // Notification State
@@ -56,18 +68,12 @@ export default function VersionManager() {
   };
 
   const fetchLatestVersions = async () => {
-    const systems = ['back_office', 'website', 'app'];
     const results = {};
+    const { data, error } = await backofficeQuery(user, 'latest_system_versions');
 
-    for (const sys of systems) {
-      const { data, error } = await backofficeQuery(user, 'latest_system_versions');
-
-      if (!error && data && data[sys]) {
-        results[sys] = data[sys];
-      } else {
-        results[sys] = 'ไม่มีข้อมูล';
-      }
-    }
+    SYSTEM_TABS.forEach((tab) => {
+      results[tab.id] = !error && data && data[tab.id] ? data[tab.id] : 'ไม่มีข้อมูล';
+    });
     setLatestVersions(results);
   };
 
@@ -177,12 +183,6 @@ export default function VersionManager() {
     }
   };
 
-  const tabs = [
-    { id: 'back_office', label: 'ระบบหลังบ้าน' },
-    { id: 'website', label: 'เว็บไซด์' },
-    { id: 'app', label: 'แอปดูวีดีโอ' }
-  ];
-
   return (
     <div className="my-6 w-full px-2">
       {/* Error Notification Banner (format from login page) */}
@@ -208,7 +208,7 @@ export default function VersionManager() {
 
       {/* Tabs */}
       <div className="flex border-b border-[#2d2252] mb-6">
-        {tabs.map(tab => (
+        {SYSTEM_TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -338,9 +338,9 @@ export default function VersionManager() {
                   onChange={(e) => setFormSystem(e.target.value)}
                   className="w-full h-10 px-3 bg-[#131024] border border-[#2d2252] rounded text-sm text-white focus:outline-none focus:border-[#6C72FF] appearance-none cursor-pointer"
                 >
-                  <option value="back_office">ระบบหลังบ้าน</option>
-                  <option value="website">เว็บไซด์</option>
-                  <option value="app">แอปดูวีดีโอ</option>
+                  {SYSTEM_TABS.map((tab) => (
+                    <option key={tab.id} value={tab.id}>{tab.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
