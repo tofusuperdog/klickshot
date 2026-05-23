@@ -21,9 +21,7 @@ function requireSupabaseAdmin() {
 }
 
 export async function upsertTikTokCustomer(openId) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return null;
-  }
+  requireSupabaseAdmin();
 
   const response = await fetch(
     getSupabaseRestUrl(

@@ -108,6 +108,16 @@ export async function POST(request) {
     }
 
     const customer = await upsertTikTokCustomer(token.open_id);
+    if (!customer?.id) {
+      return json(
+        request,
+        {
+          error: "Unable to create or load customer record",
+        },
+        { status: 500 },
+      );
+    }
+
     const customerAuthToken = createCustomerAuthToken({
       customerId: customer?.id,
       openId: token.open_id,
