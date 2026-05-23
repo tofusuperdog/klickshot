@@ -224,7 +224,7 @@ export async function GET(request) {
     const baseParams = {
       Vid: vid,
       ...(spaceName ? { SpaceName: spaceName } : {}),
-      PlayDomain: process.env.BYTEPLUS_VOD_PLAY_DOMAIN || DEFAULT_PLAY_DOMAIN,
+      PlayDomain: DEFAULT_PLAY_DOMAIN,
     };
 
     let subtitles = [];
@@ -309,7 +309,7 @@ export async function GET(request) {
         ),
         isHlsProxyEnabled: forceHlsProxy || shouldUseHlsProxy(),
         preferredPlaybackStreamType: defaultPlayback.streamType,
-        playDomain: process.env.BYTEPLUS_VOD_PLAY_DOMAIN || DEFAULT_PLAY_DOMAIN,
+        playDomain: DEFAULT_PLAY_DOMAIN,
         subtitles,
       },
       {

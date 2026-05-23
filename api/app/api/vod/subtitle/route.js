@@ -6,7 +6,6 @@ const ALLOWED_HOST_SUFFIXES = [
   "byteplusapi.com",
   "byteplusvod.com",
   "minchapseries.com",
-  "klickshotseries.com",
 ];
 
 function isAllowedSubtitleUrl(url) {

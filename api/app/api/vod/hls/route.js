@@ -9,7 +9,6 @@ const ALLOWED_HLS_HOSTS = new Set([
   "bytepluscdn.com",
   "byteplusapi.com",
   "byteplusvod.com",
-  "klickshotseries.com",
 ]);
 
 function isAllowedHlsUrl(url) {

@@ -2,8 +2,15 @@ const SUPABASE_URL =
   process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
+function getSupabaseBaseUrl() {
+  const value = String(SUPABASE_URL || "").trim();
+  const match = value.match(/^https:\/\/[a-z0-9-]+\.supabase\.co/i);
+
+  return match ? match[0] : value.replace(/\/$/, "");
+}
+
 function getSupabaseRestUrl(path) {
-  return `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${path}`;
+  return `${getSupabaseBaseUrl()}/rest/v1/${path}`;
 }
 
 function getServiceRoleHeaders(extraHeaders = {}) {
@@ -16,10 +23,17 @@ function getServiceRoleHeaders(extraHeaders = {}) {
 
 function getSupabaseHost() {
   try {
-    return SUPABASE_URL ? new URL(SUPABASE_URL).host : "";
+    return SUPABASE_URL ? new URL(getSupabaseBaseUrl()).host : "";
   } catch {
     return "";
   }
+}
+
+function getSafeHostname(value) {
+  const hostname = String(value || "");
+  const match = hostname.match(/[a-z0-9-]+\.supabase\.co/i);
+
+  return match ? match[0] : "";
 }
 
 async function fetchSupabase(input, init) {
@@ -31,7 +45,7 @@ async function fetchSupabase(input, init) {
       error?.message || "Supabase request failed",
       cause.code,
       cause.syscall,
-      cause.hostname || getSupabaseHost(),
+      getSafeHostname(cause.hostname) || getSupabaseHost(),
     ].filter(Boolean);
 
     throw new Error(details.join(" - "));
