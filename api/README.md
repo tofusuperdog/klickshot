@@ -1,6 +1,6 @@
 # MinChap API
 
-This is the standalone API app for `api.minchapseries.com`.
+This is the standalone API app for `api.klickshotseries.com`.
 
 ## Local Development
 
@@ -32,7 +32,7 @@ api
 Production domain:
 
 ```text
-api.minchapseries.com
+api.klickshotseries.com
 ```
 
 Required environment variables are listed in `.env.example`.

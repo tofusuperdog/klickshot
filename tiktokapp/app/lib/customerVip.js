@@ -74,8 +74,18 @@ const loginWithTikTokMinis = (ttMinis) =>
       handler(value);
     }
 
-    try {
-      const result = ttMinis.login(
+    function handleResult(result) {
+      if (result?.then) {
+        result
+          .then((response) => finish(resolve, response))
+          .catch((error) => finish(reject, error));
+      } else if (getAuthorizationCode(result)) {
+        finish(resolve, result);
+      }
+    }
+
+    function runLegacyLogin() {
+      return ttMinis.login(
         (response) => {
           if (getAuthorizationCode(response)) {
             finish(resolve, response);
@@ -93,16 +103,22 @@ const loginWithTikTokMinis = (ttMinis) =>
           returnScopes: true,
         },
       );
+    }
 
-      if (result?.then) {
-        result
-          .then((response) => finish(resolve, response))
-          .catch((error) => finish(reject, error));
-      } else if (getAuthorizationCode(result)) {
-        finish(resolve, result);
-      }
+    try {
+      const result = ttMinis.login({
+        success: (response) => finish(resolve, response),
+        fail: (error) => finish(reject, error),
+        complete: () => {},
+      });
+
+      handleResult(result);
     } catch (error) {
-      finish(reject, error);
+      try {
+        handleResult(runLegacyLogin());
+      } catch (legacyError) {
+        finish(reject, legacyError || error);
+      }
     }
   });
 

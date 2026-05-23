@@ -61,6 +61,7 @@ export default function AppProfile() {
   const [isVipActive, setIsVipActive] = useState(true);
   const [version, setVersion] = useState("1.01");
   const [userId, setUserId] = useState("-");
+  const [loginStatus, setLoginStatus] = useState("");
   const [vipSubscription, setVipSubscription] = useState(null);
   const [isLanguageSheetOpen, setIsLanguageSheetOpen] = useState(false);
 
@@ -75,15 +76,23 @@ export default function AppProfile() {
         .then((payload) => setVipSubscription(payload.subscription || null))
         .catch(() => setVipSubscription(null));
     };
+    const updateLoginStatus = (event) => {
+      const status = String(event.detail?.status || "").trim();
+      const message = String(event.detail?.message || "").trim();
+
+      setLoginStatus(message || status);
+    };
 
     window.addEventListener("storage", updateUserId);
     window.addEventListener("minchap:tiktok-user-updated", updateUserId);
+    window.addEventListener("minchap:tiktok-login-state", updateLoginStatus);
     window.addEventListener(CUSTOMER_VIP_UPDATED_EVENT, updateUserId);
     updateUserId();
 
     return () => {
       window.removeEventListener("storage", updateUserId);
       window.removeEventListener("minchap:tiktok-user-updated", updateUserId);
+      window.removeEventListener("minchap:tiktok-login-state", updateLoginStatus);
       window.removeEventListener(CUSTOMER_VIP_UPDATED_EVENT, updateUserId);
     };
   }, []);
@@ -186,6 +195,11 @@ export default function AppProfile() {
               {t("profile_user_id")}:{" "}
               <span className="text-[#B985FF]">{userId}</span>
             </div>
+            {userId === "-" && loginStatus ? (
+              <div className="max-w-[210px] truncate text-[12px] leading-tight text-white/42">
+                Login: {loginStatus}
+              </div>
+            ) : null}
             <div className="text-[15px]  leading-tight text-white/72">
               {t("app_version")}{" "}
               <span className="text-[#B985FF]">{version}</span>

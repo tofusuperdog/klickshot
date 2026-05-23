@@ -31,11 +31,8 @@ const FORCE_HLS_PROXY =
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "true" ||
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "1";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
-const FALLBACK_VOD_API_BASE_URL = "https://api.minchapseries.com";
 
 const headers = SUPABASE_HEADERS;
-
-const getFallbackApiUrl = (path) => `${FALLBACK_VOD_API_BASE_URL}${path}`;
 
 function recordEpisodeView(targetEpisode) {
   const seriesId = Number(targetEpisode?.series_id);
@@ -1334,10 +1331,7 @@ export default function WatchPage() {
       const playAuthPath = `/api/vod/playauth?vid=${encodeURIComponent(vid)}${
         FORCE_HLS_PROXY ? "&proxy=1" : ""
       }`;
-      const playAuthUrls = [
-        getApiUrl(playAuthPath),
-        getFallbackApiUrl(playAuthPath),
-      ].filter((url, index, urls) => url && urls.indexOf(url) === index);
+      const playAuthUrls = [getApiUrl(playAuthPath)];
       let playAuthResponse = null;
       let playAuthData = null;
 

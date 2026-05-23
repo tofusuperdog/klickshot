@@ -47,13 +47,10 @@ const waitForTikTokMinis = async () => {
 const loginWithTikTokMinis = (ttMinis) =>
   new Promise((resolve, reject) => {
     let isSettled = false;
-    let returnedSynchronously = false;
     const timeoutId = setTimeout(() => {
       finish(
         reject,
-        new Error(
-          `TikTok login timed out. loginReturned=${returnedSynchronously}.`,
-        ),
+        new Error("TikTok login timed out."),
       );
     }, 15000);
 
@@ -64,8 +61,18 @@ const loginWithTikTokMinis = (ttMinis) =>
       handler(value);
     }
 
-    try {
-      const result = ttMinis.login(
+    function handleResult(result) {
+      if (result?.then) {
+        result
+          .then((response) => finish(resolve, response))
+          .catch((error) => finish(reject, error));
+      } else if (getAuthorizationCode(result)) {
+        finish(resolve, result);
+      }
+    }
+
+    function runLegacyLogin() {
+      return ttMinis.login(
         (response) => {
           const code = getAuthorizationCode(response);
 
@@ -85,18 +92,22 @@ const loginWithTikTokMinis = (ttMinis) =>
           returnScopes: true,
         },
       );
+    }
 
-      returnedSynchronously = true;
+    try {
+      const result = ttMinis.login({
+        success: (response) => finish(resolve, response),
+        fail: (error) => finish(reject, error),
+        complete: () => {},
+      });
 
-      if (result?.then) {
-        result
-          .then((response) => finish(resolve, response))
-          .catch((error) => finish(reject, error));
-      } else if (getAuthorizationCode(result)) {
-        finish(resolve, result);
-      }
+      handleResult(result);
     } catch (error) {
-      finish(reject, error);
+      try {
+        handleResult(runLegacyLogin());
+      } catch (legacyError) {
+        finish(reject, legacyError || error);
+      }
     }
   });
 
@@ -131,6 +142,7 @@ const formatError = (error) => {
 
 function dispatchLoginState(detail) {
   if (typeof window === "undefined") return;
+  window.__MINCHAP_TIKTOK_LOGIN_STATE__ = detail;
   window.dispatchEvent(
     new CustomEvent("minchap:tiktok-login-state", { detail }),
   );
