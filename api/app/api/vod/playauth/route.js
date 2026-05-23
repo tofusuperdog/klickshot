@@ -112,6 +112,21 @@ function getPlaybackUrl(playInfo) {
   );
 }
 
+function normalizePlaybackUrl(playbackUrl) {
+  if (!playbackUrl) return "";
+
+  try {
+    const url = new URL(playbackUrl);
+
+    url.protocol = "https:";
+    url.hostname = DEFAULT_PLAY_DOMAIN;
+
+    return url.href;
+  } catch {
+    return playbackUrl;
+  }
+}
+
 function getPlaybackSource(playInfo, candidate, playInfoList) {
   return {
     requestedFormat: candidate.Format,
@@ -144,7 +159,7 @@ async function resolveDefaultPlayback(baseParams) {
           playInfoList.find((playInfo) => Boolean(getPlaybackUrl(playInfo))) ||
           playInfoList[0] ||
           {};
-        const playbackUrl = getPlaybackUrl(selectedPlayInfo);
+        const playbackUrl = normalizePlaybackUrl(getPlaybackUrl(selectedPlayInfo));
         const streamType = String(candidate.Format || "").toLowerCase();
 
         if (playbackUrl) {

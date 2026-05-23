@@ -27,9 +27,6 @@ import { SUPABASE_HEADERS, supabaseRestUrl } from "../lib/supabase";
 const BYTEPLUS_LICENSE =
   process.env.NEXT_PUBLIC_BYTEPLUS_LICENSE ||
   "https://sf16-vod-license-multi.byteplusvod.com/obj/vod-license-sgcom/l-1122314769-ch-vod-a-1006938.lic";
-const FORCE_HLS_PROXY =
-  process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "true" ||
-  process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "1";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
 const ENABLE_AUDIO_TRACK_SWITCHING = true;
 
@@ -1215,27 +1212,8 @@ export default function WatchPage() {
     };
   }, []);
 
-  useEffect(() => {
-    const tiktokMinis = typeof window !== "undefined" ? window.TTMinis : null;
-
-    if (tiktokMinis?.disableCapture) {
-      try {
-        tiktokMinis.disableCapture();
-      } catch (err) {
-        console.error("Failed to disable screen capture:", err);
-      }
-    }
-
-    return () => {
-      if (tiktokMinis?.enableCapture) {
-        try {
-          tiktokMinis.enableCapture();
-        } catch (err) {
-          console.error("Failed to enable screen capture:", err);
-        }
-      }
-    };
-  }, []);
+  // Temporarily allow capture while debugging TikTok playback error 2100.
+  useEffect(() => undefined, []);
 
   const subtitleOptions = Array.isArray(subtitles)
     ? subtitles
@@ -1365,9 +1343,7 @@ export default function WatchPage() {
         return false;
       }
 
-      const playAuthPath = `/api/vod/playauth?vid=${encodeURIComponent(vid)}${
-        FORCE_HLS_PROXY ? "&proxy=1" : ""
-      }`;
+      const playAuthPath = `/api/vod/playauth?vid=${encodeURIComponent(vid)}`;
       const playAuthUrls = [getApiUrl(playAuthPath)];
       let playAuthResponse = null;
       let playAuthData = null;
@@ -1395,7 +1371,10 @@ export default function WatchPage() {
         playAuthData = { error: labels.tokenError };
       }
 
-      const hlsPlaybackUrl = playAuthData.preferredPlaybackSource || "";
+      const hlsPlaybackUrl =
+        playAuthData.directPlaybackSource ||
+        playAuthData.preferredPlaybackSource ||
+        "";
 
       if (!playAuthResponse?.ok || !hlsPlaybackUrl) {
         const isHlsMissing =
@@ -1423,9 +1402,8 @@ export default function WatchPage() {
 
       if (ENABLE_AUDIO_TRACK_SWITCHING) {
         loadHlsAudioTracks([
-          playAuthData.proxiedPlaybackSource,
-          playAuthData.preferredPlaybackSource,
           playAuthData.directPlaybackSource,
+          playAuthData.preferredPlaybackSource,
         ]).then((manifestAudioTracks) => {
           if (manifestAudioTracks.length === 0) return;
 
