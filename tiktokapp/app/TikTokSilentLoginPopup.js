@@ -102,13 +102,25 @@ const loginWithTikTokMinis = (ttMinis) =>
 
 const getAuthorizationCode = (loginResult) =>
   loginResult?.code ||
+  loginResult?.auth_code ||
+  loginResult?.authCode ||
+  loginResult?.authorization_code ||
   loginResult?.authorizationCode ||
   loginResult?.AuthorizationCode ||
   loginResult?.authCode ||
   loginResult?.authResponse?.code ||
+  loginResult?.authResponse?.auth_code ||
+  loginResult?.authResponse?.authCode ||
+  loginResult?.authResponse?.authorization_code ||
   loginResult?.authResponse?.authorizationCode ||
   loginResult?.data?.authResponse?.code ||
+  loginResult?.data?.authResponse?.auth_code ||
+  loginResult?.data?.authResponse?.authCode ||
+  loginResult?.data?.authResponse?.authorization_code ||
   loginResult?.data?.code ||
+  loginResult?.data?.auth_code ||
+  loginResult?.data?.authCode ||
+  loginResult?.data?.authorization_code ||
   "";
 
 const formatError = (error) => {

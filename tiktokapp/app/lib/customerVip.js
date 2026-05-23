@@ -33,13 +33,25 @@ const waitForTikTokMinis = async () => {
 
 const getAuthorizationCode = (loginResult) =>
   loginResult?.code ||
+  loginResult?.auth_code ||
+  loginResult?.authCode ||
+  loginResult?.authorization_code ||
   loginResult?.authorizationCode ||
   loginResult?.AuthorizationCode ||
   loginResult?.authCode ||
   loginResult?.authResponse?.code ||
+  loginResult?.authResponse?.auth_code ||
+  loginResult?.authResponse?.authCode ||
+  loginResult?.authResponse?.authorization_code ||
   loginResult?.authResponse?.authorizationCode ||
   loginResult?.data?.authResponse?.code ||
+  loginResult?.data?.authResponse?.auth_code ||
+  loginResult?.data?.authResponse?.authCode ||
+  loginResult?.data?.authResponse?.authorization_code ||
   loginResult?.data?.code ||
+  loginResult?.data?.auth_code ||
+  loginResult?.data?.authCode ||
+  loginResult?.data?.authorization_code ||
   "";
 
 const formatError = (error) => {
@@ -83,7 +95,9 @@ const loginWithTikTokMinis = (ttMinis) =>
       );
 
       if (result?.then) {
-        result.then(resolve).catch(reject);
+        result
+          .then((response) => finish(resolve, response))
+          .catch((error) => finish(reject, error));
       } else if (getAuthorizationCode(result)) {
         finish(resolve, result);
       }
@@ -92,7 +106,9 @@ const loginWithTikTokMinis = (ttMinis) =>
     }
   });
 
-export async function refreshTikTokCustomerSession() {
+export async function refreshTikTokCustomerSession({
+  requireAccessToken = false,
+} = {}) {
   const ttMinis = await waitForTikTokMinis();
 
   if (!ttMinis) {
@@ -122,12 +138,14 @@ export async function refreshTikTokCustomerSession() {
     throw new Error(payload.error || `Backend login failed: ${response.status}`);
   }
 
-  if (!payload.user?.access_token) {
+  storeTikTokUser(payload.user);
+  const customer = getStoredCustomer();
+
+  if (requireAccessToken && !customer?.tiktokAccessToken) {
     throw new Error("TikTok login did not return a payment access token.");
   }
 
-  storeTikTokUser(payload.user);
-  return getStoredCustomer();
+  return customer;
 }
 
 export function getStoredCustomer() {
@@ -167,9 +185,13 @@ export function isVipSubscriptionActive(subscription) {
 }
 
 export async function loadCustomerVipSubscription({ includeHistory = false } = {}) {
-  const customer = getStoredCustomer();
+  let customer = getStoredCustomer();
   if (!customer) {
-    return { is_active: false, subscription: null };
+    try {
+      customer = await refreshTikTokCustomerSession();
+    } catch {
+      return { is_active: false, subscription: null };
+    }
   }
 
   const params = new URLSearchParams({
@@ -197,7 +219,13 @@ export async function loadCustomerVipSubscription({ includeHistory = false } = {
 }
 
 export async function activateVipPackageForTest(packageId) {
-  const customer = getStoredCustomer();
+  let customer = getStoredCustomer();
+  if (!customer) {
+    customer = await refreshTikTokCustomerSession({
+      requireAccessToken: true,
+    }).catch(() => null);
+  }
+
   if (!customer) {
     throw new Error("Please sign in before subscribing VIP.");
   }
@@ -232,11 +260,17 @@ export async function activateVipPackageForTest(packageId) {
 export async function createTikTokVipPaymentOrder(packageId) {
   let customer = getStoredCustomer();
   if (!customer) {
+    customer = await refreshTikTokCustomerSession().catch(() => null);
+  }
+
+  if (!customer) {
     throw new Error("Please sign in before subscribing VIP.");
   }
 
   if (!customer.tiktokAccessToken) {
-    customer = await refreshTikTokCustomerSession();
+    customer = await refreshTikTokCustomerSession({
+      requireAccessToken: true,
+    });
   }
 
   if (!customer?.tiktokAccessToken) {
@@ -272,11 +306,19 @@ export async function confirmTikTokVipPaymentOrder({
 } = {}) {
   let customer = getStoredCustomer();
   if (!customer) {
+    customer = await refreshTikTokCustomerSession({
+      requireAccessToken: true,
+    }).catch(() => null);
+  }
+
+  if (!customer) {
     throw new Error("Please sign in before subscribing VIP.");
   }
 
   if (!customer.tiktokAccessToken) {
-    customer = await refreshTikTokCustomerSession();
+    customer = await refreshTikTokCustomerSession({
+      requireAccessToken: true,
+    });
   }
 
   if (!customer?.tiktokAccessToken) {

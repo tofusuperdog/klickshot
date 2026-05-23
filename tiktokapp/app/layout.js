@@ -12,8 +12,8 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata = {
-  title: "MinChap - TikTok style short series",
-  description: "Experience the best short series in a TikTok-style feed on MinChap.",
+  title: "Klick Shot",
+  description: "Experience short series on Klick Shot.",
 };
 
 const tiktokClientKey =
