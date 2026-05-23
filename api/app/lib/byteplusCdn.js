@@ -25,6 +25,14 @@ function getCdnSigningUid() {
   return (process.env.BYTEPLUS_CDN_AUTH_UID || "0").trim();
 }
 
+function getCdnSigningTtlSeconds() {
+  const ttl = Number(process.env.BYTEPLUS_CDN_AUTH_TTL_SECONDS || 6 * 60 * 60);
+
+  if (!Number.isFinite(ttl) || ttl <= 0) return 6 * 60 * 60;
+
+  return Math.min(Math.floor(ttl), 24 * 60 * 60);
+}
+
 export function signCdnUrl(playbackUrl) {
   const signingKey = getCdnSigningKey();
 
@@ -33,7 +41,7 @@ export function signCdnUrl(playbackUrl) {
   const signedUrl =
     playbackUrl instanceof URL ? new URL(playbackUrl.href) : new URL(playbackUrl);
   const signingParameterName = getCdnSigningParameterName();
-  const timestamp = Math.floor(Date.now() / 1000);
+  const timestamp = Math.floor(Date.now() / 1000) + getCdnSigningTtlSeconds();
   const rand = getCdnSigningRand();
   const uid = getCdnSigningUid();
 

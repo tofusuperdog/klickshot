@@ -40,6 +40,12 @@ body {
 .veplayer-raised-subtitle .xgplayer-playbackrate,
 .veplayer-raised-subtitle .xgplayer-mobile-playBackRate,
 .veplayer-raised-subtitle .xgplayer-audio-track,
+.veplayer-raised-subtitle .xgplayer-audio,
+.veplayer-raised-subtitle .xgplayer-audiotrack,
+.veplayer-raised-subtitle .xgplayer-audioTrack,
+.veplayer-raised-subtitle [class*="audio-track"],
+.veplayer-raised-subtitle [class*="audioTrack"],
+.veplayer-raised-subtitle [class*="audiotrack"],
 .veplayer-raised-subtitle .xgplayer-fullscreen,
 .veplayer-raised-subtitle .xgplayer-vttsub,
 .veplayer-raised-subtitle .xgplayer-aisub {

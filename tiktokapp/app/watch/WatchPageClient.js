@@ -31,8 +31,18 @@ const FORCE_HLS_PROXY =
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "true" ||
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "1";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
+const ENABLE_AUDIO_TRACK_SWITCHING = true;
 
 const headers = SUPABASE_HEADERS;
+let vePlayerModulePromise = null;
+
+function loadVePlayerModule() {
+  if (!vePlayerModulePromise) {
+    vePlayerModulePromise = import("@byteplus/veplayer");
+  }
+
+  return vePlayerModulePromise;
+}
 
 function recordEpisodeView(targetEpisode) {
   const seriesId = Number(targetEpisode?.series_id);
@@ -656,7 +666,22 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
     const playerTracks = player.getAudioTracks() || [];
 
-    return playerTracks.length > 0 ? playerTracks : normalizedNativeTracks;
+    if (playerTracks.length > 0) return playerTracks;
+
+    const hls = findInternalHls(player);
+    const hlsTracks = hls?.audioTracks?.length
+      ? hls.audioTracks.map((track, idx) => ({
+          id: track.id ?? idx,
+          playerId: idx,
+          lang: track.lang || "",
+          language: track.lang || "",
+          name: track.name || "",
+          text: track.name || "",
+          selected: Number(hls.audioTrack) === idx,
+        }))
+      : [];
+
+    return hlsTracks.length > 0 ? hlsTracks : normalizedNativeTracks;
   };
 
   const getCurrentPlayerAudioTrack = () => {
@@ -887,7 +912,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
         containerRef.current.innerHTML = "";
 
-        const VePlayerModule = await import("@byteplus/veplayer");
+        const VePlayerModule = await loadVePlayerModule();
         const VePlayer = VePlayerModule.default || VePlayerModule;
         const playerId = `veplayer-${Date.now()}-${Math.random()
           .toString(36)
@@ -957,6 +982,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           controlBar: {
             visible: true,
           },
+          ignores: ["audioTrack", "AudioTrack", "audio", "definition"],
         };
 
         if (playerSubtitles.length > 0 && VePlayer.Subtitle) {
@@ -974,19 +1000,24 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         subtitlePluginRef.current = null;
         onPausedChangeRef.current?.(false);
 
-        const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
-        const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
+        if (ENABLE_AUDIO_TRACK_SWITCHING) {
+          const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
+          const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
 
-        if (audioTracksUpdatedEvent) {
-          playerRef.current.on?.(audioTracksUpdatedEvent, ({ audioTracks } = {}) => {
-            emitAudioTracks(audioTracks || getPlayerAudioTracks());
-          });
-        }
+          if (audioTracksUpdatedEvent) {
+            playerRef.current.on?.(
+              audioTracksUpdatedEvent,
+              ({ audioTracks } = {}) => {
+                emitAudioTracks(audioTracks || getPlayerAudioTracks());
+              },
+            );
+          }
 
-        if (audioTrackChangeEvent) {
-          playerRef.current.on?.(audioTrackChangeEvent, () => {
-            emitAudioTracks();
-          });
+          if (audioTrackChangeEvent) {
+            playerRef.current.on?.(audioTrackChangeEvent, () => {
+              emitAudioTracks();
+            });
+          }
         }
 
         let videoLookupAttempts = 0;
@@ -1045,18 +1076,20 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
         window.setTimeout(retrySubtitleSwitch, 0);
 
-        const retryAudioTracks = (attempt = 0) => {
-          if (cancelled) return;
+        if (ENABLE_AUDIO_TRACK_SWITCHING) {
+          const retryAudioTracks = (attempt = 0) => {
+            if (cancelled) return;
 
-          const audioTracks = getPlayerAudioTracks();
-          emitAudioTracks(audioTracks);
+            const audioTracks = getPlayerAudioTracks();
+            emitAudioTracks(audioTracks);
 
-          if (audioTracks.length === 0 && attempt < 20) {
-            window.setTimeout(() => retryAudioTracks(attempt + 1), 250);
-          }
-        };
+            if (audioTracks.length === 0 && attempt < 20) {
+              window.setTimeout(() => retryAudioTracks(attempt + 1), 250);
+            }
+          };
 
-        retryAudioTracks();
+          retryAudioTracks();
+        }
       } catch (error) {
         console.error("Failed to initialize BytePlus player:", error);
       }
@@ -1130,6 +1163,10 @@ export default function WatchPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
   const [hasActiveVip, setHasActiveVip] = useState(false);
+
+  useEffect(() => {
+    loadVePlayerModule().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return undefined;
@@ -1377,31 +1414,29 @@ export default function WatchPage() {
         return false;
       }
 
-      const manifestAudioTracks = await loadHlsAudioTracks([
-        playAuthData.proxiedPlaybackSource,
-        playAuthData.preferredPlaybackSource,
-        playAuthData.directPlaybackSource,
-      ]);
-      const shouldUseMseForAudioTracks = manifestAudioTracks.length > 1;
-
       setPlayback({
-        url:
-          shouldUseMseForAudioTracks && playAuthData.proxiedPlaybackSource
-            ? playAuthData.proxiedPlaybackSource
-            : hlsPlaybackUrl,
+        url: hlsPlaybackUrl,
         streamType: playAuthData.preferredPlaybackStreamType || "hls",
         codec: "h264",
-        enableHlsMSE: shouldUseMseForAudioTracks,
+        enableHlsMSE: ENABLE_AUDIO_TRACK_SWITCHING,
       });
 
-      if (manifestAudioTracks.length > 0) {
-        const activeAudioTrack =
-          manifestAudioTracks.find((track) => track.selected) ||
-          manifestAudioTracks.find((track) => track.default) ||
-          manifestAudioTracks[0];
+      if (ENABLE_AUDIO_TRACK_SWITCHING) {
+        loadHlsAudioTracks([
+          playAuthData.proxiedPlaybackSource,
+          playAuthData.preferredPlaybackSource,
+          playAuthData.directPlaybackSource,
+        ]).then((manifestAudioTracks) => {
+          if (manifestAudioTracks.length === 0) return;
 
-        setAudioTracks(manifestAudioTracks);
-        setActiveAudioTrackId(activeAudioTrack?.id || "");
+          const activeAudioTrack =
+            manifestAudioTracks.find((track) => track.selected) ||
+            manifestAudioTracks.find((track) => track.default) ||
+            manifestAudioTracks[0];
+
+          setAudioTracks(manifestAudioTracks);
+          setActiveAudioTrackId(activeAudioTrack?.id || "");
+        }).catch(() => {});
       }
       applyFetchedSubtitles(
         Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
