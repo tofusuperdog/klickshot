@@ -8,11 +8,11 @@ const termsContent = {
   TH: {
     title: "ข้อกำหนดการใช้งาน",
     effectiveDate: "เริ่มมีผลบังคับใช้: 19 กันยายน 2567",
-    intro: "ข้อกำหนดการใช้งานเหล่านี้ควบคุมการใช้แอปพลิเคชัน minchap ของคุณ โปรดอ่านและทำความเข้าใจก่อนเริ่มใช้งานแอปพลิเคชัน",
+    intro: "ข้อกำหนดการใช้งานเหล่านี้ควบคุมการใช้แอปพลิเคชัน KlickShot ของคุณ โปรดอ่านและทำความเข้าใจก่อนเริ่มใช้งานแอปพลิเคชัน",
     sections: [
       {
         title: "1. การยอมรับข้อกำหนด",
-        content: "ในการเข้าถึงและใช้งานแอปพลิเคชัน minchap คุณตกลงและยอมรับข้อกำหนดการใช้งานเหล่านี้ หากคุณไม่ตกลงตามข้อกำหนดเหล่านี้ โปรดระดมการใช้งานแอปพลิเคชัน"
+        content: "ในการเข้าถึงและใช้งานแอปพลิเคชัน KlickShot คุณตกลงและยอมรับข้อกำหนดการใช้งานเหล่านี้ หากคุณไม่ตกลงตามข้อกำหนดเหล่านี้ โปรดระดมการใช้งานแอปพลิเคชัน"
       },
       {
         title: "2. บัญชีผู้ใช้และความปลอดภัย",
@@ -49,11 +49,11 @@ const termsContent = {
   EN: {
     title: "Terms of Service",
     effectiveDate: "Effective Date: September 19, 2024",
-    intro: "These Terms of Service govern your use of the minchap application. Please read and understand them before you begin using the application.",
+    intro: "These Terms of Service govern your use of the KlickShot application. Please read and understand them before you begin using the application.",
     sections: [
       {
         title: "1. Acceptance of Terms",
-        content: "By accessing and using the minchap application, you agree to and accept these Terms of Service. If you do not agree to these terms, please refrain from using the application."
+        content: "By accessing and using the KlickShot application, you agree to and accept these Terms of Service. If you do not agree to these terms, please refrain from using the application."
       },
       {
         title: "2. User Account and Security",
@@ -90,11 +90,11 @@ const termsContent = {
   JP: {
     title: "利用規約",
     effectiveDate: "発効日: 2024年9月19日",
-    intro: "この利用規約は、minchap アプリケーションの使用に適用されます。アプリケーションの使用を開始する前に、これらを読んで理解してください。",
+    intro: "この利用規約は、KlickShot アプリケーションの使用に適用されます。アプリケーションの使用を開始する前に、これらを読んで理解してください。",
     sections: [
       {
         title: "1. 規約の承諾",
-        content: "minchap アプリケーションにアクセスして使用することにより、これらの利用規約に同意し、承諾したものとみなされます。これらの規約に同意しない場合は、アプリケーションの使用を控えてください。"
+        content: "KlickShot アプリケーションにアクセスして使用することにより、これらの利用規約に同意し、承諾したものとみなされます。これらの規約に同意しない場合は、アプリケーションの使用を控えてください。"
       },
       {
         title: "2. ユーザーアカウントとセキュリティ",
@@ -131,11 +131,11 @@ const termsContent = {
   CN: {
     title: "使用条款",
     effectiveDate: "生效日期：2024年9月19日",
-    intro: "这些使用条款约束您对 minchap 应用程序的使用。在开始使用应用程序之前，请阅读并理解这些条款。",
+    intro: "这些使用条款约束您对 KlickShot 应用程序的使用。在开始使用应用程序之前，请阅读并理解这些条款。",
     sections: [
       {
         title: "1. 接受条款",
-        content: "访问并使用 minchap 应用程序，即表示您同意并接受这些使用条款。如果您不同意这些条款，请停止使用该应用程序。"
+        content: "访问并使用 KlickShot 应用程序，即表示您同意并接受这些使用条款。如果您不同意这些条款，请停止使用该应用程序。"
       },
       {
         title: "2. 用户账户与安全",
@@ -176,7 +176,7 @@ const termsHeaderContent = {
     title: "ข้อกำหนดการใช้งาน",
     updated: "เริ่มมีผลบังคับใช้: 19 กันยายน 2567",
     intro:
-      "ข้อกำหนดนี้อธิบายเงื่อนไขการใช้งาน MinChap เพื่อให้ทุกคนใช้งานแอปได้อย่างปลอดภัยและเป็นธรรม",
+      "ข้อกำหนดนี้อธิบายเงื่อนไขการใช้งาน KlickShot เพื่อให้ทุกคนใช้งานแอปได้อย่างปลอดภัยและเป็นธรรม",
     summaryTitle: "สรุปแบบเข้าใจง่าย",
     bullets: [
       "การใช้งานแอปถือว่าคุณยอมรับข้อกำหนดนี้",
@@ -189,7 +189,7 @@ const termsHeaderContent = {
     title: "Terms of Use",
     updated: "Effective date: September 19, 2024",
     intro:
-      "These terms explain how MinChap should be used so everyone can enjoy the app safely and fairly.",
+      "These terms explain how KlickShot should be used so everyone can enjoy the app safely and fairly.",
     summaryTitle: "Simple Summary",
     bullets: [
       "Using the app means you accept these terms",
@@ -202,7 +202,7 @@ const termsHeaderContent = {
     title: "利用規約",
     updated: "発効日: 2024年9月19日",
     intro:
-      "この規約は、MinChapを安全かつ公正に利用するための条件を説明するものです。",
+      "この規約は、KlickShotを安全かつ公正に利用するための条件を説明するものです。",
     summaryTitle: "かんたん概要",
     bullets: [
       "アプリの利用は規約への同意を意味します",
@@ -215,7 +215,7 @@ const termsHeaderContent = {
     title: "使用条款",
     updated: "生效日期: 2024年9月19日",
     intro:
-      "这些条款说明 MinChap 的使用规则，帮助大家安全、公平地使用应用。",
+      "这些条款说明 KlickShot 的使用规则，帮助大家安全、公平地使用应用。",
     summaryTitle: "简明摘要",
     bullets: [
       "使用应用即表示您接受这些条款",

@@ -56,6 +56,119 @@ const normalizeSubtitle = (sub, idx) => ({
   default: Boolean(sub.default || sub.isDefault) || idx === 0,
 });
 
+const getAudioTrackId = (track, idx) =>
+  String(
+    track?.id ??
+      track?.lang ??
+      track?.language ??
+      track?.name ??
+      track?.text ??
+      idx,
+  );
+
+const normalizeAudioLanguageKey = (value) => {
+  const key = String(value || "")
+    .trim()
+    .toLowerCase();
+  const aliases = {
+    tha: "th",
+    thai: "th",
+    zho: "zh",
+    chi: "zh",
+    chinese: "zh",
+    cn: "zh",
+    "zh-cn": "zh",
+    eng: "en",
+    english: "en",
+    jpn: "ja",
+    japanese: "ja",
+    jp: "ja",
+  };
+
+  return aliases[key] || key;
+};
+
+const getAudioTrackLabel = (track, idx) => {
+  const language = normalizeAudioLanguageKey(track?.lang || track?.language);
+
+  if (language === "th") return "TH";
+  if (language === "zh") return "CN";
+  if (language === "en") return "EN";
+  if (language === "ja") return "JP";
+
+  return track?.text || track?.name || `Audio ${idx + 1}`;
+};
+
+const normalizeAudioTrack = (track, idx) => ({
+  id: getAudioTrackId(track, idx),
+  playerId: track?.playerId ?? track?.id ?? idx,
+  text: getAudioTrackLabel(track, idx),
+  lang: normalizeAudioLanguageKey(track?.lang || track?.language),
+  name: track?.name || track?.text || "",
+  uri: track?.uri || track?.url || "",
+  default: Boolean(track?.default || track?.isDefault) || idx === 0,
+  selected: Boolean(track?.selected),
+});
+
+const parseHlsAttributeList = (value) => {
+  const attributes = {};
+  const pattern = /([A-Z0-9-]+)=("(?:[^"\\]|\\.)*"|[^,]*)/gi;
+  let match;
+
+  while ((match = pattern.exec(value || ""))) {
+    const rawValue = match[2] || "";
+    attributes[match[1].toUpperCase()] = rawValue.startsWith('"')
+      ? rawValue.slice(1, -1)
+      : rawValue;
+  }
+
+  return attributes;
+};
+
+const parseHlsAudioTracks = (manifestText) =>
+  String(manifestText || "")
+    .split(/\r?\n/)
+    .filter((line) => /^#EXT-X-MEDIA:/i.test(line) && /TYPE=AUDIO/i.test(line))
+    .map((line, idx) => {
+      const attributes = parseHlsAttributeList(line.slice(line.indexOf(":") + 1));
+      const lang = normalizeAudioLanguageKey(attributes.LANGUAGE);
+
+      return normalizeAudioTrack(
+        {
+          id: attributes.URI || attributes.NAME || attributes.LANGUAGE || idx,
+          playerId: idx,
+          lang,
+          language: lang,
+          name: attributes.NAME || "",
+          text: attributes.NAME || "",
+          uri: attributes.URI || "",
+          default: attributes.DEFAULT === "YES",
+          selected: attributes.DEFAULT === "YES",
+        },
+        idx,
+      );
+    });
+
+const loadHlsAudioTracks = async (manifestUrls) => {
+  const urls = [...new Set((manifestUrls || []).filter(Boolean))];
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+
+      if (!response.ok) continue;
+
+      const tracks = parseHlsAudioTracks(await response.text());
+
+      if (tracks.length > 0) return tracks;
+    } catch {
+      // Try the next manifest URL. Direct CDN URLs may not expose CORS.
+    }
+  }
+
+  return [];
+};
+
 const normalizeSubtitleKey = (value) => {
   const key = String(value || "")
     .trim()
@@ -97,6 +210,7 @@ const subtitlesMatch = (left, right) => {
 };
 
 const SUBTITLE_LANGUAGE_ORDER = ["th", "en", "ja", "zh"];
+const AUDIO_LANGUAGE_ORDER = ["th", "zh", "en", "ja"];
 
 const getOrderedSubtitleOptions = (subtitles) =>
   SUBTITLE_LANGUAGE_ORDER.map((languageKey) =>
@@ -177,6 +291,50 @@ const findSubtitleByPreference = (subtitles, preference) => {
   );
 };
 
+const getOrderedAudioTrackOptions = (audioTracks) =>
+  [
+    ...AUDIO_LANGUAGE_ORDER.map((languageKey) =>
+      audioTracks.find((track) => track.lang === languageKey),
+    ).filter(Boolean),
+    ...audioTracks.filter(
+      (track) => !AUDIO_LANGUAGE_ORDER.includes(track.lang),
+    ),
+  ];
+
+const getAudioTrackDisplayName = (track, language) => {
+  const trackLanguage = normalizeAudioLanguageKey(
+    track?.lang || track?.language || track?.text || "",
+  );
+  const names = {
+    th: {
+      TH: "\u0e44\u0e17\u0e22",
+      EN: "Thai",
+      CN: "\u6cf0\u8bed",
+      JP: "\u30bf\u30a4\u8a9e",
+    },
+    zh: {
+      TH: "\u0e08\u0e35\u0e19",
+      EN: "Chinese",
+      CN: "\u4e2d\u6587",
+      JP: "\u4e2d\u56fd\u8a9e",
+    },
+    en: {
+      TH: "\u0e2d\u0e31\u0e07\u0e01\u0e24\u0e29",
+      EN: "English",
+      CN: "\u82f1\u8bed",
+      JP: "\u82f1\u8a9e",
+    },
+    ja: {
+      TH: "\u0e0d\u0e35\u0e48\u0e1b\u0e38\u0e48\u0e19",
+      EN: "Japanese",
+      CN: "\u65e5\u8bed",
+      JP: "\u65e5\u672c\u8a9e",
+    },
+  };
+
+  return names[trackLanguage]?.[language] || track?.text || track?.name;
+};
+
 const getSeriesTitle = (series, language) => {
   if (!series) return "";
 
@@ -253,6 +411,7 @@ function getLabels(language) {
         favorite: "Favorite",
         list: "List",
         settings: "Settings",
+        audioDubs: "Audio",
         subtitles: "Subtitles",
         subtitlesOff: "Subtitles off",
       };
@@ -296,6 +455,7 @@ function getWatchOverlayLabels(language) {
         favorite: "Favorite",
         list: "List",
         settings: "Settings",
+        audioDubs: "Audio",
         subtitles: "Subtitles",
         subtitlesOff: "Subtitles off",
       };
@@ -304,6 +464,7 @@ function getWatchOverlayLabels(language) {
         favorite: "お気に入り",
         list: "リスト",
         settings: "設定",
+        audioDubs: "音声",
         subtitles: "字幕",
         subtitlesOff: "字幕オフ",
       };
@@ -312,6 +473,7 @@ function getWatchOverlayLabels(language) {
         favorite: "收藏",
         list: "列表",
         settings: "设置",
+        audioDubs: "配音",
         subtitles: "字幕",
         subtitlesOff: "关闭字幕",
       };
@@ -320,6 +482,7 @@ function getWatchOverlayLabels(language) {
         favorite: "รายการโปรด",
         list: "รายการ",
         settings: "ตั้งค่า",
+        audioDubs: "พากย์เสียง",
         subtitles: "คำบรรยาย",
         subtitlesOff: "ปิดคำบรรยาย",
       };
@@ -334,6 +497,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     activeSubtitle,
     onPausedChange,
     onEnded,
+    onAudioTracksChange,
     lineAppId,
     lineUserId,
   },
@@ -343,6 +507,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   const playerRef = useRef(null);
   const onPausedChangeRef = useRef(onPausedChange);
   const onEndedRef = useRef(onEnded);
+  const onAudioTracksChangeRef = useRef(onAudioTracksChange);
   const subtitlePluginRef = useRef(null);
   const pendingSubtitleRef = useRef(undefined);
 
@@ -353,6 +518,10 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   useEffect(() => {
     onEndedRef.current = onEnded;
   }, [onEnded]);
+
+  useEffect(() => {
+    onAudioTracksChangeRef.current = onAudioTracksChange;
+  }, [onAudioTracksChange]);
 
   const resolveSubtitlePlugin = () => {
     if (subtitlePluginRef.current) return subtitlePluginRef.current;
@@ -414,6 +583,166 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     return true;
   };
 
+  const getPlayerAudioTracks = () => {
+    const player = playerRef.current;
+
+    const nativeTracks =
+      player?.video?.audioTracks ||
+      player?.media?.audioTracks ||
+      player?.root?.querySelector?.("video")?.audioTracks ||
+      containerRef.current?.querySelector("video")?.audioTracks;
+    const normalizedNativeTracks = nativeTracks?.length
+      ? Array.from({ length: nativeTracks.length }, (_, idx) => {
+          const track = nativeTracks[idx];
+
+          return {
+            id: track.id || idx,
+            playerId: track.id || idx,
+            lang: track.language || "",
+            language: track.language || "",
+            name: track.label || track.name || "",
+            text: track.label || track.name || "",
+            selected: Boolean(track.enabled),
+          };
+        })
+      : [];
+
+    if (!player || typeof player.getAudioTracks !== "function") {
+      return normalizedNativeTracks;
+    }
+
+    const playerTracks = player.getAudioTracks() || [];
+
+    return playerTracks.length > 0 ? playerTracks : normalizedNativeTracks;
+  };
+
+  const getCurrentPlayerAudioTrack = () => {
+    const player = playerRef.current;
+
+    if (!player || typeof player.getCurrentAudioTrack !== "function") {
+      return null;
+    }
+
+    return player.getCurrentAudioTrack();
+  };
+
+  const emitAudioTracks = (audioTracks = getPlayerAudioTracks()) => {
+    const currentTrack = getCurrentPlayerAudioTrack();
+
+    onAudioTracksChangeRef.current?.(
+      audioTracks.map((track) => ({
+        ...track,
+        selected:
+          Boolean(track.selected) ||
+          (currentTrack ? String(track.id) === String(currentTrack.id) : false),
+      })),
+    );
+  };
+
+  const findInternalHls = (value, depth = 0, seen = new Set()) => {
+    if (!value || typeof value !== "object" || seen.has(value) || depth > 8) {
+      return null;
+    }
+
+    seen.add(value);
+
+    if (Array.isArray(value.audioTracks) && "audioTrack" in value) {
+      return value;
+    }
+
+    return Object.values(value).reduce(
+      (found, item) => found || findInternalHls(item, depth + 1, seen),
+      null,
+    );
+  };
+
+  const switchNativeAudioTrack = (audioTrack) => {
+    const player = playerRef.current;
+    const nativeTracks =
+      player?.video?.audioTracks ||
+      player?.media?.audioTracks ||
+      player?.root?.querySelector?.("video")?.audioTracks ||
+      containerRef.current?.querySelector("video")?.audioTracks;
+
+    if (!nativeTracks?.length) return false;
+
+    let switched = false;
+
+    for (let idx = 0; idx < nativeTracks.length; idx += 1) {
+      const nativeTrack = nativeTracks[idx];
+      const isTarget =
+        String(nativeTrack.id) === String(audioTrack.playerId ?? audioTrack.id) ||
+        String(nativeTrack.language || "").toLowerCase() ===
+          String(audioTrack.lang || "").toLowerCase() ||
+        String(nativeTrack.label || nativeTrack.name || "") ===
+          String(audioTrack.name || audioTrack.text || "");
+
+      nativeTrack.enabled = isTarget;
+      switched = switched || isTarget;
+    }
+
+    return switched;
+  };
+
+  const switchHlsAudioTrack = (audioTrack) => {
+    const hls = findInternalHls(playerRef.current);
+    const targetId = audioTrack.playerId ?? audioTrack.id;
+
+    if (!hls?.audioTracks?.length) return false;
+
+    const targetIndex = hls.audioTracks.findIndex(
+      (track, idx) =>
+        idx === targetId ||
+        String(idx) === String(targetId) ||
+        String(track.id) === String(targetId) ||
+        String(track.lang || "").toLowerCase() ===
+          String(audioTrack.lang || "").toLowerCase() ||
+        String(track.name || "") === String(audioTrack.name || audioTrack.text || ""),
+    );
+
+    if (targetIndex < 0) return false;
+
+    hls.audioTrack = targetIndex;
+    return true;
+  };
+
+  const applyAudioTrack = (audioTrack) => {
+    const player = playerRef.current;
+
+    if (!player || !audioTrack) return false;
+
+    const currentTracks = getPlayerAudioTracks();
+    const targetTrack =
+      currentTracks.find(
+        (track) => String(track.id) === String(audioTrack.playerId ?? audioTrack.id),
+      ) ||
+      currentTracks.find(
+        (track) =>
+          audioTrack.lang &&
+          String(track.lang || "").toLowerCase() ===
+            String(audioTrack.lang).toLowerCase(),
+      ) ||
+      currentTracks.find(
+        (track) =>
+          String(track.name || "") === String(audioTrack.name || audioTrack.text || ""),
+      ) ||
+      audioTrack;
+    const targetId = targetTrack.id ?? audioTrack.playerId ?? audioTrack.id;
+    const switchPayload = {
+      ...targetTrack,
+      id: targetId,
+      lang: targetTrack.lang || audioTrack.lang,
+      name: targetTrack.name || audioTrack.name || audioTrack.text,
+    };
+
+    player.switchAudioTrack?.(switchPayload);
+    switchNativeAudioTrack(switchPayload);
+    switchHlsAudioTrack(switchPayload);
+
+    window.setTimeout(() => emitAudioTracks(), 800);
+    return true;
+  };
+
   const handlePlayerClick = (event) => {
     const target = event.target;
 
@@ -448,6 +777,9 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   useImperativeHandle(ref, () => ({
     switchSubtitle(subtitle) {
       applySubtitle(subtitle);
+    },
+    switchAudioTrack(audioTrack) {
+      applyAudioTrack(audioTrack);
     },
   }));
 
@@ -578,6 +910,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           autoplay: true,
           enableMenu: true,
           controls: true,
+          ...(playback.enableHlsMSE ? { enableHlsMSE: true } : {}),
           controlBar: {
             visible: true,
           },
@@ -597,6 +930,21 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         playerRef.current = new VePlayer(playerConfig);
         subtitlePluginRef.current = null;
         onPausedChangeRef.current?.(false);
+
+        const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
+        const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
+
+        if (audioTracksUpdatedEvent) {
+          playerRef.current.on?.(audioTracksUpdatedEvent, ({ audioTracks } = {}) => {
+            emitAudioTracks(audioTracks || getPlayerAudioTracks());
+          });
+        }
+
+        if (audioTrackChangeEvent) {
+          playerRef.current.on?.(audioTrackChangeEvent, () => {
+            emitAudioTracks();
+          });
+        }
 
         let videoLookupAttempts = 0;
         const attachVideoPlaybackListeners = () => {
@@ -653,6 +1001,19 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         };
 
         window.setTimeout(retrySubtitleSwitch, 0);
+
+        const retryAudioTracks = (attempt = 0) => {
+          if (cancelled) return;
+
+          const audioTracks = getPlayerAudioTracks();
+          emitAudioTracks(audioTracks);
+
+          if (audioTracks.length === 0 && attempt < 20) {
+            window.setTimeout(() => retryAudioTracks(attempt + 1), 250);
+          }
+        };
+
+        retryAudioTracks();
       } catch (error) {
         console.error("Failed to initialize BytePlus player:", error);
       }
@@ -715,6 +1076,8 @@ export default function WatchPage() {
   const [isVideoPaused, setIsVideoPaused] = useState(false);
   const [selectedSubtitleId, setSelectedSubtitleId] = useState("");
   const [activeSubtitle, setActiveSubtitle] = useState(undefined);
+  const [audioTracks, setAudioTracks] = useState([]);
+  const [activeAudioTrackId, setActiveAudioTrackId] = useState("");
   const [isSubtitleMenuOpen, setIsSubtitleMenuOpen] = useState(false);
   const [isEpisodeMenuOpen, setIsEpisodeMenuOpen] = useState(false);
   const [activeEpisodeRangeStart, setActiveEpisodeRangeStart] = useState(1);
@@ -818,6 +1181,7 @@ export default function WatchPage() {
       subtitle: null,
     },
   ];
+  const audioTrackOptions = getOrderedAudioTrackOptions(audioTracks);
 
   const handleSubtitleSelect = (option) => {
     playerControlRef.current?.switchSubtitle(option.subtitle);
@@ -825,6 +1189,32 @@ export default function WatchPage() {
     setActiveSubtitle(option.subtitle);
     subtitlePreferenceRef.current = getSubtitlePreference(option.subtitle);
   };
+
+  const handleAudioTrackSelect = (track) => {
+    if (!track) return;
+
+    setActiveAudioTrackId(track.id);
+    playerControlRef.current?.switchAudioTrack(track);
+  };
+
+  const handleAudioTracksChange = useCallback((playerAudioTracks) => {
+    const normalizedAudioTracks = Array.isArray(playerAudioTracks)
+      ? playerAudioTracks.map(normalizeAudioTrack)
+      : [];
+
+    if (normalizedAudioTracks.length === 0) {
+      return;
+    }
+
+    const activeAudioTrack =
+      normalizedAudioTracks.find((track) => track.selected) ||
+      normalizedAudioTracks.find((track) => track.default) ||
+      normalizedAudioTracks[0] ||
+      null;
+
+    setAudioTracks(normalizedAudioTracks);
+    setActiveAudioTrackId(activeAudioTrack?.id || "");
+  }, []);
 
   const handleFavoriteToggle = async () => {
     if (!currentSeries?.id || isFavoriteSaving) return;
@@ -883,8 +1273,10 @@ export default function WatchPage() {
       setError("");
       setPlayback(null);
       setSubtitles([]);
+      setAudioTracks([]);
       setSelectedSubtitleId("");
       setActiveSubtitle(undefined);
+      setActiveAudioTrackId("");
       setVipLockedEpisode(null);
       setPlaybackAlert(null);
 
@@ -920,11 +1312,32 @@ export default function WatchPage() {
         return false;
       }
 
+      const manifestAudioTracks = await loadHlsAudioTracks([
+        playAuthData.proxiedPlaybackSource,
+        playAuthData.preferredPlaybackSource,
+        playAuthData.directPlaybackSource,
+      ]);
+      const shouldUseMseForAudioTracks = manifestAudioTracks.length > 1;
+
       setPlayback({
-        url: hlsPlaybackUrl,
+        url:
+          shouldUseMseForAudioTracks && playAuthData.proxiedPlaybackSource
+            ? playAuthData.proxiedPlaybackSource
+            : hlsPlaybackUrl,
         streamType: playAuthData.preferredPlaybackStreamType || "hls",
         codec: "h264",
+        enableHlsMSE: shouldUseMseForAudioTracks,
       });
+
+      if (manifestAudioTracks.length > 0) {
+        const activeAudioTrack =
+          manifestAudioTracks.find((track) => track.selected) ||
+          manifestAudioTracks.find((track) => track.default) ||
+          manifestAudioTracks[0];
+
+        setAudioTracks(manifestAudioTracks);
+        setActiveAudioTrackId(activeAudioTrack?.id || "");
+      }
       applyFetchedSubtitles(
         Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
       );
@@ -1072,6 +1485,8 @@ export default function WatchPage() {
       setIsEpisodeMenuOpen(false);
       setSelectedSubtitleId("");
       setActiveSubtitle(undefined);
+      setAudioTracks([]);
+      setActiveAudioTrackId("");
       setEpisodes([]);
       setSeriesTitle("");
       setCurrentSeries(null);
@@ -1345,7 +1760,48 @@ export default function WatchPage() {
             className="absolute inset-0 bg-black/45"
           />
           <div className="relative w-full bg-[#2b2b3d] px-4 pb-6 pt-5 text-white">
-            <h2 className="px-3 mb-2 text-2xl font-medium leading-none">
+            {audioTrackOptions.length > 0 ? (
+              <>
+                <h2 className="mb-3 px-3 text-[20px] font-medium leading-none">
+                  {labels.audioDubs}
+                </h2>
+                <div className="mb-5 overflow-hidden rounded-lg bg-[#1d1d29]">
+                  {audioTrackOptions.map((track, index) => {
+                    const isSelected = activeAudioTrackId === track.id;
+
+                    return (
+                      <button
+                        type="button"
+                        key={track.id}
+                        onClick={() => handleAudioTrackSelect(track)}
+                        className={`flex h-10 w-full items-center justify-between px-3 text-left text-[16px] ${
+                          index > 0 ? "border-t border-white/15" : ""
+                        }`}
+                      >
+                        <span>{getAudioTrackDisplayName(track, language)}</span>
+                        {isSelected ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="m20 6-11 11-5-5" />
+                          </svg>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
+
+            <h2 className="mb-3 px-3 text-[20px] font-medium leading-none">
               {labels.subtitles}
             </h2>
             <div className="overflow-hidden rounded-lg bg-[#1d1d29]">
@@ -1357,7 +1813,7 @@ export default function WatchPage() {
                     type="button"
                     key={option.id}
                     onClick={() => handleSubtitleSelect(option)}
-                    className={`flex h-11 w-full items-center justify-between px-3 text-left text-lg ${
+                    className={`flex h-10 w-full items-center justify-between px-3 text-left text-[16px] ${
                       index > 0 ? "border-t border-white/15" : ""
                     }`}
                   >
@@ -1545,6 +2001,7 @@ export default function WatchPage() {
           activeSubtitle={activeSubtitle}
           onPausedChange={setIsVideoPaused}
           onEnded={handleVideoEnded}
+          onAudioTracksChange={handleAudioTracksChange}
           lineAppId={1006938}
           lineUserId={`web-watch-${seriesId || "unknown"}`}
         />

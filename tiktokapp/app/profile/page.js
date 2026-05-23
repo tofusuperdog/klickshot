@@ -193,7 +193,7 @@ export default function AppProfile() {
           </div>
         </div>
 
-        {/* Minchap-VIP Card */}
+        {/* VIP Card */}
         {isVipActive && (
           <div className="relative mb-5 w-full overflow-hidden rounded-[18px] border border-[#C15BFF] bg-[radial-gradient(circle_at_36%_19%,rgba(235,188,255,0.16),transparent_18%),linear-gradient(115deg,#1B0A25_0%,#2F1544_48%,#16091F_100%)] px-4 py-6 shadow-[0_0_24px_rgba(178,55,255,0.26),inset_0_0_22px_rgba(199,91,255,0.13)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_19%_34%,rgba(255,255,255,0.23),transparent_2px),radial-gradient(circle_at_24%_16%,rgba(255,151,236,0.55),transparent_2px),radial-gradient(circle_at_16%_57%,rgba(255,222,130,0.34),transparent_3px)]" />
@@ -207,7 +207,7 @@ export default function AppProfile() {
               </div>
               <div className="flex flex-col items-start flex-1 min-w-0">
                 <h3 className="mb-2 text-[24px] font-extrabold leading-none tracking-tight text-white">
-                  MinChap{" "}
+                  KlickShot{" "}
                   <span className="bg-gradient-to-b from-[#FAE8FF] via-[#B65CFF] to-[#6E14C8] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(191,105,255,0.7)]">
                     VIP
                   </span>

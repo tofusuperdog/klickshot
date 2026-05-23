@@ -7,7 +7,7 @@ const faqContent = {
   TH: {
     title: "คำถามที่พบบ่อย",
     description:
-      "รวมคำตอบสำหรับคำถามที่ผู้ใช้ถามบ่อย\nเพื่อช่วยให้คุณใช้งาน MinChap ได้ง่ายขึ้น",
+      "รวมคำตอบสำหรับคำถามที่ผู้ใช้ถามบ่อย\nเพื่อช่วยให้คุณใช้งาน KlickShot ได้ง่ายขึ้น",
     items: [
       {
         question: "สมัคร VIP ได้ที่ไหน?",
@@ -36,7 +36,7 @@ const faqContent = {
   EN: {
     title: "FAQ",
     description:
-      "Answers to common questions from users\nso you can use MinChap more easily",
+      "Answers to common questions from users\nso you can use KlickShot more easily",
     items: [
       {
         question: "Where can I subscribe to VIP?",
@@ -64,7 +64,7 @@ const faqContent = {
   JP: {
     title: "よくある質問",
     description:
-      "ユーザーからよく寄せられる質問への回答をまとめました\nMinChapをより簡単にご利用いただくためのヘルプです",
+      "ユーザーからよく寄せられる質問への回答をまとめました\nKlickShotをより簡単にご利用いただくためのヘルプです",
     items: [
       {
         question: "VIPにはどこから登録できますか？",
@@ -91,7 +91,7 @@ const faqContent = {
   },
   CN: {
     title: "常见问题",
-    description: "整理用户常见问题的答案\n帮助您更轻松地使用 MinChap",
+    description: "整理用户常见问题的答案\n帮助您更轻松地使用 KlickShot",
     items: [
       {
         question: "在哪里订阅 VIP？",

@@ -1,6 +1,8 @@
 const DEFAULT_ALLOWED_ORIGINS = [
   "https://tiktok.minchapseries.com",
+  "https://tiktok.klickshotseries.com",
   "https://dev.minchapseries.com",
+  "https://dev.klickshotseries.com",
   "http://localhost:3000",
   "http://localhost:3001",
 ];

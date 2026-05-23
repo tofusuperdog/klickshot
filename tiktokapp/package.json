@@ -12,7 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@byteplus/veplayer": "^1.16.0",
+    "@byteplus/veplayer": "^1.17.0",
     "next": "16.2.6",
     "react": "19.1.0",
     "react-dom": "19.1.0"

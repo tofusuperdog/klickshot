@@ -37,7 +37,7 @@ try {
         $env:NEXT_PUBLIC_MINCHAP_API_BASE_URL = $NgrokUrl
       }
     } catch {
-      $env:NEXT_PUBLIC_MINCHAP_API_BASE_URL = "https://api.minchapseries.com"
+      $env:NEXT_PUBLIC_MINCHAP_API_BASE_URL = "https://api.klickshotseries.com"
     }
   }
 
