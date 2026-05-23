@@ -156,6 +156,69 @@ export async function getVipPackageById(packageId) {
   return Array.isArray(payload) ? payload[0] || null : null;
 }
 
+function getVipPurchaseEventKey({
+  subscriptionId,
+  sourceOrderId,
+  sourceTradeOrderId,
+}) {
+  const tradeOrderId = String(sourceTradeOrderId || "").trim();
+  const orderId = String(sourceOrderId || "").trim();
+
+  if (tradeOrderId) return `trade:${tradeOrderId}`;
+  if (orderId) return `order:${orderId}`;
+
+  return `subscription:${subscriptionId}`;
+}
+
+export async function recordVipDailyPurchase({
+  customerId,
+  subscriptionId,
+  vipPackage,
+  source,
+  sourceOrderId,
+  sourceTradeOrderId,
+}) {
+  requireSupabaseAdmin();
+
+  const response = await fetch(
+    getSupabaseRestUrl("rpc/record_vip_daily_purchase"),
+    {
+      method: "POST",
+      headers: getServiceRoleHeaders({
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify({
+        p_event_key: getVipPurchaseEventKey({
+          subscriptionId,
+          sourceOrderId,
+          sourceTradeOrderId,
+        }),
+        p_customer_id: customerId,
+        p_subscription_id: subscriptionId,
+        p_vip_package_id: vipPackage.id,
+        p_package_type: vipPackage.type,
+        p_duration_days: Number(vipPackage.duration_days || 7),
+        p_bean_amount: Number(vipPackage.bean_amount ?? 0),
+        p_source: source || "tiktok_minis",
+        p_source_order_id: sourceOrderId || null,
+        p_source_trade_order_id: sourceTradeOrderId || null,
+      }),
+      cache: "no-store",
+    },
+  );
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.message ||
+        payload?.error ||
+        "Failed to record VIP daily purchase",
+    );
+  }
+
+  return Boolean(payload);
+}
+
 export async function activateCustomerVipSubscription({
   customerId,
   packageId,
@@ -221,7 +284,24 @@ export async function activateCustomerVipSubscription({
     );
   }
 
-  return normalizeVipSubscription(Array.isArray(payload) ? payload[0] : payload);
+  const subscription = normalizeVipSubscription(
+    Array.isArray(payload) ? payload[0] : payload,
+  );
+
+  try {
+    await recordVipDailyPurchase({
+      customerId,
+      subscriptionId: subscription?.id,
+      vipPackage,
+      source,
+      sourceOrderId,
+      sourceTradeOrderId,
+    });
+  } catch (error) {
+    console.error("Failed to record VIP daily purchase:", error);
+  }
+
+  return subscription;
 }
 
 export async function updateTikTokCustomerLanguage({ customerId, openId, language }) {
@@ -339,6 +419,41 @@ export async function createContactMessage({
   }
 
   return Array.isArray(payload) ? payload[0] || null : payload;
+}
+
+export async function recordEpisodeDailyView({
+  seriesId,
+  episodeId,
+  episodeNo,
+}) {
+  requireSupabaseAdmin();
+
+  const response = await fetch(
+    getSupabaseRestUrl("rpc/record_episode_daily_view"),
+    {
+      method: "POST",
+      headers: getServiceRoleHeaders({
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify({
+        p_series_id: seriesId,
+        p_episode_id: episodeId,
+        p_episode_no: episodeNo,
+      }),
+      cache: "no-store",
+    },
+  );
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.message ||
+        payload?.error ||
+        "Failed to record episode daily view",
+    );
+  }
+
+  return true;
 }
 
 export async function upsertCustomerRecentSeries({

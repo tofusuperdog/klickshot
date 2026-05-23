@@ -31,8 +31,54 @@ const FORCE_HLS_PROXY =
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "true" ||
   process.env.NEXT_PUBLIC_FORCE_HLS_PROXY === "1";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
+const FALLBACK_VOD_API_BASE_URL = "https://api.minchapseries.com";
 
 const headers = SUPABASE_HEADERS;
+
+const getFallbackApiUrl = (path) => `${FALLBACK_VOD_API_BASE_URL}${path}`;
+
+function recordEpisodeView(targetEpisode) {
+  const seriesId = Number(targetEpisode?.series_id);
+  const episodeId = Number(targetEpisode?.id);
+  const episodeNo = Number(targetEpisode?.episode_no);
+
+  if (
+    !Number.isSafeInteger(seriesId) ||
+    !Number.isSafeInteger(episodeId) ||
+    !Number.isSafeInteger(episodeNo)
+  ) {
+    return;
+  }
+
+  const url = getApiUrl("/api/customer/episode-view");
+  const body = JSON.stringify({
+    seriesId,
+    episodeId,
+    episodeNo,
+  });
+
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.sendBeacon === "function"
+  ) {
+    const blob = new Blob([body], { type: "application/json" });
+
+    if (navigator.sendBeacon(url, blob)) {
+      return;
+    }
+  }
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body,
+    keepalive: true,
+  }).catch((error) => {
+    console.warn("Failed to record episode view:", error);
+  });
+}
 
 const getSubtitleId = (sub, idx) =>
   String(sub?.id || sub?.language || sub?.text || idx);
@@ -1285,17 +1331,42 @@ export default function WatchPage() {
         return false;
       }
 
-      const playAuthUrl = getApiUrl(
-        `/api/vod/playauth?vid=${encodeURIComponent(vid)}${
-          FORCE_HLS_PROXY ? "&proxy=1" : ""
-        }`,
-      );
-      const playAuthResponse = await fetch(playAuthUrl);
-      const playAuthData = await playAuthResponse.json();
+      const playAuthPath = `/api/vod/playauth?vid=${encodeURIComponent(vid)}${
+        FORCE_HLS_PROXY ? "&proxy=1" : ""
+      }`;
+      const playAuthUrls = [
+        getApiUrl(playAuthPath),
+        getFallbackApiUrl(playAuthPath),
+      ].filter((url, index, urls) => url && urls.indexOf(url) === index);
+      let playAuthResponse = null;
+      let playAuthData = null;
+
+      for (const playAuthUrl of playAuthUrls) {
+        try {
+          const response = await fetch(playAuthUrl);
+          const payload = await response.json().catch(() => ({}));
+
+          playAuthResponse = response;
+          playAuthData = payload;
+
+          if (response.ok && payload?.preferredPlaybackSource) {
+            break;
+          }
+        } catch (fetchError) {
+          playAuthResponse = null;
+          playAuthData = {
+            error: fetchError?.message || labels.tokenError,
+          };
+        }
+      }
+
+      if (!playAuthData) {
+        playAuthData = { error: labels.tokenError };
+      }
 
       const hlsPlaybackUrl = playAuthData.preferredPlaybackSource || "";
 
-      if (!playAuthResponse.ok || !hlsPlaybackUrl) {
+      if (!playAuthResponse?.ok || !hlsPlaybackUrl) {
         const isHlsMissing =
           playAuthData.code === "HLS_PLAYBACK_NOT_FOUND";
         const message = isHlsMissing
@@ -1341,6 +1412,7 @@ export default function WatchPage() {
       applyFetchedSubtitles(
         Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
       );
+      recordEpisodeView(targetEpisode);
       return true;
     },
     [
