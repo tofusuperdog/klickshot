@@ -14,6 +14,30 @@ function getServiceRoleHeaders(extraHeaders = {}) {
   };
 }
 
+function getSupabaseHost() {
+  try {
+    return SUPABASE_URL ? new URL(SUPABASE_URL).host : "";
+  } catch {
+    return "";
+  }
+}
+
+async function fetchSupabase(input, init) {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    const cause = error?.cause || {};
+    const details = [
+      error?.message || "Supabase request failed",
+      cause.code,
+      cause.syscall,
+      cause.hostname || getSupabaseHost(),
+    ].filter(Boolean);
+
+    throw new Error(details.join(" - "));
+  }
+}
+
 function requireSupabaseAdmin() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error("Supabase admin credentials are not configured");
@@ -23,7 +47,7 @@ function requireSupabaseAdmin() {
 export async function upsertTikTokCustomer(openId) {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       "customers?on_conflict=tiktok_open_id&select=id,tiktok_open_id,preferred_language",
     ),
@@ -77,7 +101,7 @@ function normalizeVipSubscription(item) {
 export async function getActiveCustomerVipSubscription({ customerId }) {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_vip_subscriptions?customer_id=eq.${encodeURIComponent(customerId)}&status=eq.active&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=id,customer_id,vip_package_id,package_type,duration_days,bean_amount,starts_at,expires_at,status&order=expires_at.desc&limit=1`,
     ),
@@ -107,7 +131,7 @@ export async function getCustomerVipSubscriptionHistory({
   requireSupabaseAdmin();
 
   const safeLimit = Math.min(Math.max(Number(limit) || 30, 1), 30);
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_vip_subscriptions?customer_id=eq.${encodeURIComponent(customerId)}&select=id,customer_id,vip_package_id,package_type,duration_days,bean_amount,starts_at,expires_at,status,source_order_id,source_trade_order_id,created_at&order=created_at.desc&limit=${safeLimit}`,
     ),
@@ -133,7 +157,7 @@ export async function getCustomerVipSubscriptionHistory({
 export async function getVipPackageById(packageId) {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `vip_package?id=eq.${encodeURIComponent(packageId)}&select=id,type,bean_amount,duration_days,sort_order&limit=1`,
     ),
@@ -178,7 +202,7 @@ export async function recordVipDailyPurchase({
 }) {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl("rpc/record_vip_daily_purchase"),
     {
       method: "POST",
@@ -247,7 +271,7 @@ export async function activateCustomerVipSubscription({
   const expiresAt = new Date(startsAt.getTime() + durationDays * 86400000);
   const beanAmount = Number(vipPackage.bean_amount ?? 0);
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl("customer_vip_subscriptions?select=id,customer_id,vip_package_id,package_type,duration_days,bean_amount,starts_at,expires_at,status"),
     {
       method: "POST",
@@ -307,7 +331,7 @@ export async function updateTikTokCustomerLanguage({ customerId, openId, languag
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customers?id=eq.${encodeURIComponent(customerId)}&tiktok_open_id=eq.${encodeURIComponent(openId)}&select=id,tiktok_open_id,preferred_language`,
     ),
@@ -345,7 +369,7 @@ export async function getTikTokCustomerById({ customerId, openId }) {
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customers?id=eq.${encodeURIComponent(customerId)}&tiktok_open_id=eq.${encodeURIComponent(openId)}&select=id,tiktok_open_id,preferred_language&limit=1`,
     ),
@@ -384,7 +408,7 @@ export async function createContactMessage({
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl("contact_messages?select=id"),
     {
       method: "POST",
@@ -426,7 +450,7 @@ export async function recordEpisodeDailyView({
 }) {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl("rpc/record_episode_daily_view"),
     {
       method: "POST",
@@ -457,7 +481,7 @@ export async function recordEpisodeDailyView({
 export async function recordTikTokAppDailyVisit() {
   requireSupabaseAdmin();
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl("rpc/record_tiktokapp_daily_visit"),
     {
       method: "POST",
@@ -490,7 +514,7 @@ export async function upsertCustomerRecentSeries({
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       "customer_recent_series?on_conflict=customer_id,series_id&select=id,customer_id,series_id,watched_at",
     ),
@@ -530,7 +554,7 @@ export async function getCustomerRecentSeries({ customerId }) {
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_recent_series?customer_id=eq.${encodeURIComponent(customerId)}&select=series_id,watched_at,series!inner(id,title_th,title_en,title_jp,title_cn,poster_url,status)&series.status=eq.published&order=watched_at.desc&limit=9`,
     ),
@@ -577,7 +601,7 @@ export async function upsertCustomerFavoriteSeries({
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       "customer_favorite_series?on_conflict=customer_id,series_id&select=id,customer_id,series_id,favorited_at",
     ),
@@ -617,7 +641,7 @@ export async function deleteCustomerFavoriteSeries({ customerId, seriesId }) {
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_favorite_series?customer_id=eq.${encodeURIComponent(customerId)}&series_id=eq.${encodeURIComponent(seriesId)}`,
     ),
@@ -649,7 +673,7 @@ export async function isCustomerFavoriteSeries({ customerId, seriesId }) {
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_favorite_series?customer_id=eq.${encodeURIComponent(customerId)}&series_id=eq.${encodeURIComponent(seriesId)}&select=id&limit=1`,
     ),
@@ -681,7 +705,7 @@ export async function getCustomerFavoriteSeries({ customerId }) {
     throw new Error("Supabase admin credentials are not configured");
   }
 
-  const response = await fetch(
+  const response = await fetchSupabase(
     getSupabaseRestUrl(
       `customer_favorite_series?customer_id=eq.${encodeURIComponent(customerId)}&select=series_id,favorited_at,series!inner(id,title_th,title_en,title_jp,title_cn,poster_url,status)&series.status=eq.published&order=favorited_at.desc&limit=9`,
     ),
