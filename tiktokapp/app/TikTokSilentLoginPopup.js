@@ -290,12 +290,16 @@ export default function TikTokSilentLoginPopup() {
         };
 
         if (!response.ok) {
+          const message = [payload.error, payload.details]
+            .filter(Boolean)
+            .join(": ");
+
           dispatchLoginState({
             status: "error",
             codeReceived: true,
             loginMethod: loginResult?.loginMethod || "login",
             ...responseDebug,
-            message: payload.error || `Backend login failed: ${response.status}`,
+            message: message || `Backend login failed: ${response.status}`,
           });
           return;
         }

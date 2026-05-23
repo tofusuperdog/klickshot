@@ -154,7 +154,11 @@ export async function refreshTikTokCustomerSession({
   });
 
   if (!response.ok) {
-    throw new Error(payload.error || `Backend login failed: ${response.status}`);
+    const message = [payload.error, payload.details]
+      .filter(Boolean)
+      .join(": ");
+
+    throw new Error(message || `Backend login failed: ${response.status}`);
   }
 
   storeTikTokUser(payload.user);

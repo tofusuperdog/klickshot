@@ -107,7 +107,21 @@ export async function POST(request) {
       );
     }
 
-    const customer = await upsertTikTokCustomer(token.open_id);
+    let customer;
+
+    try {
+      customer = await upsertTikTokCustomer(token.open_id);
+    } catch (error) {
+      return json(
+        request,
+        {
+          error: "Unable to create or load customer record",
+          details: error?.message || String(error),
+        },
+        { status: 500 },
+      );
+    }
+
     if (!customer?.id) {
       return json(
         request,
