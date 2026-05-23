@@ -65,7 +65,7 @@ const loginWithTikTokMinis = (ttMinis) =>
     let isSettled = false;
     const timeoutId = setTimeout(() => {
       finish(reject, new Error("TikTok login timed out."));
-    }, 15000);
+    }, 30000);
 
     function finish(handler, value) {
       if (isSettled) return;
@@ -77,53 +77,43 @@ const loginWithTikTokMinis = (ttMinis) =>
     function handleResult(result) {
       if (result?.then) {
         result
-          .then((response) => finish(resolve, response))
-          .catch((error) => finish(reject, error));
+          .then((response) => {
+            if (getAuthorizationCode(response)) {
+              finish(resolve, response);
+            }
+          })
+          .catch(() => {});
       } else if (getAuthorizationCode(result)) {
         finish(resolve, result);
       }
     }
 
-    function runLegacyLogin() {
-      return ttMinis.login(
-        (response) => {
-          if (getAuthorizationCode(response)) {
-            finish(resolve, response);
-            return;
-          }
+    function handleLoginResponse(response) {
+      if (getAuthorizationCode(response)) {
+        finish(resolve, response);
+        return;
+      }
 
-          finish(
-            reject,
-            new Error(
-              `TikTok login did not return an authorization code: ${formatError(response)}`,
-            ),
-          );
-        },
-        {
-          returnScopes: true,
-        },
+      finish(
+        reject,
+        new Error(
+          `TikTok login did not return an authorization code: ${formatError(response)}`,
+        ),
       );
     }
 
     try {
-      const result = ttMinis.login({
-        success: (response) => finish(resolve, response),
-        fail: (error) => finish(reject, error),
-        complete: () => {},
-      });
+      const result = ttMinis.login(handleLoginResponse);
 
       handleResult(result);
     } catch (error) {
-      try {
-        handleResult(runLegacyLogin());
-      } catch (legacyError) {
-        finish(reject, legacyError || error);
-      }
+      finish(reject, error);
     }
   });
 
 export async function refreshTikTokCustomerSession({
   requireAccessToken = false,
+  onDebug = () => {},
 } = {}) {
   const ttMinis = await waitForTikTokMinis();
 
@@ -136,6 +126,8 @@ export async function refreshTikTokCustomerSession({
     window.__MINCHAP_TIKTOK_SDK_READY__ = true;
   }
 
+  onDebug({ status: "logging_in" });
+
   const loginResult = await loginWithTikTokMinis(ttMinis);
   const code = getAuthorizationCode(loginResult);
 
@@ -143,12 +135,23 @@ export async function refreshTikTokCustomerSession({
     throw new Error("TikTok login did not return an authorization code.");
   }
 
+  onDebug({
+    status: "exchanging",
+    codeReceived: true,
+    loginMethod: "login",
+  });
+
   const response = await fetch(getApiUrl("/api/tiktok/silent-login"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
   });
   const payload = await response.json().catch(() => ({}));
+
+  onDebug({
+    apiStatus: response.status,
+    apiOk: response.ok,
+  });
 
   if (!response.ok) {
     throw new Error(payload.error || `Backend login failed: ${response.status}`);
