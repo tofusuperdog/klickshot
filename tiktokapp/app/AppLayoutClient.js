@@ -10,6 +10,7 @@ import { getApiUrl } from "./lib/apiBaseUrl";
 
 const LANGUAGE_STORAGE_KEY = "minchap_lang";
 const TIKTOK_USER_STORAGE_KEY = "minchap_tiktok_user";
+let hasRecordedAppVisit = false;
 const LANGUAGES = ["TH", "EN", "CN", "JP"];
 const LANGUAGE_LABELS = {
   TH: "ไทย",
@@ -149,6 +150,37 @@ async function saveCustomerLanguage({
   }
 }
 
+function recordAppVisit() {
+  if (hasRecordedAppVisit) return;
+
+  hasRecordedAppVisit = true;
+
+  const url = getApiUrl("/api/customer/app-visit");
+  const body = JSON.stringify({});
+
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.sendBeacon === "function"
+  ) {
+    const blob = new Blob([body], { type: "application/json" });
+
+    if (navigator.sendBeacon(url, blob)) {
+      return;
+    }
+  }
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body,
+    keepalive: true,
+  }).catch((error) => {
+    console.warn("Failed to record app visit:", error);
+  });
+}
+
 function LanguageBottomSheet({
   isOpen,
   mode,
@@ -280,6 +312,10 @@ function LayoutContent({ children }) {
   const isVipPage = pathname === "/vip";
   const isProfileSectionPage = PROFILE_SECTION_PATHS.has(pathname);
   const showHeader = pathname !== "/" && !HEADER_HIDDEN_PATHS.has(pathname) && !isDetailPage(pathname);
+
+  useEffect(() => {
+    recordAppVisit();
+  }, []);
 
   useEffect(() => {
     const handleTikTokLoginState = (event) => {

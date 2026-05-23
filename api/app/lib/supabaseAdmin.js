@@ -456,6 +456,33 @@ export async function recordEpisodeDailyView({
   return true;
 }
 
+export async function recordTikTokAppDailyVisit() {
+  requireSupabaseAdmin();
+
+  const response = await fetch(
+    getSupabaseRestUrl("rpc/record_tiktokapp_daily_visit"),
+    {
+      method: "POST",
+      headers: getServiceRoleHeaders({
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify({}),
+      cache: "no-store",
+    },
+  );
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      payload?.message ||
+        payload?.error ||
+        "Failed to record TikTok app daily visit",
+    );
+  }
+
+  return true;
+}
+
 export async function upsertCustomerRecentSeries({
   customerId,
   seriesId,
