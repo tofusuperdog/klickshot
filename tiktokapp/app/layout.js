@@ -17,7 +17,9 @@ export const metadata = {
 };
 
 const tiktokClientKey =
-  process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY || process.env.TIKTOK_CLIENT_KEY || "";
+  process.env.NEXT_PUBLIC_TIKTOK_CLIENT_KEY ||
+  process.env.TIKTOK_CLIENT_KEY ||
+  "mnve2ugyyu44qay5";
 const minchapApiBaseUrl =
   process.env.NEXT_PUBLIC_MINCHAP_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -31,9 +33,9 @@ export default function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.__MINCHAP_TIKTOK_CLIENT_KEY__ = ${JSON.stringify(tiktokClientKey)};
-              window.__MINCHAP_API_BASE_URL__ = ${JSON.stringify(minchapApiBaseUrl)};
-              window.__MINCHAP_TIKTOK_SDK_READY__ = false;
+              window.__MINCHAP_TIKTOK_CLIENT_KEY__ = window.__MINCHAP_TIKTOK_CLIENT_KEY__ || ${JSON.stringify(tiktokClientKey)};
+              window.__MINCHAP_API_BASE_URL__ = window.__MINCHAP_API_BASE_URL__ || ${JSON.stringify(minchapApiBaseUrl)};
+              window.__MINCHAP_TIKTOK_SDK_READY__ = Boolean(window.__MINCHAP_TIKTOK_SDK_READY__);
               (function initTikTokMinis() {
                 if (!window.TTMinis || !window.__MINCHAP_TIKTOK_CLIENT_KEY__) return;
                 try {
