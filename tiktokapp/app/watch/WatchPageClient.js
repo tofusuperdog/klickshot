@@ -33,6 +33,19 @@ const ENABLE_AUDIO_TRACK_SWITCHING = true;
 const headers = SUPABASE_HEADERS;
 let vePlayerModulePromise = null;
 
+const isAppleMobileWebKit = () => {
+  if (typeof navigator === "undefined") return false;
+
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const hasTouch = Number(navigator.maxTouchPoints || 0) > 1;
+
+  return (
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (platform === "MacIntel" && hasTouch)
+  );
+};
+
 function loadVePlayerModule() {
   if (!vePlayerModulePromise) {
     vePlayerModulePromise = import("@byteplus/veplayer");
@@ -339,6 +352,37 @@ const getOrderedAudioTrackOptions = (audioTracks) =>
       (track) => !AUDIO_LANGUAGE_ORDER.includes(track.lang),
     ),
   ];
+
+const getAudioTrackMatchKeys = (track) => {
+  if (!track) return [];
+
+  return [
+    track.lang,
+    track.language,
+    track.text,
+    track.name,
+    track.id,
+    track.uri,
+    track.url,
+  ]
+    .filter(Boolean)
+    .map(normalizeAudioLanguageKey);
+};
+
+const getAudioTrackPreference = (track) =>
+  getAudioTrackMatchKeys(track)[0] || "";
+
+const findAudioTrackByPreference = (audioTracks, preference) => {
+  const normalizedPreference = normalizeAudioLanguageKey(preference);
+
+  if (!normalizedPreference) return null;
+
+  return (
+    audioTracks.find((track) =>
+      getAudioTrackMatchKeys(track).includes(normalizedPreference),
+    ) || null
+  );
+};
 
 const getAudioTrackDisplayName = (track, language) => {
   const trackLanguage = normalizeAudioLanguageKey(
@@ -765,6 +809,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
     if (!player || !audioTrack) return false;
 
+    const isAppleMobile = isAppleMobileWebKit();
     const currentTracks = getPlayerAudioTracks();
     const targetTrack =
       currentTracks.find(
@@ -788,13 +833,26 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
       lang: targetTrack.lang || audioTrack.lang,
       name: targetTrack.name || audioTrack.name || audioTrack.text,
     };
+    const hasPlayerTrackMatch = currentTracks.some(
+      (track) =>
+        String(track.id) === String(switchPayload.id) ||
+        String(track.id) === String(switchPayload.playerId) ||
+        (switchPayload.lang &&
+          String(track.lang || "").toLowerCase() ===
+            String(switchPayload.lang).toLowerCase()) ||
+        String(track.name || "") === String(switchPayload.name || ""),
+    );
+    const nativeSwitched = switchNativeAudioTrack(switchPayload);
+    const hlsSwitched = nativeSwitched
+      ? false
+      : switchHlsAudioTrack(switchPayload);
 
-    player.switchAudioTrack?.(switchPayload);
-    switchNativeAudioTrack(switchPayload);
-    switchHlsAudioTrack(switchPayload);
+    if (!nativeSwitched && !hlsSwitched && !isAppleMobile) {
+      player.switchAudioTrack?.(switchPayload);
+    }
 
     window.setTimeout(() => emitAudioTracks(), 800);
-    return true;
+    return nativeSwitched || hlsSwitched || (!isAppleMobile && hasPlayerTrackMatch);
   };
 
   const handlePlayerClick = (event) => {
@@ -964,7 +1022,9 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           autoplay: true,
           enableMenu: true,
           controls: true,
-          ...(playback.enableHlsMSE ? { enableHlsMSE: true } : {}),
+          ...(playback.enableHlsMSE && !isAppleMobileWebKit()
+            ? { enableHlsMSE: true }
+            : {}),
           controlBar: {
             visible: true,
           },
@@ -1126,6 +1186,7 @@ export default function WatchPage() {
   const seriesId = params?.id || searchParams.get("id");
   const playerControlRef = useRef(null);
   const subtitlePreferenceRef = useRef("");
+  const audioTrackPreferenceRef = useRef("");
 
   const [episode, setEpisode] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -1241,6 +1302,7 @@ export default function WatchPage() {
     if (!track) return;
 
     setActiveAudioTrackId(track.id);
+    audioTrackPreferenceRef.current = getAudioTrackPreference(track);
     playerControlRef.current?.switchAudioTrack(track);
   };
 
@@ -1253,14 +1315,29 @@ export default function WatchPage() {
       return;
     }
 
-    const activeAudioTrack =
+    const playerSelectedAudioTrack =
       normalizedAudioTracks.find((track) => track.selected) ||
       normalizedAudioTracks.find((track) => track.default) ||
       normalizedAudioTracks[0] ||
       null;
+    const preferredAudioTrack =
+      findAudioTrackByPreference(
+        normalizedAudioTracks,
+        audioTrackPreferenceRef.current,
+      ) || null;
+    const activeAudioTrack = preferredAudioTrack || playerSelectedAudioTrack;
 
     setAudioTracks(normalizedAudioTracks);
     setActiveAudioTrackId(activeAudioTrack?.id || "");
+
+    if (
+      preferredAudioTrack &&
+      preferredAudioTrack.id !== playerSelectedAudioTrack?.id
+    ) {
+      window.setTimeout(() => {
+        playerControlRef.current?.switchAudioTrack(preferredAudioTrack);
+      }, 0);
+    }
   }, []);
 
   const handleFavoriteToggle = async () => {
@@ -1396,13 +1473,25 @@ export default function WatchPage() {
         ]).then((manifestAudioTracks) => {
           if (manifestAudioTracks.length === 0) return;
 
+          const preferredAudioTrack =
+            findAudioTrackByPreference(
+              manifestAudioTracks,
+              audioTrackPreferenceRef.current,
+            ) || null;
           const activeAudioTrack =
+            preferredAudioTrack ||
             manifestAudioTracks.find((track) => track.selected) ||
             manifestAudioTracks.find((track) => track.default) ||
             manifestAudioTracks[0];
 
           setAudioTracks(manifestAudioTracks);
           setActiveAudioTrackId(activeAudioTrack?.id || "");
+
+          if (preferredAudioTrack) {
+            window.setTimeout(() => {
+              playerControlRef.current?.switchAudioTrack(preferredAudioTrack);
+            }, 300);
+          }
         }).catch(() => {});
       }
       applyFetchedSubtitles(
