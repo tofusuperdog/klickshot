@@ -11,6 +11,7 @@ import { getApiUrl } from "./lib/apiBaseUrl";
 const LANGUAGE_STORAGE_KEY = "minchap_lang";
 const TIKTOK_USER_STORAGE_KEY = "minchap_tiktok_user";
 let hasRecordedAppVisit = false;
+let appVisitRequest = null;
 const LANGUAGES = ["TH", "EN", "CN", "JP"];
 const LANGUAGE_LABELS = {
   TH: "ไทย",
@@ -178,18 +179,7 @@ function recordAppVisit(user = null) {
       : {},
   );
 
-  if (
-    typeof navigator !== "undefined" &&
-    typeof navigator.sendBeacon === "function"
-  ) {
-    const blob = new Blob([body], { type: "application/json" });
-
-    if (navigator.sendBeacon(url, blob)) {
-      return;
-    }
-  }
-
-  fetch(url, {
+  appVisitRequest = fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -198,6 +188,8 @@ function recordAppVisit(user = null) {
     keepalive: true,
   }).catch((error) => {
     console.warn("Failed to record app visit:", error);
+  }).finally(() => {
+    appVisitRequest = null;
   });
 }
 
@@ -334,8 +326,9 @@ function LayoutContent({ children }) {
   const showHeader = pathname !== "/" && !HEADER_HIDDEN_PATHS.has(pathname) && !isDetailPage(pathname);
 
   useEffect(() => {
-    const handleTikTokLoginState = (event) => {
-      const { status, user } = event.detail || {};
+    const handleTikTokLoginState = (eventOrDetail) => {
+      const detail = eventOrDetail?.detail || eventOrDetail || {};
+      const { status, user } = detail;
 
       if (["checking", "logging_in", "exchanging"].includes(status)) {
         setLanguageSheet((current) => ({ ...current, isOpen: false }));
@@ -420,7 +413,16 @@ function LayoutContent({ children }) {
     };
 
     window.addEventListener("minchap:tiktok-login-state", handleTikTokLoginState);
+    if (window.__MINCHAP_TIKTOK_LOGIN_STATE__) {
+      handleTikTokLoginState(window.__MINCHAP_TIKTOK_LOGIN_STATE__);
+    }
+
+    const visitFallbackTimer = window.setTimeout(() => {
+      recordAppVisit(getStoredTikTokUser());
+    }, 3500);
+
     return () => {
+      window.clearTimeout(visitFallbackTimer);
       window.removeEventListener("minchap:tiktok-login-state", handleTikTokLoginState);
     };
   }, [changeLanguage]);

@@ -47,10 +47,10 @@ export default function AppSearch() {
         );
         const seriesData = await seriesRes.json();
 
-        // 3) Fetch total views per series_id from series_daily_views
+        // 3) Fetch total views per series_id from episode_daily_views
         const viewsRes = await fetch(
           supabaseRestUrl(
-            `series_daily_views?select=series_id,views_th,views_en,views_jp,views_cn&series_id=in.(${seriesIds.join(",")})`,
+            `episode_daily_views?select=series_id,views&series_id=in.(${seriesIds.join(",")})`,
           ),
           { headers }
         );
@@ -59,7 +59,7 @@ export default function AppSearch() {
         // Sum views per series
         const viewsMap = {};
         viewsData.forEach(row => {
-          const total = (row.views_th || 0) + (row.views_en || 0) + (row.views_jp || 0) + (row.views_cn || 0);
+          const total = row.views || 0;
           viewsMap[row.series_id] = (viewsMap[row.series_id] || 0) + total;
         });
 

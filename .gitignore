@@ -66,6 +66,9 @@ next-env.d.ts
 *.tar
 *.tar.gz
 
+# Local documentation snapshots
+docs/database-data-dictionary.md
+
 # OS and editor files
 .DS_Store
 Thumbs.db

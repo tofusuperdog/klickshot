@@ -617,8 +617,8 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
     setDateRangeStr(drStr);
 
     const { data: viewsData, error: viewsError } = await supabase
-      .from('series_daily_views')
-      .select('series_id, views_th, views_en, views_jp, views_cn')
+      .from('episode_daily_views')
+      .select('series_id, views')
       .gte('view_date', startStr)
       .lte('view_date', endStr);
       
@@ -626,7 +626,7 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
     if (viewsData) {
       viewsData.forEach(row => {
         if (!viewsMap[row.series_id]) viewsMap[row.series_id] = 0;
-        viewsMap[row.series_id] += ((row.views_th||0) + (row.views_en||0) + (row.views_jp||0) + (row.views_cn||0));
+        viewsMap[row.series_id] += (row.views || 0);
       });
     }
 

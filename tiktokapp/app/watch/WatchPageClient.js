@@ -61,17 +61,6 @@ function recordEpisodeView(targetEpisode) {
     episodeNo,
   });
 
-  if (
-    typeof navigator !== "undefined" &&
-    typeof navigator.sendBeacon === "function"
-  ) {
-    const blob = new Blob([body], { type: "application/json" });
-
-    if (navigator.sendBeacon(url, blob)) {
-      return;
-    }
-  }
-
   fetch(url, {
     method: "POST",
     headers: {
