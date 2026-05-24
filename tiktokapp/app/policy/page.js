@@ -9,7 +9,7 @@ const policyContent = {
     title: "นโยบายความเป็นส่วนตัว",
     effectiveDate: "เริ่มมีผลบังคับใช้: 19 กันยายน 2567",
     intro:
-      "แอป minchap เคารพความเป็นส่วนตัวของผู้ใช้ เรามุ่งมั่นที่จะรักษาความปลอดภัยและปกป้องข้อมูลส่วนบุคคลของคุณ นโยบายความเป็นส่วนตัวนี้อธิบายวิธีที่เราเก็บรวบรวม ใช้ และปกป้องข้อมูลของคุณ",
+      "แอป KlickShot เคารพความเป็นส่วนตัวของผู้ใช้ เรามุ่งมั่นที่จะรักษาความปลอดภัยและปกป้องข้อมูลส่วนบุคคลของคุณ นโยบายความเป็นส่วนตัวนี้อธิบายวิธีที่เราเก็บรวบรวม ใช้ และปกป้องข้อมูลของคุณ",
     sections: [
       {
         title: "1. การเก็บรวบรวมข้อมูลส่วนบุคคล",
@@ -62,7 +62,7 @@ const policyContent = {
       {
         title: "8. ติดต่อเรา",
         content:
-          "หากคุณมีคำถามหรือข้อกังวลใดๆ เกี่ยวกับนโยบายความเป็นส่วนตัวนี้ โปรดติดต่อเราที่: support@minchapseries.com",
+          "หากคุณมีคำถามหรือข้อกังวลใดๆ เกี่ยวกับนโยบายความเป็นส่วนตัวนี้ โปรดติดต่อเราที่: klickshot.official@gmail.com",
       },
     ],
   },
@@ -70,7 +70,7 @@ const policyContent = {
     title: "Privacy Policy",
     effectiveDate: "Effective Date: September 19, 2024",
     intro:
-      "The minchap app respects user privacy. We are committed to securing and protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.",
+      "The KlickShot app respects user privacy. We are committed to securing and protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.",
     sections: [
       {
         title: "1. Collection of Personal Information",
@@ -124,7 +124,7 @@ const policyContent = {
       {
         title: "8. Contact Us",
         content:
-          "If you have any questions or concerns about this Privacy Policy, please contact us at: support@minchapseries.com",
+          "If you have any questions or concerns about this Privacy Policy, please contact us at: klickshot.official@gmail.com",
       },
     ],
   },
@@ -132,7 +132,7 @@ const policyContent = {
     title: "プライバシーポリシー",
     effectiveDate: "発効日: 2024年9月19日",
     intro:
-      "minchap アプリはユーザーのプライバシーを尊重します。当社は、お客様の個人情報を保護し、安全に保つことに尽力しています。このプライバシーポリシーでは、当社がお客様のデータを収集、使用、保護する方法について説明します。",
+      "KlickShot アプリはユーザーのプライバシーを尊重します。当社は、お客様の個人情報を保護し、安全に保つことに尽力しています。このプライバシーポリシーでは、当社がお客様のデータを収集、使用、保護する方法について説明します。",
     sections: [
       {
         title: "1. 個人情報の収集",
@@ -184,7 +184,7 @@ const policyContent = {
       {
         title: "8. お問い合わせ",
         content:
-          "このプライバシーポリシーに関するご質問や懸念がある場合は、support@minchapseries.com までご連絡ください。",
+          "このプライバシーポリシーに関するご質問や懸念がある場合は、klickshot.official@gmail.com までご連絡ください。",
       },
     ],
   },
@@ -192,7 +192,7 @@ const policyContent = {
     title: "隐私政策",
     effectiveDate: "生效日期：2024年9月19日",
     intro:
-      "minchap 应用程序尊重用户隐私。我们致力于保护您的个人信息。本隐私政策说明了我们如何收集、使用和保护您的数据。",
+      "KlickShot 应用程序尊重用户隐私。我们致力于保护您的个人信息。本隐私政策说明了我们如何收集、使用和保护您的数据。",
     sections: [
       {
         title: "1. 个人信息的收集",
@@ -243,7 +243,7 @@ const policyContent = {
       {
         title: "8. 联系我们",
         content:
-          "如果您对本隐私政策有任何问题或疑问，请联系我们：support@minchapseries.com",
+          "如果您对本隐私政策有任何问题或疑问，请联系我们：klickshot.official@gmail.com",
       },
     ],
   },
@@ -254,7 +254,7 @@ const policyHeaderContent = {
     title: "นโยบายความเป็นส่วนตัว",
     updated: "อัปเดตล่าสุด: 19 กันยายน 2567",
     intro:
-      "ที่ MinChap เราให้ความสำคัญกับความเป็นส่วนตัวของคุณ เราเก็บรักษาข้อมูลอย่างปลอดภัยและใช้เฉพาะเพื่อให้บริการที่ดีและปลอดภัยสำหรับคุณ",
+      "ที่ KlickShot เราให้ความสำคัญกับความเป็นส่วนตัวของคุณ เราเก็บรักษาข้อมูลอย่างปลอดภัยและใช้เฉพาะเพื่อให้บริการที่ดีและปลอดภัยสำหรับคุณ",
     summaryTitle: "สรุปแบบเข้าใจง่าย",
     bullets: [
       "เราเก็บข้อมูลเท่าที่จำเป็นต่อการใช้งาน",
@@ -267,7 +267,7 @@ const policyHeaderContent = {
     title: "Privacy Policy",
     updated: "Last updated: September 19, 2024",
     intro:
-      "At MinChap, your privacy matters. We keep your data secure and use it only to provide a better and safer service for you.",
+      "At KlickShot, your privacy matters. We keep your data secure and use it only to provide a better and safer service for you.",
     summaryTitle: "Simple Summary",
     bullets: [
       "We collect only what is needed to use the app",
@@ -280,7 +280,7 @@ const policyHeaderContent = {
     title: "プライバシーポリシー",
     updated: "最終更新: 2024年9月19日",
     intro:
-      "MinChapはお客様のプライバシーを大切にし、安全でより良いサービス提供に必要な範囲で情報を利用します。",
+      "KlickShotはお客様のプライバシーを大切にし、安全でより良いサービス提供に必要な範囲で情報を利用します。",
     summaryTitle: "かんたん概要",
     bullets: [
       "アプリ利用に必要な情報のみ収集します",
@@ -293,7 +293,7 @@ const policyHeaderContent = {
     title: "隐私政策",
     updated: "最后更新: 2024年9月19日",
     intro:
-      "MinChap 重视您的隐私。我们会安全保存数据，并仅用于为您提供更好、更安全的服务。",
+      "KlickShot 重视您的隐私。我们会安全保存数据，并仅用于为您提供更好、更安全的服务。",
     summaryTitle: "简明摘要",
     bullets: [
       "我们只收集使用应用所需的信息",
@@ -348,7 +348,7 @@ export default function AppPolicy() {
         <div className="flex items-center">
           <img
             src="/minchap.svg"
-            alt="MinChap"
+            alt="KlickShot"
             className="object-contain w-auto h-6"
           />
         </div>
@@ -515,7 +515,7 @@ export default function AppPolicy() {
                         <p className="text-[13px] font-medium leading-relaxed text-[#A9A3B4]">
                           {section.content
                             .replace(
-                              /support@minchapseries\.com|support@minchap\.app/g,
+                              /klickshot\.official@gmail\.com/g,
                               "",
                             )
                             .trim()}
@@ -534,7 +534,7 @@ export default function AppPolicy() {
                           <rect x="3" y="5" width="18" height="14" rx="2" />
                           <path d="m3 7 9 6 9-6" />
                         </svg>
-                        <span>klickshot.official@gamil.com</span>
+                        <span>klickshot.official@gmail.com</span>
                       </div>
                     </div>
                   </div>

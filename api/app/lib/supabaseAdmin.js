@@ -492,7 +492,7 @@ export async function recordEpisodeDailyView({
   return true;
 }
 
-export async function recordTikTokAppDailyVisit() {
+export async function recordTikTokAppDailyVisit({ customerId } = {}) {
   requireSupabaseAdmin();
 
   const response = await fetchSupabase(
@@ -502,7 +502,9 @@ export async function recordTikTokAppDailyVisit() {
       headers: getServiceRoleHeaders({
         "Content-Type": "application/json",
       }),
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        p_customer_id: customerId || null,
+      }),
       cache: "no-store",
     },
   );

@@ -12,8 +12,8 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata = {
-  title: "Klick Shot",
-  description: "Experience short series on Klick Shot.",
+  title: "KlickShot",
+  description: "Experience short series on KlickShot.",
 };
 
 const tiktokClientKey =

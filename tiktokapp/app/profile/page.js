@@ -7,15 +7,10 @@ import {
   CUSTOMER_VIP_UPDATED_EVENT,
   isVipSubscriptionActive,
   loadCustomerVipSubscription,
-  refreshTikTokCustomerSession,
 } from "../lib/customerVip";
 import { SUPABASE_HEADERS, supabaseRestUrl } from "../lib/supabase";
 
 const TIKTOK_USER_STORAGE_KEY = "minchap_tiktok_user";
-const TIKTOK_LOGIN_DEBUG_STORAGE_KEY = "minchap_tiktok_login_debug";
-const TIKTOK_LOGIN_DEBUG_ENABLED = ["1", "true", "yes"].includes(
-  String(process.env.NEXT_PUBLIC_TIKTOK_LOGIN_DEBUG || "").toLowerCase(),
-);
 const LANGUAGE_OPTIONS = [
   { code: "TH", label: "\u0e44\u0e17\u0e22" },
   { code: "EN", label: "English" },
@@ -61,63 +56,11 @@ function readStoredUserId() {
   }
 }
 
-function getYesNo(value) {
-  return value ? "yes" : "no";
-}
-
-function readStoredUserDebug() {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const storedUser = JSON.parse(
-      window.localStorage.getItem(TIKTOK_USER_STORAGE_KEY) || "null",
-    );
-
-    if (!storedUser) return {};
-
-    return {
-      customerId: storedUser?.id ? String(storedUser.id) : "",
-      openId:
-        storedUser?.tiktok_open_id ||
-        storedUser?.open_id ||
-        storedUser?.openId ||
-        "",
-      customerAuthToken: Boolean(storedUser?.customer_auth_token),
-      accessToken: Boolean(storedUser?.access_token),
-      preferredLanguage: storedUser?.preferred_language || "",
-      isDevBypass: Boolean(storedUser?.is_dev_bypass),
-    };
-  } catch {
-    return {};
-  }
-}
-
-function readLoginDebug() {
-  if (typeof window === "undefined") return {};
-
-  const storedUserDebug = readStoredUserDebug();
-
-  try {
-    const storedLoginDebug = JSON.parse(
-      window.sessionStorage.getItem(TIKTOK_LOGIN_DEBUG_STORAGE_KEY) || "null",
-    );
-
-    return {
-      ...storedLoginDebug,
-      ...storedUserDebug,
-    };
-  } catch {
-    return storedUserDebug;
-  }
-}
-
 export default function AppProfile() {
   const { language, changeLanguage, t } = useLanguage();
   const [isVipActive, setIsVipActive] = useState(true);
   const [version, setVersion] = useState("1.01");
   const [userId, setUserId] = useState("-");
-  const [loginStatus, setLoginStatus] = useState("");
-  const [loginDebug, setLoginDebug] = useState({});
   const [vipSubscription, setVipSubscription] = useState(null);
   const [isLanguageSheetOpen, setIsLanguageSheetOpen] = useState(false);
 
@@ -130,7 +73,6 @@ export default function AppProfile() {
       const nextUserId = readStoredUserId();
 
       setUserId(nextUserId);
-      setLoginDebug(readLoginDebug());
 
       if (nextUserId === "-") {
         setVipSubscription(null);
@@ -141,27 +83,14 @@ export default function AppProfile() {
         .then((payload) => setVipSubscription(payload.subscription || null))
         .catch(() => setVipSubscription(null));
     };
-    const updateLoginStatus = (event) => {
-      const status = String(event.detail?.status || "").trim();
-      const message = String(event.detail?.message || "").trim();
-
-      setLoginStatus(message || status);
-      setLoginDebug({
-        ...readStoredUserDebug(),
-        ...event.detail,
-      });
-    };
-
     window.addEventListener("storage", updateUserId);
     window.addEventListener("minchap:tiktok-user-updated", updateUserId);
-    window.addEventListener("minchap:tiktok-login-state", updateLoginStatus);
     window.addEventListener(CUSTOMER_VIP_UPDATED_EVENT, updateUserId);
     updateUserId();
 
     return () => {
       window.removeEventListener("storage", updateUserId);
       window.removeEventListener("minchap:tiktok-user-updated", updateUserId);
-      window.removeEventListener("minchap:tiktok-login-state", updateLoginStatus);
       window.removeEventListener(CUSTOMER_VIP_UPDATED_EVENT, updateUserId);
     };
   }, []);
@@ -239,70 +168,6 @@ export default function AppProfile() {
       path: "/contact",
     },
   ];
-  const debugRows = [
-    ["Status", loginDebug.status || loginStatus || "-"],
-    ["SDK", getYesNo(loginDebug.sdkAvailable)],
-    ["Runtime", getYesNo(loginDebug.minisRuntime)],
-    ["Client key", getYesNo(loginDebug.clientKeyConfigured)],
-    ["Init error", loginDebug.initError || "-"],
-    ["API", loginDebug.apiBaseUrl || "-"],
-    ["API status", loginDebug.apiStatus ? String(loginDebug.apiStatus) : "-"],
-    ["Code", getYesNo(loginDebug.codeReceived)],
-    ["Method", loginDebug.loginMethod || "-"],
-    ["Callback", getYesNo(loginDebug.loginCallbackReceived)],
-    ["Promise", getYesNo(loginDebug.loginReturnedPromise)],
-    ["Promise err", loginDebug.loginPromiseError || "-"],
-    ["Callback err", loginDebug.loginCallbackError || "-"],
-    ["Error name", loginDebug.errorName || "-"],
-    ["Error stack", loginDebug.errorStack || "-"],
-    ["Customer ID", loginDebug.customerId || "-"],
-    ["TikTok open ID", loginDebug.openId || "-"],
-    ["Auth token", getYesNo(loginDebug.customerAuthToken)],
-    ["Payment token", getYesNo(loginDebug.accessToken)],
-    ["Dev bypass", getYesNo(loginDebug.isDevBypass)],
-    ["Updated", loginDebug.updatedAt || "-"],
-    ["Error", loginDebug.message || "-"],
-  ];
-  const retryTikTokLogin = async () => {
-    setLoginStatus("retrying");
-    setLoginDebug({
-      ...readLoginDebug(),
-      status: "retrying",
-      message: "",
-      updatedAt: new Date().toISOString(),
-    });
-
-    try {
-      await refreshTikTokCustomerSession({
-        onDebug: (detail) => {
-          setLoginDebug((current) => ({
-            ...current,
-            ...detail,
-            updatedAt: new Date().toISOString(),
-          }));
-        },
-      });
-      const nextDebug = readLoginDebug();
-      setUserId(readStoredUserId());
-      setLoginDebug({
-        ...nextDebug,
-        status: "success",
-        message: "",
-        updatedAt: new Date().toISOString(),
-      });
-      setLoginStatus("success");
-    } catch (error) {
-      setLoginDebug((current) => ({
-        ...current,
-        status: "error",
-        message: error?.message || String(error || "Unknown error"),
-        errorName: error?.name || "",
-        errorStack: error?.stack ? String(error.stack).slice(0, 320) : "",
-        updatedAt: new Date().toISOString(),
-      }));
-      setLoginStatus(error?.message || "error");
-    }
-  };
 
   return (
     <div className="relative flex min-h-[calc(100dvh-130px)] w-full flex-col overflow-y-auto bg-black px-5 pb-8 pt-4 text-white no-scrollbar">
@@ -328,44 +193,12 @@ export default function AppProfile() {
               {t("profile_user_id")}:{" "}
               <span className="text-[#B985FF]">{userId}</span>
             </div>
-            {userId === "-" && loginStatus ? (
-              <div className="max-w-[210px] truncate text-[12px] leading-tight text-white/42">
-                Login: {loginStatus}
-              </div>
-            ) : null}
             <div className="text-[15px]  leading-tight text-white/72">
               {t("app_version")}{" "}
               <span className="text-[#B985FF]">{version}</span>
             </div>
           </div>
         </div>
-
-        {TIKTOK_LOGIN_DEBUG_ENABLED ? (
-          <div className="mb-5 rounded-[10px] border border-white/12 bg-white/[0.055] p-3 text-[12px] leading-tight text-white/78">
-            <div className="mb-2 text-[13px] font-bold text-white">
-              TikTok login debug
-            </div>
-            <div className="grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 gap-y-1">
-              {debugRows.map(([label, value]) => (
-                <div key={label} className="contents">
-                  <div className="text-white/46">{label}</div>
-                  <div className="min-w-0 break-words font-mono text-white/82">
-                    {value}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {userId === "-" ? (
-              <button
-                type="button"
-                onClick={retryTikTokLogin}
-                className="mt-3 h-9 w-full rounded-[8px] border border-white/18 bg-white/[0.08] text-[13px] font-bold text-white active:scale-[0.99]"
-              >
-                Retry TikTok login
-              </button>
-            ) : null}
-          </div>
-        ) : null}
 
         {/* VIP Card */}
         {isVipActive && (

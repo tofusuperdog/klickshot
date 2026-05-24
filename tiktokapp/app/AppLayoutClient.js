@@ -125,6 +125,18 @@ function getStoredLanguagePreference() {
   }
 }
 
+function getStoredTikTokUser() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return JSON.parse(
+      window.localStorage.getItem(TIKTOK_USER_STORAGE_KEY) || "null",
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function saveCustomerLanguage({
   customerId,
   openId,
@@ -150,13 +162,21 @@ async function saveCustomerLanguage({
   }
 }
 
-function recordAppVisit() {
+function recordAppVisit(user = null) {
   if (hasRecordedAppVisit) return;
 
   hasRecordedAppVisit = true;
 
   const url = getApiUrl("/api/customer/app-visit");
-  const body = JSON.stringify({});
+  const body = JSON.stringify(
+    user?.id && user?.open_id && user?.customer_auth_token
+      ? {
+          customerId: user.id,
+          openId: user.open_id,
+          customerAuthToken: user.customer_auth_token,
+        }
+      : {},
+  );
 
   if (
     typeof navigator !== "undefined" &&
@@ -314,10 +334,6 @@ function LayoutContent({ children }) {
   const showHeader = pathname !== "/" && !HEADER_HIDDEN_PATHS.has(pathname) && !isDetailPage(pathname);
 
   useEffect(() => {
-    recordAppVisit();
-  }, []);
-
-  useEffect(() => {
     const handleTikTokLoginState = (event) => {
       const { status, user } = event.detail || {};
 
@@ -327,6 +343,7 @@ function LayoutContent({ children }) {
       }
 
       if (status === "not_tiktok") {
+        recordAppVisit();
         setLanguageSheet({
           isOpen: !getStoredLanguagePreference(),
           mode: "guest",
@@ -338,6 +355,8 @@ function LayoutContent({ children }) {
       }
 
       if (status === "success") {
+        recordAppVisit(user || getStoredTikTokUser());
+
         if (user?.preferred_language && LANGUAGES.includes(user.preferred_language)) {
           changeLanguage(user.preferred_language);
           setLanguageSheet({
@@ -393,6 +412,10 @@ function LayoutContent({ children }) {
           openId: user?.open_id || null,
           customerAuthToken: user?.customer_auth_token || null,
         });
+      }
+
+      if (status === "error") {
+        recordAppVisit();
       }
     };
 
