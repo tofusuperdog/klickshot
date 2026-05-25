@@ -2568,6 +2568,10 @@ h1 {
     padding: 16px;
   }
 
+  .partner-feedback-note {
+    display: none;
+  }
+
   .partner-feedback-submit {
     width: 100%;
   }
