@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
-const allowedRanges = new Set([7, 14, 30]);
+const allowedRanges = new Set([1, 7, 14]);
 
 export async function GET(request) {
   const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
@@ -31,8 +31,8 @@ export async function GET(request) {
 
   const url = new URL(request.url);
   const seriesId = Number(url.searchParams.get("seriesId"));
-  const requestedDays = Number(url.searchParams.get("days") || 7);
-  const days = allowedRanges.has(requestedDays) ? requestedDays : 7;
+  const requestedDays = Number(url.searchParams.get("days") || 1);
+  const days = allowedRanges.has(requestedDays) ? requestedDays : 1;
 
   if (!Number.isInteger(seriesId) || seriesId <= 0) {
     return NextResponse.json(

@@ -8,11 +8,12 @@ import { usePathname, useRouter } from "next/navigation";
 const menuItems = [
   { href: "/dashboard", label: "ภาพรวม", icon: "home" },
   { href: "/series", label: "ซีรีส์ของฉัน", icon: "series" },
+  { href: "/feedback", label: "ข้อเสนอแนะ", icon: "feedback" },
   { href: "/billing", label: "สรุปรอบบิล", icon: "billing" },
 ];
 
 function NavIcon({ name }) {
-  if (name === "home" || name === "series" || name === "billing") {
+  if (name === "home" || name === "series" || name === "billing" || name === "feedback") {
     return <span className={`nav-icon nav-icon-${name}`} aria-hidden="true" />;
   }
 

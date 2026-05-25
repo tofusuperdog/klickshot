@@ -19,10 +19,10 @@ const rangeOptions = [
 ];
 
 const lineSeries = [
-  { key: "platform_views", label: "ยอดดูรวมทั้งหมด", color: "#7dd3fc" },
-  { key: "partner_views", label: "ยอดดูผลงาน", color: "#a7ffd9" },
-  { key: "partner_free_views", label: "ตอนฟรี", color: "#34d399" },
-  { key: "partner_paid_views", label: "ตอนเสียเงิน", color: "#ffd36c" },
+  { key: "platform_views", label: "รวมทุกพาร์ทเนอร์", color: "#7dd3fc" },
+  { key: "partner_views", label: "พาร์ทเนอร์นี้", color: "#a7ffd9" },
+  { key: "partner_free_views", label: "ฟรี", color: "#34d399" },
+  { key: "partner_paid_views", label: "เสียเงิน", color: "#ffd36c" },
 ];
 
 function formatDateLabel(value) {
@@ -139,19 +139,23 @@ export default function PartnerDashboardChart() {
 
       <section className="partner-summary-grid" aria-label="สรุปยอดดู">
         <article>
-          <span>ยอดดูรวมทั้งหมด</span>
+          <span>รวมทุกพาร์ทเนอร์</span>
+          <small>ยอดดูทั้งหมด</small>
           <strong>{summary.platform.toLocaleString()}</strong>
         </article>
         <article>
-          <span>ยอดดูผลงาน</span>
+          <span>พาร์ทเนอร์นี้</span>
+          <small>ฟรี + เสียเงิน</small>
           <strong>{summary.partner.toLocaleString()}</strong>
         </article>
         <article>
-          <span>ตอนฟรี</span>
+          <span>ฟรี</span>
+          <small>ของพาร์ทเนอร์นี้</small>
           <strong>{summary.free.toLocaleString()}</strong>
         </article>
         <article>
-          <span>ตอนเสียเงิน</span>
+          <span>เสียเงิน</span>
+          <small>ของพาร์ทเนอร์นี้</small>
           <strong>{summary.paid.toLocaleString()}</strong>
         </article>
       </section>

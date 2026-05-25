@@ -20,9 +20,9 @@ const rangeOptions = [
 ];
 
 const detailRangeOptions = [
+  { value: 1, label: "วันนี้" },
   { value: 7, label: "7 วัน" },
   { value: 14, label: "14 วัน" },
-  { value: 30, label: "30 วัน" },
 ];
 
 function toNumber(value) {
@@ -81,11 +81,14 @@ function getFreeAreas(rows) {
 function DetailTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
+  const isFree = Boolean(payload[0]?.payload?.is_free);
+  const episodeLabel = `EP${label}${isFree ? " (ฟรี)" : ""}`;
+
   return (
     <div className="partner-series-detail-tooltip">
-      <p>ตอนที่ {label}</p>
+      <p>{episodeLabel}</p>
       <span>
-        <small>จำนวนที่คนดู</small>
+        <small>ยอดดูตอนนี้</small>
         <strong>{formatNumber(payload[0]?.value)}</strong>
       </span>
     </div>
@@ -98,7 +101,7 @@ export default function PartnerSeriesList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedSeries, setSelectedSeries] = useState(null);
-  const [detailRange, setDetailRange] = useState(7);
+  const [detailRange, setDetailRange] = useState(1);
   const [detailRows, setDetailRows] = useState([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
@@ -211,7 +214,7 @@ export default function PartnerSeriesList() {
         <div>
           <p className="section-label">Klickshot Partner</p>
           <h1>ซีรีส์ของฉัน</h1>
-          <p>ดูยอดรับชมของซีรีส์แต่ละเรื่อง พร้อมแยกยอดตอนฟรีและตอนเสียเงินตามช่วงเวลาที่เลือก</p>
+          <p>ดูยอดของพาร์ทเนอร์นี้ แยกฟรีและเสียเงินตามช่วงเวลาที่เลือก</p>
         </div>
       </header>
 
@@ -219,18 +222,22 @@ export default function PartnerSeriesList() {
         <div className="partner-series-summary">
           <span>
             <small>ซีรีส์ทั้งหมด</small>
+            <em>ของพาร์ทเนอร์นี้</em>
             <strong>{formatNumber(summary.series)}</strong>
           </span>
           <span>
-            <small>ยอดดูรวม</small>
+            <small>ยอดรวม</small>
+            <em>ฟรี + เสียเงิน</em>
             <strong>{formatNumber(summary.total)}</strong>
           </span>
           <span>
-            <small>ตอนฟรี</small>
+            <small>ฟรี</small>
+            <em>ของพาร์ทเนอร์นี้</em>
             <strong>{formatNumber(summary.free)}</strong>
           </span>
           <span>
-            <small>ตอนเสียเงิน</small>
+            <small>เสียเงิน</small>
+            <em>ของพาร์ทเนอร์นี้</em>
             <strong>{formatNumber(summary.paid)}</strong>
           </span>
         </div>
@@ -280,15 +287,18 @@ export default function PartnerSeriesList() {
 
               <div className="partner-series-metrics">
                 <span>
-                  <small>จำนวนตอนที่ดูทั้งหมด</small>
+                  <small>ยอดรวม</small>
+                  <em>ฟรี + เสียเงิน</em>
                   <strong>{formatNumber(series.total_views)}</strong>
                 </span>
                 <span>
-                  <small>จำนวนตอนฟรีที่ดู</small>
+                  <small>ฟรี</small>
+                  <em>ของเรื่องนี้</em>
                   <strong>{formatNumber(series.free_views)}</strong>
                 </span>
                 <span>
-                  <small>จำนวนตอนเสียเงินที่ดู</small>
+                  <small>เสียเงิน</small>
+                  <em>ของเรื่องนี้</em>
                   <strong>{formatNumber(series.paid_views)}</strong>
                 </span>
               </div>
@@ -341,6 +351,11 @@ export default function PartnerSeriesList() {
 
             {detailError ? <p className="partner-series-detail-error">{detailError}</p> : null}
 
+            <div className="partner-series-detail-chart-title">
+              <p className="section-label">Episode analytics</p>
+              <h3>ยอดรับชมรายตอน</h3>
+            </div>
+
             <div className="partner-series-detail-chart" aria-busy={isDetailLoading}>
               {isDetailLoading ? (
                 <div className="partner-series-detail-state">กำลังโหลดข้อมูล...</div>
@@ -363,7 +378,7 @@ export default function PartnerSeriesList() {
                     <XAxis
                       dataKey="episode_no"
                       type="number"
-                      domain={["dataMin - 0.5", "dataMax + 0.5"]}
+                      domain={[0.5, "dataMax + 0.5"]}
                       tickFormatter={(value) => `EP${value}`}
                       stroke="rgba(228,242,237,0.58)"
                       tick={{ fill: "rgba(228,242,237,0.68)", fontSize: 12 }}
@@ -378,14 +393,14 @@ export default function PartnerSeriesList() {
                     <Tooltip content={<DetailTooltip />} />
                     <Legend
                       payload={[
-                        { value: "จำนวนที่คนดู", type: "plainline", color: "#7dd3fc" },
-                        { value: "พื้นหลังสีเขียว = ตอนฟรี", type: "square", color: "rgba(63, 242, 198, 0.22)" },
+                        { value: "ยอดรับชมรายตอน", type: "plainline", color: "#7dd3fc" },
+                        { value: "แถบเขียว = ตอนฟรี", type: "square", color: "rgba(63, 242, 198, 0.22)" },
                       ]}
                       wrapperStyle={{ color: "rgba(228,242,237,0.72)", fontSize: 12, paddingTop: 10 }}
                     />
                     <Line
                       type="monotone"
-                      name="จำนวนที่คนดู"
+                      name="ยอดรับชมรายตอน"
                       dataKey="views"
                       stroke="#7dd3fc"
                       strokeWidth={3}
