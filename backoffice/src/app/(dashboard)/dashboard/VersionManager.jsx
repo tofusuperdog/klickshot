@@ -5,10 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 import { backofficeMutation, backofficeQuery } from '@/lib/backoffice';
 
 const SYSTEM_TABS = [
-  { id: 'back_office', label: 'ระบบหลังบ้าน' },
-  { id: 'partner', label: 'ระบบพาร์ทเนอร์' },
+  { id: 'back_office', label: 'หลังบ้าน' },
+  { id: 'partner', label: 'พาร์ทเนอร์' },
   { id: 'website', label: 'เว็บไซด์' },
-  { id: 'app', label: 'แอปดูวีดีโอ' }
+  { id: 'app', label: 'Tiktok minis' }
 ];
 
 export default function VersionManager() {

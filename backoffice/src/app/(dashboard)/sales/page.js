@@ -201,8 +201,8 @@ export default function SalesPage() {
                           <input
                             type="text"
                             value={pkg.type}
-                            onChange={(e) => handleVipChange(pkg.id, 'type', e.target.value)}
-                            className="w-full max-w-[180px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            readOnly
+                            className="w-full max-w-[180px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[13px] rounded-sm cursor-default"
                           />
                         </td>
                         <td className="py-2 px-2">
@@ -211,8 +211,8 @@ export default function SalesPage() {
                             step="1"
                             min="1"
                             value={pkg.duration_days ?? 0}
-                            onChange={(e) => handleVipChange(pkg.id, 'duration_days', e.target.value)}
-                            className="w-full max-w-[90px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            readOnly
+                            className="w-full max-w-[90px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[13px] rounded-sm cursor-default"
                           />
                         </td>
                         <td className="py-2 px-2">

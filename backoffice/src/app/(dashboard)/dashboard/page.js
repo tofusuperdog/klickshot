@@ -63,25 +63,25 @@ export default async function OverviewPage() {
           {/* Card 1 */}
           <div className="flex-1 min-h-0 bg-[#131024] border border-[#2d2252] rounded p-4 flex flex-col justify-between shadow-md transition-all hover:border-[#3b2a75]">
             <div className="text-gray-400 font-light text-[13px] tracking-wide">ซีรีส์ที่เผยแพร่แล้ว</div>
-            <div className="text-white text-3xl font-semibold text-right leading-[1]">{publishedSeriesCount}</div>
+            <div className="text-white text-[21px] font-semibold text-right leading-[1]">{publishedSeriesCount}</div>
           </div>
 
           {/* Card 2 */}
           <div className="flex-1 min-h-0 bg-[#131024] border border-[#2d2252] rounded p-4 flex flex-col justify-between shadow-md transition-all hover:border-[#3b2a75]">
             <div className="text-gray-400 font-light text-[13px] tracking-wide">ตอนที่เผยแพร่แล้ว</div>
-            <div className="text-white text-3xl font-semibold text-right leading-[1]">{publishedEpisodesCount}</div>
+            <div className="text-white text-[21px] font-semibold text-right leading-[1]">{publishedEpisodesCount}</div>
           </div>
 
           {/* Card 3 */}
           <div className="flex-1 min-h-0 bg-[#131024] border border-[#2d2252] rounded p-4 flex flex-col justify-between shadow-md transition-all hover:border-[#3b2a75]">
             <div className="text-gray-400 font-light text-[13px] tracking-wide">ซีรีส์ที่ยังไม่เผยแพร่</div>
-            <div className="text-white text-3xl font-semibold text-right leading-[1]">{readySeriesCount}</div>
+            <div className="text-white text-[21px] font-semibold text-right leading-[1]">{readySeriesCount}</div>
           </div>
 
           {/* Card 4 - Red */}
           <div className="flex-1 min-h-0 bg-[#2c1010] border border-[#531c1c] rounded p-4 flex flex-col justify-between shadow-md transition-all hover:border-[#7c2d2d]">
             <div className="text-gray-400 font-light text-[13px] tracking-wide">ซีรีส์ที่ยังไม่พร้อม</div>
-            <div className="text-white text-3xl font-semibold text-right leading-[1]">{notReadySeriesCount}</div>
+            <div className="text-white text-[21px] font-semibold text-right leading-[1]">{notReadySeriesCount}</div>
           </div>
           
         </div>

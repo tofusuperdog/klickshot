@@ -1,8 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { backofficeQuery } from '@/lib/backoffice';
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -20,41 +23,61 @@ const rangeOptions = [
 
 const chartConfigs = {
   streaming: {
-    label: 'การสตรีมมิ่ง',
-    yLabel: 'จำนวนตอน',
-    color: '#7dd3fc',
-    base: 180,
-    step: 11,
-    wave: 46,
+    label: 'สตรีมมิ่ง',
+    yLabel: 'ยอดดูตอน',
+    series: [
+      { key: 'views', label: 'รวม', color: '#7dd3fc' },
+      { key: 'free_views', label: 'ฟรี', color: '#34d399' },
+      { key: 'paid_views', label: 'จ่ายเงิน', color: '#f59e0b' },
+    ],
   },
   users: {
     label: 'จำนวนผู้ใช้งาน',
-    yLabel: 'จำนวนคนเข้า',
-    color: '#a78bfa',
-    base: 420,
-    step: 17,
-    wave: 70,
+    yLabel: 'ผู้ใช้งาน',
+    series: [
+      { key: 'visits', label: 'รวม', color: '#a78bfa' },
+      { key: 'non_vip_visits', label: 'ฟรี', color: '#60a5fa' },
+      { key: 'vip_visits', label: 'VIP', color: '#f472b6' },
+    ],
   },
   beans: {
     label: 'การซื้อ Bean',
     yLabel: 'จำนวน Bean',
     color: '#fbbf24',
-    base: 11800,
-    step: 380,
-    wave: 2200,
   },
   vip: {
     label: 'การซื้อ VIP Package',
     yLabel: 'จำนวนครั้งที่ซื้อ',
     series: [
-      { key: 'vip7', label: 'VIP 7 วัน', color: '#34d399', base: 18, step: 1.1, wave: 7 },
-      { key: 'vip30', label: 'VIP 30 วัน', color: '#60a5fa', base: 9, step: 0.7, wave: 5 },
+      { key: 'vip7', label: 'VIP 7 วัน', color: '#34d399' },
+      { key: 'vip30', label: 'VIP 30 วัน', color: '#60a5fa' },
     ],
   },
 };
 
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function formatDate(date) {
   return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+}
+
+function buildDateRows(days) {
+  const today = new Date();
+
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (days - 1 - index));
+
+    return {
+      date: formatDate(date),
+      dateKey: toDateKey(date),
+    };
+  });
 }
 
 function mockValue(index, config) {
@@ -78,20 +101,74 @@ function buildMockData(days, config) {
   });
 }
 
-function buildVipMockData(days, series) {
-  const today = new Date();
+function buildStreamingData(days, rows = []) {
+  const totalsByDate = new Map(rows.map((row) => [row.view_date, row]));
 
-  return Array.from({ length: days }, (_, index) => {
-    const date = new Date(today);
-    const row = { date: formatDate(date) };
-    date.setDate(date.getDate() - (days - 1 - index));
-    row.date = formatDate(date);
+  return buildDateRows(days).map(({ date, dateKey }) => {
+    const row = totalsByDate.get(dateKey);
 
-    series.forEach((item) => {
-      row[item.key] = mockValue(index, item);
-    });
+    return {
+      date,
+      views: Number(row?.views || 0),
+      free_views: Number(row?.free_views || 0),
+      paid_views: Number(row?.paid_views || 0),
+    };
+  });
+}
 
-    return row;
+function buildVisitData(days, rows = []) {
+  const visitsByDate = new Map(rows.map((row) => [row.visit_date, row]));
+
+  return buildDateRows(days).map(({ date, dateKey }) => {
+    const row = visitsByDate.get(dateKey);
+
+    return {
+      date,
+      visits: Number(row?.visits || 0),
+      non_vip_visits: Number(row?.non_vip_visits || 0),
+      vip_visits: Number(row?.vip_visits || 0),
+    };
+  });
+}
+
+function buildBeanData(days, rows = []) {
+  const beansByDate = new Map(rows.map((row) => [row.purchase_date, row]));
+
+  return buildDateRows(days).map(({ date, dateKey }) => {
+    const row = beansByDate.get(dateKey);
+
+    return {
+      date,
+      value: Number(row?.total_bean_amount || 0),
+    };
+  });
+}
+
+function buildVipData(days, rows = []) {
+  const purchasesByDate = new Map();
+
+  rows.forEach((row) => {
+    const current = purchasesByDate.get(row.purchase_date) || { vip7: 0, vip30: 0 };
+
+    if (Number(row.duration_days) === 7 || row.package_type === 'VIP 7 วัน') {
+      current.vip7 += Number(row.purchases || 0);
+    }
+
+    if (Number(row.duration_days) === 30 || row.package_type === 'VIP 30 วัน') {
+      current.vip30 += Number(row.purchases || 0);
+    }
+
+    purchasesByDate.set(row.purchase_date, current);
+  });
+
+  return buildDateRows(days).map(({ date, dateKey }) => {
+    const row = purchasesByDate.get(dateKey);
+
+    return {
+      date,
+      vip7: Number(row?.vip7 || 0),
+      vip30: Number(row?.vip30 || 0),
+    };
   });
 }
 
@@ -119,8 +196,13 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function DashboardGraph() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('streaming');
   const [dateRange, setDateRange] = useState(7);
+  const [streamingRows, setStreamingRows] = useState([]);
+  const [visitRows, setVisitRows] = useState([]);
+  const [beanRows, setBeanRows] = useState([]);
+  const [vipRows, setVipRows] = useState([]);
 
   const tabs = [
     { id: 'streaming', label: chartConfigs.streaming.label },
@@ -130,13 +212,81 @@ export default function DashboardGraph() {
   ];
 
   const config = chartConfigs[activeTab];
+
+  useEffect(() => {
+    if (!['streaming', 'users', 'beans', 'vip'].includes(activeTab) || !user) return;
+
+    let isCurrent = true;
+    const dateRows = buildDateRows(dateRange);
+    const startDate = dateRows[0]?.dateKey;
+    const endDate = dateRows[dateRows.length - 1]?.dateKey;
+
+    async function fetchChartRows() {
+      const resourceByTab = {
+        streaming: 'episode_daily_totals',
+        users: 'tiktokapp_daily_visits',
+        beans: 'bean_daily_purchases',
+        vip: 'vip_daily_purchases',
+      };
+      const resource = resourceByTab[activeTab];
+      const { data, error } = await backofficeQuery(user, resource, {
+        start_date: startDate,
+        end_date: endDate,
+      });
+
+      if (!isCurrent) return;
+
+      if (error) {
+        console.error(`Failed to load ${resource}`, error);
+        if (activeTab === 'streaming') {
+          setStreamingRows([]);
+        } else if (activeTab === 'users') {
+          setVisitRows([]);
+        } else if (activeTab === 'beans') {
+          setBeanRows([]);
+        } else {
+          setVipRows([]);
+        }
+        return;
+      }
+
+      if (activeTab === 'streaming') {
+        setStreamingRows(data || []);
+      } else if (activeTab === 'users') {
+        setVisitRows(data || []);
+      } else if (activeTab === 'beans') {
+        setBeanRows(data || []);
+      } else {
+        setVipRows(data || []);
+      }
+    }
+
+    fetchChartRows();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeTab, dateRange, user]);
+
   const data = useMemo(() => {
+    if (activeTab === 'streaming') {
+      return buildStreamingData(dateRange, streamingRows);
+    }
+
+    if (activeTab === 'users') {
+      return buildVisitData(dateRange, visitRows);
+    }
+
+    if (activeTab === 'beans') {
+      return buildBeanData(dateRange, beanRows);
+    }
+
     if (activeTab === 'vip') {
-      return buildVipMockData(dateRange, chartConfigs.vip.series);
+      return buildVipData(dateRange, vipRows);
     }
 
     return buildMockData(dateRange, config);
-  }, [activeTab, config, dateRange]);
+  }, [activeTab, config, dateRange, streamingRows, visitRows, beanRows, vipRows]);
 
   return (
     <div className="bg-[#131024] border border-[#2d2252] rounded shadow-md p-4 h-full min-h-0 flex flex-col">
@@ -195,7 +345,13 @@ export default function DashboardGraph() {
               }}
             />
             <Tooltip content={<CustomTooltip />} />
-            {activeTab === 'vip' ? (
+            {(activeTab === 'streaming' || activeTab === 'users' || activeTab === 'vip') && (
+              <Legend
+                iconType="plainline"
+                wrapperStyle={{ color: '#d1d5db', fontSize: 12, paddingTop: 8 }}
+              />
+            )}
+            {activeTab === 'streaming' || activeTab === 'users' || activeTab === 'vip' ? (
               config.series.map((item) => (
                 <Line
                   key={item.key}
