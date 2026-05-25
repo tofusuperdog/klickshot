@@ -46,6 +46,15 @@ const isAppleMobileWebKit = () => {
   );
 };
 
+const getAppleMobileOsMajorVersion = () => {
+  if (typeof navigator === "undefined") return 0;
+
+  const userAgent = navigator.userAgent || "";
+  const match = userAgent.match(/(?:CPU(?: iPhone)? OS|iPhone OS|iPad; CPU OS)\s+(\d+)/i);
+
+  return match ? Number(match[1]) || 0 : 0;
+};
+
 function loadVePlayerModule() {
   if (!vePlayerModulePromise) {
     vePlayerModulePromise = import("@byteplus/veplayer");
@@ -804,12 +813,66 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     return true;
   };
 
+  const getVideoElement = () =>
+    playerRef.current?.video ||
+    playerRef.current?.media ||
+    playerRef.current?.root?.querySelector?.("video") ||
+    containerRef.current?.querySelector("video");
+
+  const recoverAppleNativeAudioSwitch = (video, state) => {
+    if (!video || !state) return;
+
+    const resumePlayback = () => {
+      try {
+        if (Number.isFinite(state.currentTime)) {
+          video.currentTime = Math.max(0, state.currentTime);
+        }
+      } catch {}
+
+      if (!state.wasPaused) {
+        video.play?.().catch?.(() => {});
+      }
+    };
+
+    window.setTimeout(resumePlayback, 120);
+
+    window.setTimeout(() => {
+      const isLikelyStalled =
+        video.readyState < 2 ||
+        (!state.wasPaused && video.paused) ||
+        (Number.isFinite(state.currentTime) &&
+          Math.abs(video.currentTime - state.currentTime) > 3);
+
+      if (!isLikelyStalled) return;
+
+      try {
+        video.load?.();
+      } catch {}
+
+      window.setTimeout(resumePlayback, 180);
+    }, 900);
+  };
+
   const applyAudioTrack = (audioTrack) => {
     const player = playerRef.current;
 
     if (!player || !audioTrack) return false;
 
     const isAppleMobile = isAppleMobileWebKit();
+    const useAppleNativeRecovery =
+      isAppleMobile && getAppleMobileOsMajorVersion() >= 26;
+    const video = useAppleNativeRecovery ? getVideoElement() : null;
+    const appleSwitchState = video
+      ? {
+          wasPaused: video.paused,
+          currentTime: video.currentTime,
+        }
+      : null;
+
+    if (video && !appleSwitchState.wasPaused) {
+      video.pause?.();
+    }
+
     const currentTracks = getPlayerAudioTracks();
     const targetTrack =
       currentTracks.find(
@@ -849,6 +912,10 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
     if (!nativeSwitched && !hlsSwitched && !isAppleMobile) {
       player.switchAudioTrack?.(switchPayload);
+    }
+
+    if (useAppleNativeRecovery && (nativeSwitched || hlsSwitched)) {
+      recoverAppleNativeAudioSwitch(video, appleSwitchState);
     }
 
     window.setTimeout(() => emitAudioTracks(), 800);
