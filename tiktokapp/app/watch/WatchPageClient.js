@@ -63,6 +63,56 @@ function loadVePlayerModule() {
   return vePlayerModulePromise;
 }
 
+function invokeNativeSnapshotProtection(allow) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const payload = { allow };
+  const callbacks = {
+    ...payload,
+    success: () => {},
+    fail: () => {},
+    complete: () => {},
+  };
+  const ttMinis = window.TTMinis;
+
+  try {
+    if (typeof ttMinis?.allowSystemSnapshot === "function") {
+      ttMinis.allowSystemSnapshot(callbacks);
+      return true;
+    }
+
+    if (typeof ttMinis?.call === "function") {
+      ttMinis.call("allowSystemSnapshot", payload);
+      return true;
+    }
+
+    if (typeof ttMinis?.invoke === "function") {
+      ttMinis.invoke("allowSystemSnapshot", payload);
+      return true;
+    }
+
+    if (typeof window.my?.call === "function") {
+      window.my.call("allowSystemSnapshot", payload);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Unable to update native screen capture protection:", error);
+  }
+
+  return false;
+}
+
+function enableProtectedPlaybackSurface() {
+  const nativeApplied = invokeNativeSnapshotProtection(false);
+
+  return () => {
+    invokeNativeSnapshotProtection(true);
+    return nativeApplied;
+  };
+}
+
 function recordEpisodeView(targetEpisode) {
   const seriesId = Number(targetEpisode?.series_id);
   const episodeId = Number(targetEpisode?.id);
@@ -1276,6 +1326,7 @@ export default function WatchPage() {
   const [currentSeries, setCurrentSeries] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
+  const [privacyOverlayVisible, setPrivacyOverlayVisible] = useState(false);
   const [hasActiveVip, setHasActiveVip] = useState(false);
 
   useEffect(() => {
@@ -1329,8 +1380,38 @@ export default function WatchPage() {
     };
   }, []);
 
-  // Temporarily allow capture while debugging TikTok playback error 2100.
-  useEffect(() => undefined, []);
+  useEffect(() => {
+    const restoreProtectedSurface = enableProtectedPlaybackSurface();
+
+    const protectInactiveSurface = () => {
+      if (document.visibilityState === "hidden") {
+        setPrivacyOverlayVisible(true);
+        playerControlRef.current?.pause?.();
+      } else {
+        setPrivacyOverlayVisible(false);
+      }
+    };
+
+    const handleBlur = () => {
+      setPrivacyOverlayVisible(true);
+      playerControlRef.current?.pause?.();
+    };
+
+    const handleFocus = () => {
+      setPrivacyOverlayVisible(false);
+    };
+
+    document.addEventListener("visibilitychange", protectInactiveSurface);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      restoreProtectedSurface();
+      document.removeEventListener("visibilitychange", protectInactiveSurface);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   const subtitleOptions = Array.isArray(subtitles)
     ? subtitles
@@ -1777,9 +1858,38 @@ export default function WatchPage() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex bg-black text-white"
+      className="fixed inset-0 z-[100] flex select-none bg-black text-white"
       onContextMenu={(event) => event.preventDefault()}
+      onCopy={(event) => event.preventDefault()}
+      onCut={(event) => event.preventDefault()}
+      onDragStart={(event) => event.preventDefault()}
     >
+      {privacyOverlayVisible ? (
+        <div className="pointer-events-none absolute inset-0 z-[95] flex items-center justify-center bg-black text-center text-white">
+          <div className="rounded-2xl border border-white/12 bg-white/8 px-6 py-5 shadow-[0_18px_48px_rgba(0,0,0,0.46)] backdrop-blur-md">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" />
+                <path d="m9 12 2 2 4-5" />
+              </svg>
+            </div>
+            <p className="text-[15px] font-semibold">Protected playback</p>
+            <p className="mt-1 text-[12px] text-white/62">Video is hidden while the app is inactive.</p>
+          </div>
+        </div>
+      ) : null}
+
       {showPlayer && isVideoPaused && !vipLockedEpisode ? (
         <div className="absolute bottom-[72px] right-4 z-20 flex flex-col items-center gap-5">
           <button
