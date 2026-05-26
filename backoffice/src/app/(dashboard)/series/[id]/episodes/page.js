@@ -304,7 +304,9 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
 
         containerRef.current.id = playerId;
 
-        const license = process.env.NEXT_PUBLIC_BYTEPLUS_LICENSE;
+        const license =
+          process.env.NEXT_PUBLIC_BACKOFFICE_BYTEPLUS_LICENSE ||
+          '/licenses/l-2166832401-ch-vod-a-1022447.lic';
 
         const parsedLineAppId = Number(lineAppId);
 
