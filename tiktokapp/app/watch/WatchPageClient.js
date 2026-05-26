@@ -283,17 +283,24 @@ const loadHlsAudioTracks = async (manifestUrls) => {
 const normalizeSubtitleKey = (value) => {
   const key = String(value || "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/_/g, "-");
+  const baseKey = key.split("-")[0];
   const aliases = {
     chinese: "zh",
+    chi: "zh",
+    zho: "zh",
     cn: "zh",
     thai: "th",
+    tha: "th",
     english: "en",
+    eng: "en",
     japanese: "ja",
+    jpn: "ja",
     jp: "ja",
   };
 
-  return aliases[key] || key;
+  return aliases[key] || aliases[baseKey] || key;
 };
 
 const getSubtitleMatchKeys = (subtitle) => {

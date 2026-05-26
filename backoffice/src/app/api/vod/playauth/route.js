@@ -126,11 +126,39 @@ async function resolveDefaultPlayback(baseParams) {
   };
 }
 
+function normalizeSubtitleLanguage(value) {
+  const key = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, '-');
+  const baseKey = key.split('-')[0];
+  const aliases = {
+    thai: 'th',
+    tha: 'th',
+    chinese: 'zh',
+    chi: 'zh',
+    zho: 'zh',
+    cn: 'zh',
+    english: 'en',
+    eng: 'en',
+    japanese: 'ja',
+    jpn: 'ja',
+    jp: 'ja',
+  };
+
+  return aliases[key] || aliases[baseKey] || key;
+}
+
 function getSubtitleLabel(sub, idx) {
   const languageId = Number(sub.LanguageId);
+  const language = normalizeSubtitleLanguage(sub.Language);
 
   if (languageId === 30) return 'Thai';
   if (languageId === 1) return 'Chinese';
+  if (language === 'th') return 'Thai';
+  if (language === 'zh') return 'Chinese';
+  if (language === 'en') return 'English';
+  if (language === 'ja') return 'Japanese';
 
   return (
     sub.Language ||
@@ -146,7 +174,7 @@ function getSubtitleLanguage(sub) {
   if (languageId === 30) return 'th';
   if (languageId === 1) return 'zh';
 
-  return String(sub.Language || sub.LanguageId || '');
+  return normalizeSubtitleLanguage(sub.Language || sub.LanguageId);
 }
 
 function dedupeSubtitles(subtitleList) {
