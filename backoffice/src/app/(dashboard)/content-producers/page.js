@@ -155,6 +155,8 @@ function DeleteConfirmModal({ isOpen, producer, onClose, onConfirm, isDeleting }
 
   if (!isOpen || !producer) return null;
 
+  const seriesCount = producer.seriesCount || 0;
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
       <div className="bg-[#12102f] border border-[#2d2252] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10 flex flex-col items-center">
@@ -165,7 +167,9 @@ function DeleteConfirmModal({ isOpen, producer, onClose, onConfirm, isDeleting }
         </p>
 
         <p className="text-[#FF9999] text-[14px] font-light mb-8 text-center">
-          การดำเนินการนี้ไม่สามารถย้อนกลับได้!
+          {seriesCount > 0
+            ? `ซีรีส์ ${seriesCount} เรื่องของผู้ผลิตนี้จะถูกยกเลิกการผูกผู้ผลิต และการดำเนินการนี้ไม่สามารถย้อนกลับได้!`
+            : 'การดำเนินการนี้ไม่สามารถย้อนกลับได้!'}
         </p>
 
         <div className="w-full flex flex-col items-center mb-10">
@@ -276,7 +280,6 @@ export default function ContentProducersPage() {
   const [editingProducer, setEditingProducer] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [blockedDeleteTarget, setBlockedDeleteTarget] = useState(null);
   const [seriesListTarget, setSeriesListTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState(defaultFormData);
@@ -486,14 +489,10 @@ export default function ContentProducersPage() {
   );
 
   const handleDeleteClick = (producer) => {
-    const producerSeries = getProducerSeries(producer.id);
-
-    if (producerSeries.length > 0) {
-      setBlockedDeleteTarget(producer);
-      return;
-    }
-
-    setDeleteTarget(producer);
+    setDeleteTarget({
+      ...producer,
+      seriesCount: getProducerSeries(producer.id).length,
+    });
   };
 
   return (
@@ -690,19 +689,6 @@ export default function ContentProducersPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         isDeleting={isDeleting}
-      />
-
-      <ProducerSeriesListModal
-        isOpen={blockedDeleteTarget !== null}
-        producer={blockedDeleteTarget}
-        title="ไม่สามารถลบผู้ผลิตได้"
-        message={
-          blockedDeleteTarget
-            ? <>จะลบผู้ผลิต <span className="font-semibold text-white">{blockedDeleteTarget.name}</span> ได้ต่อเมื่อไม่มีซีรีส์ของผู้ผลิตนี้อยู่ในระบบ</>
-            : null
-        }
-        seriesList={blockedDeleteTarget ? getProducerSeries(blockedDeleteTarget.id) : []}
-        onClose={() => setBlockedDeleteTarget(null)}
       />
 
       <ProducerSeriesListModal
