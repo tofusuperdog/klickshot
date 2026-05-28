@@ -121,7 +121,7 @@ const actionCopy = {
   },
   delete: {
     title: 'ลบรายงาน',
-    message: 'ระบบจะลบแบบเก็บประวัติ เพื่อไม่ให้ข้อมูลทางการเงินหายถาวร',
+    message: 'การลบรายงานนี้จะลบข้อมูลในรายงาน พาร์ทเนอร์ และซีรีส์ที่เกี่ยวข้องอย่างถาวร',
     confirm: 'ลบรายงาน',
     success: 'ลบรายงานแล้ว',
     buttonClass: 'bg-red-500 text-white hover:bg-red-400',
@@ -551,7 +551,7 @@ export default function ReportsPage() {
                     <tbody>
                       {seriesRows.map((series) => (
                         <tr key={series.id} className="border-t border-[#2d2252]/80 text-gray-300">
-                          <td className="px-4 py-3 text-white">{series.series_title}</td>
+                          <td className="px-4 py-3 text-white">{series.series_title_th || series.series_title}</td>
                           <td className="px-4 py-3">{series.partner_name}</td>
                           <td className="px-4 py-3 text-right">{formatNumber(series.total_free_views)}</td>
                           <td className="px-4 py-3 text-right">{formatNumber(series.total_paid_views)}</td>

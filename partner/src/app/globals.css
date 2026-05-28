@@ -926,12 +926,13 @@ h1 {
 }
 
 .partner-language-switcher {
+  position: relative;
   display: grid;
   gap: 7px;
   margin-top: 14px;
 }
 
-.partner-language-switcher span {
+.partner-language-switcher-label {
   color: rgba(221, 238, 232, 0.64);
   font-size: 12px;
   font-weight: 700;
@@ -939,9 +940,13 @@ h1 {
   text-transform: uppercase;
 }
 
-.partner-language-switcher select {
+.partner-language-select {
+  display: flex;
   width: 100%;
   min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   cursor: pointer;
   border: 1px solid rgba(167, 255, 217, 0.2);
   border-radius: 8px;
@@ -952,11 +957,78 @@ h1 {
   transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
-.partner-language-switcher select:focus,
-.partner-language-switcher select:hover {
+.partner-language-selected,
+.partner-language-option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.partner-language-selected span,
+.partner-language-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partner-language-flag {
+  width: 24px;
+  height: 16px;
+  flex: 0 0 24px;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.partner-language-chevron {
+  flex: 0 0 auto;
+  color: rgba(221, 238, 232, 0.62);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.partner-language-options {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(167, 255, 217, 0.2);
+  border-radius: 8px;
+  background: rgba(5, 20, 18, 0.98);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
+}
+
+.partner-language-option {
+  width: 100%;
+  min-height: 42px;
+  cursor: pointer;
+  border: 0;
+  border-bottom: 1px solid rgba(167, 255, 217, 0.09);
+  background: transparent;
+  color: rgba(237, 249, 245, 0.92);
+  padding: 0 12px;
+  text-align: left;
+}
+
+.partner-language-option:last-child {
+  border-bottom: 0;
+}
+
+.partner-language-select:focus,
+.partner-language-select:hover {
   border-color: rgba(167, 255, 217, 0.42);
   background: rgba(8, 40, 35, 0.82);
   box-shadow: 0 0 0 3px rgba(63, 242, 198, 0.1);
+}
+
+.partner-language-option:hover,
+.partner-language-option:focus,
+.partner-language-option[aria-selected="true"] {
+  background: rgba(43, 119, 100, 0.42);
+  outline: none;
 }
 
 .login-language-switcher {

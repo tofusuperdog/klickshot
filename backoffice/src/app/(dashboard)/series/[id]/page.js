@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { backofficeMutation, backofficeQuery } from '@/lib/backoffice';
+import { backofficeDeleteSeries, backofficeMutation, backofficeQuery } from '@/lib/backoffice';
 
 // Helper for pill toggles
 function LangToggle({ label, active, onClick }) {
@@ -285,52 +285,10 @@ export default function EditSeriesPage() {
     setIsDeleting(true);
 
     try {
-      // 1. Fetch categories that contain this series in their series_ids array
-      const { data: allCategories, error: fetchError } = await backofficeQuery(user, 'content_categories');
-      const categories = (allCategories || []).filter(cat => cat.series_ids?.includes(parseInt(seriesId)));
-
-      if (!fetchError && categories && categories.length > 0) {
-        // 2. Update each affected category
-        for (const cat of categories) {
-          const updatedIds = cat.series_ids.filter(id => String(id) !== String(seriesId));
-          const newBadgeText = `${updatedIds.length} ซีรีส์`;
-          
-          await backofficeMutation(
-            user,
-            'content_categories',
-            'update',
-            {
-              series_ids: updatedIds,
-              badge_text: newBadgeText,
-              updated_at: new Date().toISOString()
-            },
-            { id: cat.id }
-          );
-        }
-      }
-
-      // Attempt explicit child-row removal to satisfy foreign-key constraints if cascade is off
-      const childDeleteTargets = [
-        'customer_recent_series',
-        'episode',
-      ];
-
-      for (const table of childDeleteTargets) {
-        const { error: childDeleteError } = await backofficeMutation(user, table, 'delete', {}, { series_id: seriesId });
-
-        if (childDeleteError) {
-          console.error(`Error deleting ${table}:`, childDeleteError);
-          showError('ไม่สามารถลบข้อมูลที่เกี่ยวข้องกับซีรีส์ได้: ' + (childDeleteError.message || ''));
-          setIsDeleting(false);
-          setShowDeleteModal(false);
-          return;
-        }
-      }
-
-      const { error } = await backofficeMutation(user, 'series', 'delete', {}, { id: seriesId });
-      if (error) {
-        console.error('Error deleting series:', error);
-        showError('ไม่สามารถลบซีรีส์ได้ เนื่องจากเกิดข้อผิดพลาด: ' + (error.message || ''));
+      const { error: deleteError } = await backofficeDeleteSeries(user, seriesId);
+      if (deleteError) {
+        console.error('Error deleting series:', deleteError);
+        showError('ไม่สามารถลบซีรีส์ได้ เนื่องจากเกิดข้อผิดพลาด: ' + (deleteError.message || ''));
         setIsDeleting(false);
         setShowDeleteModal(false);
         return;
@@ -339,6 +297,7 @@ export default function EditSeriesPage() {
       setIsDeleting(false);
       setShowDeleteModal(false);
       router.push('/series');
+      return;
     } catch (err) {
       console.error('Error in handleDeleteSeries:', err);
       showError('เกิดข้อผิดพลาดที่ไม่คาดคิดในการลบซีรีส์');
@@ -533,7 +492,7 @@ export default function EditSeriesPage() {
                 onChange={(e) => handleInputChange('total_episodes', e.target.value)}
                 className="w-[70px] h-9 pl-4 pr-2 bg-white rounded text-black font-medium focus:outline-none focus:ring-2 focus:ring-[#709bf0] cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239CA3AF%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.2rem_center] bg-[length:1rem_1rem]"
               >
-                {Array.from({ length: 99 }, (_, i) => i + 1).map(num => (
+                {Array.from({ length: 299 }, (_, i) => i + 1).map(num => (
                   <option key={num} value={num}>{num}</option>
                 ))}
               </select>

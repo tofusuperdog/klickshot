@@ -49,6 +49,14 @@ export async function backofficeMutation(
   });
 }
 
+export async function backofficeDeleteSeries(user, seriesId) {
+  if (!user) {
+    return { data: null, error: { message: 'Missing back office session' } };
+  }
+
+  return postBackoffice('/api/backoffice/series/delete', { seriesId });
+}
+
 export async function backofficeUserMutation(user, action, payload = {}) {
   if (!user) {
     return { data: null, error: { message: 'Missing back office session' } };

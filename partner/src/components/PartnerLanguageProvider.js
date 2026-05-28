@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 export const partnerLanguages = [
-  { code: "th", label: "ไทย", shortLabel: "TH", locale: "th-TH" },
-  { code: "en", label: "English", shortLabel: "EN", locale: "en-US" },
-  { code: "zh", label: "中文", shortLabel: "中文", locale: "zh-CN" },
+  { code: "th", label: "ไทย", shortLabel: "TH", locale: "th-TH", flag: "th" },
+  { code: "en", label: "English", shortLabel: "EN", locale: "en-US", flag: "us" },
+  { code: "zh", label: "中文", shortLabel: "中文", locale: "zh-CN", flag: "cn" },
 ];
 
 const defaultLanguage = "th";
@@ -530,23 +530,105 @@ export function usePartnerLanguage() {
   return context;
 }
 
-export function LanguageSwitcher({ className = "" }) {
-  const { language, languages, setLanguage, t } = usePartnerLanguage();
+function FlagIcon({ code }) {
+  if (code === "th") {
+    return (
+      <svg className="partner-language-flag" viewBox="0 0 24 16" aria-hidden="true">
+        <rect width="24" height="16" fill="#A51931" />
+        <rect y="2" width="24" height="12" fill="#F4F5F8" />
+        <rect y="5" width="24" height="6" fill="#2D2A4A" />
+      </svg>
+    );
+  }
+
+  if (code === "cn") {
+    return (
+      <svg className="partner-language-flag" viewBox="0 0 24 16" aria-hidden="true">
+        <rect width="24" height="16" fill="#DE2910" />
+        <path d="M5 2.1 5.7 4h2L6.1 5.2 6.7 7 5 5.9 3.3 7l.6-1.8L2.3 4h2L5 2.1Z" fill="#FFDE00" />
+        <circle cx="10" cy="3" r="0.8" fill="#FFDE00" />
+        <circle cx="12" cy="5" r="0.8" fill="#FFDE00" />
+        <circle cx="12" cy="8" r="0.8" fill="#FFDE00" />
+        <circle cx="10" cy="10" r="0.8" fill="#FFDE00" />
+      </svg>
+    );
+  }
 
   return (
-    <label className={`partner-language-switcher ${className}`}>
-      <span>{t("language.label")}</span>
-      <select
-        value={language}
-        onChange={(event) => setLanguage(event.target.value)}
-        aria-label={t("language.select")}
-      >
-        {languages.map((option) => (
-          <option key={option.code} value={option.code}>
-            {option.label}
-          </option>
+    <svg className="partner-language-flag" viewBox="0 0 24 16" aria-hidden="true">
+      <rect width="24" height="16" fill="#fff" />
+      {Array.from({ length: 7 }, (_, index) => (
+        <rect key={index} y={index * 2.3} width="24" height="1.2" fill="#B22234" />
+      ))}
+      <rect width="10.6" height="8.6" fill="#3C3B6E" />
+      <g fill="#fff">
+        {Array.from({ length: 12 }, (_, index) => (
+          <circle key={index} cx={1.6 + (index % 4) * 2.2} cy={1.4 + Math.floor(index / 4) * 2.2} r="0.35" />
         ))}
-      </select>
-    </label>
+      </g>
+    </svg>
+  );
+}
+
+export function LanguageSwitcher({ className = "" }) {
+  const { language, languages, setLanguage, t } = usePartnerLanguage();
+  const [isOpen, setIsOpen] = useState(false);
+  const switcherRef = useRef(null);
+  const selectedLanguage = languages.find((option) => option.code === language) || languages[0];
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!switcherRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [isOpen]);
+
+  const handleSelect = (nextLanguage) => {
+    setLanguage(nextLanguage);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className={`partner-language-switcher ${className}`} ref={switcherRef}>
+      <span className="partner-language-switcher-label">{t("language.label")}</span>
+      <button
+        type="button"
+        className="partner-language-select"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={t("language.select")}
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        <span className="partner-language-selected">
+          <FlagIcon code={selectedLanguage.flag} />
+          <span>{selectedLanguage.label}</span>
+        </span>
+        <span className="partner-language-chevron" aria-hidden="true">⌄</span>
+      </button>
+
+      {isOpen ? (
+        <div className="partner-language-options" role="listbox" aria-label={t("language.select")}>
+          {languages.map((option) => (
+            <button
+              type="button"
+              key={option.code}
+              role="option"
+              aria-selected={option.code === language}
+              className="partner-language-option"
+              onClick={() => handleSelect(option.code)}
+            >
+              <FlagIcon code={option.flag} />
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

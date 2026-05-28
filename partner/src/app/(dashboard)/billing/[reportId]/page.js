@@ -50,15 +50,19 @@ function getSeriesDetails(report) {
 }
 
 function getLocalizedSeriesTitle(series, language, fallback) {
+  const titleTh = series.title_th || series.series_title_th || series.series_title;
+  const titleEn = series.title_en || series.series_title_en || series.series_title;
+  const titleCn = series.title_cn || series.series_title_cn || series.series_title;
+
   if (language === "en") {
-    return series.title_en || series.series_title || series.title_th || series.title_cn || fallback;
+    return titleEn || titleTh || titleCn || fallback;
   }
 
   if (language === "zh") {
-    return series.title_cn || series.series_title || series.title_th || series.title_en || fallback;
+    return titleCn || titleTh || titleEn || fallback;
   }
 
-  return series.title_th || series.series_title || series.title_en || series.title_cn || fallback;
+  return titleTh || titleEn || titleCn || fallback;
 }
 
 export default function BillingDetailPage() {
@@ -172,14 +176,10 @@ export default function BillingDetailPage() {
                   {t("billing.emptySeries")}
                 </div>
               ) : (
-                seriesDetails.map((series) => (
-                  <div className="partner-billing-series-row" key={series.series_id}>
+                seriesDetails.map((series, index) => (
+                  <div className="partner-billing-series-row" key={`${series.series_title || series.title_th || series.title_en || series.title_cn || "series"}-${index}`}>
                     <span>
-                      {getLocalizedSeriesTitle(
-                        series,
-                        language,
-                        t("billing.seriesFallback", { id: series.series_id }),
-                      )}
+                      {getLocalizedSeriesTitle(series, language, t("billing.seriesFallback", { id: index + 1 }))}
                     </span>
                     <span data-label={t("billing.freeEpisodes")}>
                       {formatNumber(series.total_free_views, locale)}
