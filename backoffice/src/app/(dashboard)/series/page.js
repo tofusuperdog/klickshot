@@ -362,28 +362,12 @@ export default function SeriesPage() {
 
                   {/* Statistics */}
                   <div className="w-[230px] shrink-0 py-1 text-[16px] text-gray-300 font-light flex flex-col justify-center space-y-2">
+                    <div className="flex justify-between">
+                      <span>ทั้งหมด</span>
+                      <span>{s.total_episodes} ตอน</span>
+                    </div>
                     {s.status === 'published' ? (
-                      <div className="flex justify-between">
-                        <span>เผยแพร่</span>
-                        <span>3 วัน</span>
-                      </div>
-                    ) : (
-                      <div className="flex justify-between">
-                        <span>ทั้งหมด</span>
-                        <span>{s.total_episodes} ตอน</span>
-                      </div>
-                    )}
-                    {s.status === 'published' ? (
-                      <>
-                        <div className="flex justify-between">
-                          <span>ยอดวิว</span>
-                          <span className="text-white">999 ตอน</span>
-                        </div>
-                        <div className="flex justify-between pb-1">
-                          <span>ยอดซื้อ</span>
-                          <span className="text-white">300 ตอน</span>
-                        </div>
-                      </>
+                      null
                     ) : (
                       <>
                         <div className="flex justify-between">

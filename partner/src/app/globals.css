@@ -29,7 +29,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -56,8 +57,8 @@ a {
 }
 
 .partner-billing-header {
-  margin-bottom: 22px;
-  min-height: 214px;
+  margin-bottom: 18px;
+  min-height: 150px;
   background:
     radial-gradient(circle at 86% 18%, rgba(255, 211, 108, 0.18), transparent 26%),
     linear-gradient(135deg, rgba(5, 24, 21, 0.96) 0%, rgba(8, 43, 37, 0.94) 54%, rgba(13, 58, 48, 0.88) 100%);
@@ -144,7 +145,9 @@ a {
   font-size: 13px;
 }
 
-.partner-billing-card-main button {
+.partner-billing-card-main button,
+.partner-billing-card-main a,
+.partner-billing-back-link {
   flex: 0 0 auto;
   border: 1px solid rgba(63, 242, 198, 0.36);
   border-radius: 8px;
@@ -155,10 +158,17 @@ a {
   transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
-.partner-billing-card-main button:hover {
+.partner-billing-card-main button:hover,
+.partner-billing-card-main a:hover,
+.partner-billing-back-link:hover {
   background: rgba(63, 242, 198, 0.18);
   color: #ffffff;
   transform: translateY(-1px);
+}
+
+.partner-billing-back-link {
+  align-self: flex-start;
+  white-space: nowrap;
 }
 
 .partner-billing-metrics {
@@ -198,8 +208,11 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.64);
+  background:
+    radial-gradient(circle at 50% 34%, rgba(63, 242, 198, 0.06), transparent 34%),
+    rgba(0, 0, 0, 0.38);
   padding: 24px;
+  backdrop-filter: blur(16px) grayscale(0.78) brightness(0.82);
 }
 
 .partner-billing-detail-modal {
@@ -241,6 +254,14 @@ a {
 .partner-billing-detail-summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 22px;
+}
+
+.partner-billing-detail-page-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8, 25, 22, 0.72);
+  padding: 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
 }
 
 .partner-billing-series-table {
@@ -295,6 +316,13 @@ a {
 }
 
 @media (max-width: 900px) {
+  .partner-billing-detail-backdrop {
+    background:
+      radial-gradient(circle at 50% 28%, rgba(63, 242, 198, 0.05), transparent 32%),
+      rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(18px) grayscale(0.82) brightness(0.78);
+  }
+
   .partner-billing-summary,
   .partner-billing-metrics,
   .partner-billing-detail-summary {
@@ -311,6 +339,59 @@ a {
   .partner-billing-metrics,
   .partner-billing-detail-summary {
     grid-template-columns: 1fr;
+  }
+
+  .partner-billing-detail-page-panel {
+    padding: 12px;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-table {
+    min-width: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-head {
+    display: none;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(4, 18, 16, 0.72);
+    padding: 14px;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-row span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0;
+    text-align: right;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-row span:first-child {
+    display: block;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(167, 255, 217, 0.14);
+    text-align: left;
+    line-height: 1.45;
+  }
+
+  .partner-billing-detail-page-panel .partner-billing-series-row span:not(:first-child)::before {
+    flex: 0 0 auto;
+    content: attr(data-label);
+    color: rgba(228, 242, 237, 0.58);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
   }
 
   .partner-billing-detail-modal {
@@ -844,6 +925,49 @@ h1 {
   font-size: 18px;
 }
 
+.partner-language-switcher {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.partner-language-switcher span {
+  color: rgba(221, 238, 232, 0.64);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.partner-language-switcher select {
+  width: 100%;
+  min-height: 42px;
+  cursor: pointer;
+  border: 1px solid rgba(167, 255, 217, 0.2);
+  border-radius: 8px;
+  background: rgba(5, 26, 23, 0.68);
+  color: rgba(237, 249, 245, 0.92);
+  padding: 0 12px;
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.partner-language-switcher select:focus,
+.partner-language-switcher select:hover {
+  border-color: rgba(167, 255, 217, 0.42);
+  background: rgba(8, 40, 35, 0.82);
+  box-shadow: 0 0 0 3px rgba(63, 242, 198, 0.1);
+}
+
+.login-language-switcher {
+  width: min(100%, 180px);
+  margin: 0 0 10px;
+}
+
+.mobile-language-switcher {
+  margin-top: 0;
+}
+
 .app-nav {
   display: grid;
   gap: 12px;
@@ -1353,15 +1477,15 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  min-height: 244px;
+  gap: 18px;
+  min-height: 168px;
   border: 1px solid rgba(167, 255, 217, 0.24);
   border-radius: 8px;
   background:
     radial-gradient(ellipse at 86% 58%, rgba(255, 211, 108, 0.36), transparent 18%),
     radial-gradient(ellipse at 75% 48%, rgba(63, 242, 198, 0.2), transparent 32%),
     linear-gradient(105deg, rgba(5, 21, 18, 0.92) 0%, rgba(7, 42, 36, 0.72) 58%, rgba(5, 21, 18, 0.86) 100%);
-  padding: 34px 38px;
+  padding: 24px 30px;
   box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -1387,10 +1511,10 @@ h1 {
 }
 
 .content-header h1 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   max-width: none;
-  font-size: clamp(38px, 5vw, 56px);
-  line-height: 1.05;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.12;
   text-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
 }
 
@@ -1398,7 +1522,7 @@ h1 {
   max-width: 760px;
   margin-bottom: 0;
   color: rgba(228, 242, 237, 0.72);
-  line-height: 1.7;
+  line-height: 1.55;
 }
 
 .mock-badge {
@@ -1569,7 +1693,7 @@ h1 {
 }
 
 .partner-feedback-header {
-  min-height: 214px;
+  min-height: 150px;
   background:
     radial-gradient(circle at 86% 18%, rgba(255, 211, 108, 0.18), transparent 26%),
     linear-gradient(135deg, rgba(5, 24, 21, 0.96) 0%, rgba(8, 43, 37, 0.94) 54%, rgba(13, 58, 48, 0.88) 100%);
@@ -1752,7 +1876,7 @@ h1 {
 }
 
 .partner-dashboard-header {
-  min-height: 214px;
+  min-height: 150px;
   background: linear-gradient(135deg, rgba(5, 24, 21, 0.96) 0%, rgba(8, 43, 37, 0.92) 54%, rgba(13, 58, 48, 0.88) 100%);
 }
 
@@ -1929,7 +2053,7 @@ h1 {
 }
 
 .partner-series-header {
-  min-height: 214px;
+  min-height: 150px;
   background: linear-gradient(135deg, rgba(5, 24, 21, 0.96) 0%, rgba(8, 43, 37, 0.92) 54%, rgba(13, 58, 48, 0.88) 100%);
 }
 
@@ -2352,6 +2476,12 @@ h1 {
       linear-gradient(180deg, rgba(13, 55, 45, 0.5), rgba(4, 18, 16, 0.1));
   }
 
+  .login-language-switcher {
+    margin-right: auto;
+    margin-left: auto;
+    text-align: left;
+  }
+
   .brand-topline {
     margin: 0 auto;
     padding: 8px 14px;
@@ -2441,7 +2571,17 @@ h1 {
 
 @media (max-width: 1024px) {
   .partner-app {
+    align-content: start;
     grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .app-content:has(.partner-billing-detail-backdrop) {
+    z-index: 120;
+  }
+
+  .partner-billing-detail-backdrop {
+    z-index: 130;
   }
 
   .mobile-topbar {
@@ -2451,12 +2591,14 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 74px;
+    height: 100px;
+    min-height: 100px;
+    max-height: 100px;
     border-bottom: 1px solid rgba(167, 255, 217, 0.16);
     background:
       radial-gradient(circle at 16% 0%, rgba(63, 242, 198, 0.2), transparent 34%),
       rgba(3, 20, 18, 0.92);
-    padding: 10px 18px;
+    padding: 16px 24px;
     backdrop-filter: blur(14px);
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
   }
@@ -2465,7 +2607,7 @@ h1 {
     position: relative;
     display: block;
     width: 154px;
-    height: 54px;
+    height: 58px;
   }
 
   .mobile-logo img {
@@ -2489,7 +2631,7 @@ h1 {
   .mobile-menu-backdrop {
     position: fixed;
     z-index: 11;
-    inset: 74px 0 0;
+    inset: 100px 0 0;
     display: block;
     background: rgba(1, 10, 9, 0.54);
     backdrop-filter: blur(8px);
@@ -2585,12 +2727,18 @@ h1 {
   }
 
   .app-content {
+    align-self: start;
     padding: 20px;
   }
 
   .content-header {
     flex-direction: column;
-    padding: 22px;
+    min-height: 132px;
+    padding: 18px 20px;
+  }
+
+  .content-header h1 {
+    font-size: 30px;
   }
 
   .mock-grid {
@@ -2809,8 +2957,13 @@ h1 {
     padding: 14px;
   }
 
+  .content-header {
+    min-height: auto;
+    padding: 16px;
+  }
+
   .content-header h1 {
-    font-size: 30px;
+    font-size: 26px;
   }
 
   .placeholder-panel {
@@ -2976,3 +3129,13 @@ h1 {
     animation: none;
   }
 }
+  .mobile-topbar {
+    height: 74px;
+    min-height: 74px;
+    max-height: 74px;
+    padding: 10px 18px;
+  }
+
+  .mobile-menu-backdrop {
+    inset: 74px 0 0;
+  }

@@ -12,25 +12,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { usePartnerLanguage } from "@/components/PartnerLanguageProvider";
 
-const rangeOptions = [
-  { value: 1, label: "วันนี้" },
-  { value: 7, label: "7 วัน" },
-  { value: 14, label: "14 วัน" },
-];
-
-const detailRangeOptions = [
-  { value: 1, label: "วันนี้" },
-  { value: 7, label: "7 วัน" },
-  { value: 14, label: "14 วัน" },
-];
+const rangeOptions = [1, 7, 14];
+const detailRangeOptions = [1, 7, 14];
 
 function toNumber(value) {
   return Number(value || 0);
 }
 
-function formatNumber(value) {
-  return toNumber(value).toLocaleString();
+function formatNumber(value, locale) {
+  return toNumber(value).toLocaleString(locale);
 }
 
 function PosterFallback() {
@@ -78,24 +70,25 @@ function getFreeAreas(rows) {
   return areas;
 }
 
-function DetailTooltip({ active, payload, label }) {
+function DetailTooltip({ active, payload, label, locale, t }) {
   if (!active || !payload?.length) return null;
 
   const isFree = Boolean(payload[0]?.payload?.is_free);
-  const episodeLabel = `EP${label}${isFree ? " (ฟรี)" : ""}`;
+  const episodeLabel = `EP${label}${isFree ? t("series.freeEpisodeSuffix") : ""}`;
 
   return (
     <div className="partner-series-detail-tooltip">
       <p>{episodeLabel}</p>
       <span>
-        <small>ยอดดูตอนนี้</small>
-        <strong>{formatNumber(payload[0]?.value)}</strong>
+        <small>{t("series.episodeThisViews")}</small>
+        <strong>{formatNumber(payload[0]?.value, locale)}</strong>
       </span>
     </div>
   );
 }
 
 export default function PartnerSeriesList() {
+  const { locale, t } = usePartnerLanguage();
   const [dateRange, setDateRange] = useState(1);
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,7 +116,7 @@ export default function PartnerSeriesList() {
 
         if (!response.ok) {
           setRows([]);
-          setError(data.error || "ไม่สามารถดึงข้อมูลซีรีส์ได้");
+          setError(data.error || t("series.loadError"));
           return;
         }
 
@@ -131,7 +124,7 @@ export default function PartnerSeriesList() {
       } catch {
         if (!isCurrent) return;
         setRows([]);
-        setError("ไม่สามารถเชื่อมต่อข้อมูลซีรีส์ได้");
+        setError(t("series.connectError"));
       } finally {
         if (isCurrent) {
           setIsLoading(false);
@@ -144,7 +137,7 @@ export default function PartnerSeriesList() {
     return () => {
       isCurrent = false;
     };
-  }, [dateRange]);
+  }, [dateRange, t]);
 
   useEffect(() => {
     if (!selectedSeries) return undefined;
@@ -169,7 +162,7 @@ export default function PartnerSeriesList() {
 
         if (!response.ok) {
           setDetailRows([]);
-          setDetailError(data.error || "ไม่สามารถดึงข้อมูลรายละเอียดซีรีส์ได้");
+          setDetailError(data.error || t("series.detailLoadError"));
           return;
         }
 
@@ -177,7 +170,7 @@ export default function PartnerSeriesList() {
       } catch {
         if (!isCurrent) return;
         setDetailRows([]);
-        setDetailError("ไม่สามารถเชื่อมต่อข้อมูลรายละเอียดซีรีส์ได้");
+        setDetailError(t("series.detailConnectError"));
       } finally {
         if (isCurrent) {
           setIsDetailLoading(false);
@@ -190,7 +183,7 @@ export default function PartnerSeriesList() {
     return () => {
       isCurrent = false;
     };
-  }, [detailRange, selectedSeries]);
+  }, [detailRange, selectedSeries, t]);
 
   const summary = useMemo(
     () =>
@@ -213,44 +206,44 @@ export default function PartnerSeriesList() {
       <header className="content-header partner-series-header">
         <div>
           <p className="section-label">Klickshot Partner</p>
-          <h1>ซีรีส์ของฉัน</h1>
-          <p>ดูยอดของพาร์ทเนอร์นี้ แยกฟรีและเสียเงินตามช่วงเวลาที่เลือก</p>
+          <h1>{t("series.title")}</h1>
+          <p>{t("series.copy")}</p>
         </div>
       </header>
 
       <section className="partner-series-toolbar">
         <div className="partner-series-summary">
           <span>
-            <small>ซีรีส์ทั้งหมด</small>
-            <em>ของพาร์ทเนอร์นี้</em>
-            <strong>{formatNumber(summary.series)}</strong>
+            <small>{t("series.totalSeries")}</small>
+            <em>{t("dashboard.ofThisPartner")}</em>
+            <strong>{formatNumber(summary.series, locale)}</strong>
           </span>
           <span>
-            <small>ยอดรวม</small>
-            <em>ฟรี + เสียเงิน</em>
-            <strong>{formatNumber(summary.total)}</strong>
+            <small>{t("series.total")}</small>
+            <em>{t("dashboard.freePaid")}</em>
+            <strong>{formatNumber(summary.total, locale)}</strong>
           </span>
           <span>
-            <small>ฟรี</small>
-            <em>ของพาร์ทเนอร์นี้</em>
-            <strong>{formatNumber(summary.free)}</strong>
+            <small>{t("common.free")}</small>
+            <em>{t("dashboard.ofThisPartner")}</em>
+            <strong>{formatNumber(summary.free, locale)}</strong>
           </span>
           <span>
-            <small>เสียเงิน</small>
-            <em>ของพาร์ทเนอร์นี้</em>
-            <strong>{formatNumber(summary.paid)}</strong>
+            <small>{t("common.paid")}</small>
+            <em>{t("dashboard.ofThisPartner")}</em>
+            <strong>{formatNumber(summary.paid, locale)}</strong>
           </span>
         </div>
 
-        <div className="partner-series-filter" aria-label="เลือกช่วงเวลา">
+        <div className="partner-series-filter" aria-label={t("series.dateRange")}>
           {rangeOptions.map((option) => (
             <button
-              key={option.value}
+              key={option}
               type="button"
-              className={dateRange === option.value ? "active" : ""}
-              onClick={() => setDateRange(option.value)}
+              className={dateRange === option ? "active" : ""}
+              onClick={() => setDateRange(option)}
             >
-              {option.label}
+              {option === 1 ? t("common.today") : t("common.days", { count: option })}
             </button>
           ))}
         </div>
@@ -260,16 +253,16 @@ export default function PartnerSeriesList() {
 
       <section className="partner-series-list" aria-busy={isLoading}>
         {isLoading ? (
-          <div className="partner-series-state">กำลังโหลดข้อมูล...</div>
+          <div className="partner-series-state">{t("common.loading")}</div>
         ) : rows.length === 0 ? (
-          <div className="partner-series-state">ยังไม่มีซีรีส์ในช่วงเวลานี้</div>
+          <div className="partner-series-state">{t("series.empty")}</div>
         ) : (
           rows.map((series, index) => (
             <article className="partner-series-card" key={series.series_id}>
               <div className="partner-series-rank">#{index + 1}</div>
               <div className="partner-series-poster">
                 {series.poster_url ? (
-                  <img src={series.poster_url} alt={series.title_th || "Series poster"} />
+                  <img src={series.poster_url} alt={series.title_th || t("common.seriesPoster")} />
                 ) : (
                   <PosterFallback />
                 )}
@@ -277,29 +270,30 @@ export default function PartnerSeriesList() {
 
               <div className="partner-series-info">
                 <div>
-                  <h2>{series.title_th || "ไม่มีชื่อภาษาไทย"}</h2>
-                  <p>{series.title_en || "ไม่มีชื่อภาษาอังกฤษ"}</p>
+                  <h2>{series.title_th || t("common.noThaiTitle")}</h2>
+                  <p>{series.title_en || t("common.noEnglishTitle")}</p>
+                  <p>{series.title_cn || t("common.noChineseTitle")}</p>
                 </div>
                 <button type="button" onClick={() => setSelectedSeries(series)}>
-                  รายละเอียด
+                  {t("common.details")}
                 </button>
               </div>
 
               <div className="partner-series-metrics">
                 <span>
-                  <small>ยอดรวม</small>
-                  <em>ฟรี + เสียเงิน</em>
-                  <strong>{formatNumber(series.total_views)}</strong>
+                  <small>{t("series.total")}</small>
+                  <em>{t("dashboard.freePaid")}</em>
+                  <strong>{formatNumber(series.total_views, locale)}</strong>
                 </span>
                 <span>
-                  <small>ฟรี</small>
-                  <em>ของเรื่องนี้</em>
-                  <strong>{formatNumber(series.free_views)}</strong>
+                  <small>{t("common.free")}</small>
+                  <em>{t("series.thisSeries")}</em>
+                  <strong>{formatNumber(series.free_views, locale)}</strong>
                 </span>
                 <span>
-                  <small>เสียเงิน</small>
-                  <em>ของเรื่องนี้</em>
-                  <strong>{formatNumber(series.paid_views)}</strong>
+                  <small>{t("common.paid")}</small>
+                  <em>{t("series.thisSeries")}</em>
+                  <strong>{formatNumber(series.paid_views, locale)}</strong>
                 </span>
               </div>
             </article>
@@ -322,29 +316,30 @@ export default function PartnerSeriesList() {
           >
             <div className="partner-series-detail-head">
               <div>
-                <p className="section-label">Episode views</p>
-                <h2 id="partner-series-detail-title">{selectedSeries.title_th || "รายละเอียดซีรีส์"}</h2>
-                <span>{selectedSeries.title_en || "ไม่มีชื่อภาษาอังกฤษ"}</span>
+                <p className="section-label">{t("series.episodeViewsKicker")}</p>
+                <h2 id="partner-series-detail-title">{selectedSeries.title_th || t("series.detailTitle")}</h2>
+                <span>{selectedSeries.title_en || t("common.noEnglishTitle")}</span>
+                <span>{selectedSeries.title_cn || t("common.noChineseTitle")}</span>
               </div>
               <button
                 type="button"
                 className="partner-series-detail-close"
-                aria-label="ปิดรายละเอียด"
+                aria-label={t("series.closeDetails")}
                 onClick={() => setSelectedSeries(null)}
               >
                 ×
               </button>
             </div>
 
-            <div className="partner-series-detail-controls" aria-label="เลือกช่วงเวลา">
+            <div className="partner-series-detail-controls" aria-label={t("series.dateRange")}>
               {detailRangeOptions.map((option) => (
                 <button
-                  key={option.value}
+                  key={option}
                   type="button"
-                  className={detailRange === option.value ? "active" : ""}
-                  onClick={() => setDetailRange(option.value)}
+                  className={detailRange === option ? "active" : ""}
+                  onClick={() => setDetailRange(option)}
                 >
-                  {option.label}
+                  {option === 1 ? t("common.today") : t("common.days", { count: option })}
                 </button>
               ))}
             </div>
@@ -352,15 +347,15 @@ export default function PartnerSeriesList() {
             {detailError ? <p className="partner-series-detail-error">{detailError}</p> : null}
 
             <div className="partner-series-detail-chart-title">
-              <p className="section-label">Episode analytics</p>
-              <h3>ยอดรับชมรายตอน</h3>
+              <p className="section-label">{t("series.episodeAnalyticsKicker")}</p>
+              <h3>{t("series.episodeViewsTitle")}</h3>
             </div>
 
             <div className="partner-series-detail-chart" aria-busy={isDetailLoading}>
               {isDetailLoading ? (
-                <div className="partner-series-detail-state">กำลังโหลดข้อมูล...</div>
+                <div className="partner-series-detail-state">{t("common.loading")}</div>
               ) : episodeRows.length === 0 ? (
-                <div className="partner-series-detail-state">ยังไม่มีข้อมูลรายตอนในช่วงเวลานี้</div>
+                <div className="partner-series-detail-state">{t("series.episodeEmpty")}</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={episodeRows} margin={{ top: 10, right: 22, left: 4, bottom: 6 }}>
@@ -390,17 +385,17 @@ export default function PartnerSeriesList() {
                       width={46}
                       allowDecimals={false}
                     />
-                    <Tooltip content={<DetailTooltip />} />
+                    <Tooltip content={<DetailTooltip locale={locale} t={t} />} />
                     <Legend
                       payload={[
-                        { value: "ยอดรับชมรายตอน", type: "plainline", color: "#7dd3fc" },
-                        { value: "แถบเขียว = ตอนฟรี", type: "square", color: "rgba(63, 242, 198, 0.22)" },
+                        { value: t("series.episodeViewsTitle"), type: "plainline", color: "#7dd3fc" },
+                        { value: t("series.freeAreaLegend"), type: "square", color: "rgba(63, 242, 198, 0.22)" },
                       ]}
                       wrapperStyle={{ color: "rgba(228,242,237,0.72)", fontSize: 12, paddingTop: 10 }}
                     />
                     <Line
                       type="monotone"
-                      name="ยอดรับชมรายตอน"
+                      name={t("series.episodeViewsTitle")}
                       dataKey="views"
                       stroke="#7dd3fc"
                       strokeWidth={3}

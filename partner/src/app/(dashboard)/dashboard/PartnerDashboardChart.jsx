@@ -11,18 +11,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { usePartnerLanguage } from "@/components/PartnerLanguageProvider";
 
-const rangeOptions = [
-  { value: 7, label: "7 วัน" },
-  { value: 14, label: "14 วัน" },
-  { value: 30, label: "30 วัน" },
-];
+const rangeOptions = [7, 14, 30];
 
 const lineSeries = [
-  { key: "platform_views", label: "รวมทุกพาร์ทเนอร์", color: "#7dd3fc" },
-  { key: "partner_views", label: "พาร์ทเนอร์นี้", color: "#a7ffd9" },
-  { key: "partner_free_views", label: "ฟรี", color: "#34d399" },
-  { key: "partner_paid_views", label: "เสียเงิน", color: "#ffd36c" },
+  { key: "platform_views", labelKey: "dashboard.allPartners", color: "#7dd3fc" },
+  { key: "partner_views", labelKey: "dashboard.thisPartner", color: "#a7ffd9" },
+  { key: "partner_free_views", labelKey: "common.free", color: "#34d399" },
+  { key: "partner_paid_views", labelKey: "common.paid", color: "#ffd36c" },
 ];
 
 function formatDateLabel(value) {
@@ -51,18 +48,18 @@ function sumRows(rows, key) {
   return rows.reduce((sum, row) => sum + toNumber(row[key]), 0);
 }
 
-function CustomTooltip({ active, payload, label }) {
+function CustomTooltip({ active, payload, label, locale, t }) {
   if (!active || !payload?.length) return null;
 
   return (
     <div className="partner-chart-tooltip">
-      <p>วันที่ {label}</p>
+      <p>{t("dashboard.tooltipDate", { date: label })}</p>
       <div>
         {payload.map((item) => (
           <span key={item.dataKey}>
             <i style={{ backgroundColor: item.color }} />
             <small>{item.name}</small>
-            <strong>{Number(item.value).toLocaleString()}</strong>
+            <strong>{Number(item.value).toLocaleString(locale)}</strong>
           </span>
         ))}
       </div>
@@ -71,6 +68,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function PartnerDashboardChart() {
+  const { locale, t } = usePartnerLanguage();
   const [dateRange, setDateRange] = useState(7);
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,7 +91,7 @@ export default function PartnerDashboardChart() {
 
         if (!response.ok) {
           setRows([]);
-          setError(data.error || "ไม่สามารถดึงข้อมูลกราฟได้");
+          setError(data.error || t("dashboard.chartLoadError"));
           return;
         }
 
@@ -101,7 +99,7 @@ export default function PartnerDashboardChart() {
       } catch {
         if (!isCurrent) return;
         setRows([]);
-        setError("ไม่สามารถเชื่อมต่อข้อมูลกราฟได้");
+        setError(t("dashboard.chartConnectError"));
       } finally {
         if (isCurrent) {
           setIsLoading(false);
@@ -114,7 +112,7 @@ export default function PartnerDashboardChart() {
     return () => {
       isCurrent = false;
     };
-  }, [dateRange]);
+  }, [dateRange, t]);
 
   const chartRows = useMemo(() => buildChartRows(rows), [rows]);
   const summary = useMemo(
@@ -132,48 +130,48 @@ export default function PartnerDashboardChart() {
       <header className="content-header partner-dashboard-header">
         <div>
           <p className="section-label">Klickshot Partner</p>
-          <h1>ภาพรวมผลงาน</h1>
-          <p>ติดตามยอดดูรายวันของผลงาน แยกตอนฟรีและตอนเสียเงิน ตามข้อมูลจริงของพาร์ทเนอร์</p>
+          <h1>{t("dashboard.title")}</h1>
+          <p>{t("dashboard.copy")}</p>
         </div>
       </header>
 
-      <section className="partner-summary-grid" aria-label="สรุปยอดดู">
+      <section className="partner-summary-grid" aria-label={t("dashboard.summaryLabel")}>
         <article>
-          <span>รวมทุกพาร์ทเนอร์</span>
-          <small>ยอดดูทั้งหมด</small>
-          <strong>{summary.platform.toLocaleString()}</strong>
+          <span>{t("dashboard.allPartners")}</span>
+          <small>{t("dashboard.totalViews")}</small>
+          <strong>{summary.platform.toLocaleString(locale)}</strong>
         </article>
         <article>
-          <span>พาร์ทเนอร์นี้</span>
-          <small>ฟรี + เสียเงิน</small>
-          <strong>{summary.partner.toLocaleString()}</strong>
+          <span>{t("dashboard.thisPartner")}</span>
+          <small>{t("dashboard.freePaid")}</small>
+          <strong>{summary.partner.toLocaleString(locale)}</strong>
         </article>
         <article>
-          <span>ฟรี</span>
-          <small>ของพาร์ทเนอร์นี้</small>
-          <strong>{summary.free.toLocaleString()}</strong>
+          <span>{t("common.free")}</span>
+          <small>{t("dashboard.ofThisPartner")}</small>
+          <strong>{summary.free.toLocaleString(locale)}</strong>
         </article>
         <article>
-          <span>เสียเงิน</span>
-          <small>ของพาร์ทเนอร์นี้</small>
-          <strong>{summary.paid.toLocaleString()}</strong>
+          <span>{t("common.paid")}</span>
+          <small>{t("dashboard.ofThisPartner")}</small>
+          <strong>{summary.paid.toLocaleString(locale)}</strong>
         </article>
       </section>
 
       <section className="partner-chart-panel">
         <div className="partner-chart-head">
           <div>
-            <p className="section-label">Streaming graph</p>
-            <h2>กราฟการสตรีมมิ่ง</h2>
+            <p className="section-label">{t("dashboard.graphKicker")}</p>
+            <h2>{t("dashboard.graphTitle")}</h2>
           </div>
           <select
             value={dateRange}
             onChange={(event) => setDateRange(Number(event.target.value))}
-            aria-label="เลือกช่วงวันที่"
+            aria-label={t("dashboard.dateRange")}
           >
             {rangeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+              <option key={option} value={option}>
+                {t("common.days", { count: option })}
               </option>
             ))}
           </select>
@@ -183,10 +181,10 @@ export default function PartnerDashboardChart() {
 
         <div className="partner-chart-wrap" aria-busy={isLoading}>
           {isLoading ? (
-            <div className="partner-chart-state">กำลังโหลดข้อมูล...</div>
+            <div className="partner-chart-state">{t("common.loading")}</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartRows} margin={{ top: 8, right: 18, left: 6, bottom: 4 }}>
+              <LineChart data={chartRows} margin={{ top: 8, right: 18, left: 10, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,255,217,0.12)" />
                 <XAxis
                   dataKey="date"
@@ -197,9 +195,16 @@ export default function PartnerDashboardChart() {
                 <YAxis
                   stroke="rgba(228,242,237,0.58)"
                   tick={{ fill: "rgba(228,242,237,0.68)", fontSize: 12 }}
-                  width={46}
+                  width={64}
+                  label={{
+                    value: t("dashboard.yAxisEpisodes"),
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: "rgba(228,242,237,0.68)",
+                    fontSize: 12,
+                  }}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip locale={locale} t={t} />} />
                 <Legend
                   iconType="plainline"
                   wrapperStyle={{ color: "rgba(228,242,237,0.72)", fontSize: 12, paddingTop: 10 }}
@@ -208,7 +213,7 @@ export default function PartnerDashboardChart() {
                   <Line
                     key={series.key}
                     type="monotone"
-                    name={series.label}
+                    name={t(series.labelKey)}
                     dataKey={series.key}
                     stroke={series.color}
                     strokeWidth={3}

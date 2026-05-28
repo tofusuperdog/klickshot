@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LanguageSwitcher, usePartnerLanguage } from "@/components/PartnerLanguageProvider";
 
 export default function LoginPage() {
+  const { t } = usePartnerLanguage();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -56,7 +58,7 @@ export default function LoginPage() {
     setError("");
 
     if (!username.trim() || !password.trim()) {
-      setError("กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน");
+      setError(t("login.missingCredentials"));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (!response.ok || !data.producer) {
-      setError(data.error || "ไม่สามารถเข้าสู่ระบบได้");
+      setError(data.error || t("login.failed"));
       return;
     }
 
@@ -87,7 +89,7 @@ export default function LoginPage() {
   if (isCheckingSession) {
     return (
       <main className="partner-page">
-        <div className="loading-panel">กำลังตรวจสอบสถานะการเข้าสู่ระบบ...</div>
+        <div className="loading-panel">{t("login.checkingSession")}</div>
       </main>
     );
   }
@@ -105,9 +107,11 @@ export default function LoginPage() {
 
       <section className="login-shell" aria-label="Klickshot Partner login">
         <div className="brand-panel">
+          <LanguageSwitcher className="login-language-switcher" />
+
           <div className="brand-topline">
             <span className="status-dot" />
-            Content Producer Portal
+            {t("login.brandTopline")}
           </div>
 
           <div className="logo-wrap">
@@ -121,11 +125,10 @@ export default function LoginPage() {
           </div>
 
           <div className="headline-block">
-            <p className="section-label">Partner analytics</p>
-            <h1>Track how your films perform on Klickshot.</h1>
+            <p className="section-label">{t("login.analyticsLabel")}</p>
+            <h1>{t("login.headline")}</h1>
             <p className="brand-copy">
-              A focused workspace for content producers to review title
-              performance, view trends, and monitor audience response.
+              {t("login.copy")}
             </p>
           </div>
         </div>
@@ -133,16 +136,16 @@ export default function LoginPage() {
         <div className="form-panel">
           <div className="form-header">
             <p className="section-label">Klickshot Partner</p>
-            <h2>ระบบผู้ผลิตคอนเทนต์</h2>
+            <h2>{t("login.formTitle")}</h2>
           </div>
 
           <form className="login-form" onSubmit={handleLogin}>
             <label className="field">
-              <span>ชื่อผู้ใช้งาน</span>
+              <span>{t("login.username")}</span>
               <input
                 type="text"
                 name="username"
-                placeholder="กรอกชื่อผู้ใช้งาน"
+                placeholder={t("login.usernamePlaceholder")}
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
@@ -150,12 +153,12 @@ export default function LoginPage() {
             </label>
 
             <label className="field">
-              <span>รหัสผ่าน</span>
+              <span>{t("login.password")}</span>
               <div className="password-control">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="กรอกรหัสผ่าน"
+                  placeholder={t("login.passwordPlaceholder")}
                   autoComplete="current-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -164,7 +167,7 @@ export default function LoginPage() {
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword((current) => !current)}
-                  aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+                  aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                   aria-pressed={showPassword}
                 >
                   {showPassword ? (
@@ -187,19 +190,19 @@ export default function LoginPage() {
                   checked={remember}
                   onChange={(event) => setRemember(event.target.checked)}
                 />
-                <span>จดจำการเข้าสู่ระบบ</span>
+                <span>{t("login.remember")}</span>
               </label>
             </div>
 
             {error && <p className="login-error">{error}</p>}
 
             <button type="submit" className="login-button" disabled={isLoading}>
-              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+              {isLoading ? t("login.submitting") : t("login.submit")}
             </button>
           </form>
 
           <p className="support-note">
-            หากลืมรหัสผ่านหรือยังไม่มีบัญชี กรุณาติดต่อ{" "}
+            {t("login.support")}{" "}
             <a href="mailto:klickshot.official@gmail.com">
               klickshot.official@gmail.com
             </a>

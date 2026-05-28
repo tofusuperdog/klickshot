@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePartnerLanguage } from "@/components/PartnerLanguageProvider";
 
 function SendIcon() {
   return (
@@ -30,6 +31,7 @@ function CheckIcon() {
 }
 
 export default function PartnerFeedbackForm() {
+  const { t } = usePartnerLanguage();
   const [form, setForm] = useState({
     category: "feedback",
     email: "",
@@ -82,7 +84,7 @@ export default function PartnerFeedbackForm() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.error || "ไม่สามารถส่งข้อความได้");
+        throw new Error(data.error || t("feedback.failed"));
       }
 
       setForm({
@@ -92,12 +94,12 @@ export default function PartnerFeedbackForm() {
       });
       setSubmitStatus("idle");
       setNotification({
-        title: "ส่งข้อความแล้ว",
-        message: "ทีมงานได้รับข้อความของคุณเรียบร้อยแล้ว",
+        title: t("feedback.successTitle"),
+        message: t("feedback.successMessage"),
       });
     } catch (error) {
       setSubmitStatus("error");
-      setSubmitMessage(error?.message || "ไม่สามารถส่งข้อความได้");
+      setSubmitMessage(error?.message || t("feedback.failed"));
     }
   };
 
@@ -105,29 +107,26 @@ export default function PartnerFeedbackForm() {
     <>
       <header className="content-header partner-feedback-header">
         <div>
-          <p className="section-label">Partner feedback</p>
-          <h1>Feedback / ข้อเสนอแนะ</h1>
-          <p>ส่งคำติชม ข้อเสนอแนะ หรือแจ้งปัญหาการใช้งาน Partner Portal ให้ทีม Klickshot</p>
+          <p className="section-label">{t("feedback.kicker")}</p>
+          <h1>{t("feedback.title")}</h1>
+          <p>{t("feedback.copy")}</p>
         </div>
       </header>
 
       <section className="partner-feedback-shell">
         <div className="partner-feedback-intro">
-          <p className="section-label">ส่งข้อความถึงทีมงาน</p>
-          <h2>ช่วยให้เราปรับ Partner Portal ให้ใช้งานได้ดีขึ้น</h2>
-          <p>
-            กรอกอีเมลติดต่อกลับ และเล่ารายละเอียดให้ชัดเจน
-            ระบบจะแนบข้อมูลบัญชีพาร์ทเนอร์ของคุณให้อัตโนมัติ
-          </p>
+          <p className="section-label">{t("feedback.introKicker")}</p>
+          <h2>{t("feedback.introTitle")}</h2>
+          <p>{t("feedback.introCopy")}</p>
           <div className="partner-feedback-note">
-            <strong>ข้อมูลที่ส่งจะถูกจัดเก็บเป็น ticket</strong>
-            <span>ทีมงานจะใช้เพื่อตรวจสอบปัญหาและพัฒนาระบบ Partner Portal</span>
+            <strong>{t("feedback.noteTitle")}</strong>
+            <span>{t("feedback.noteCopy")}</span>
           </div>
         </div>
 
         <form className="partner-feedback-form" onSubmit={handleSubmit}>
           <label className="partner-feedback-field">
-            <span>อีเมลติดต่อกลับ</span>
+            <span>{t("feedback.email")}</span>
             <input
               type="email"
               value={form.email}
@@ -138,12 +137,12 @@ export default function PartnerFeedbackForm() {
           </label>
 
           <label className="partner-feedback-field">
-            <span>ข้อความ</span>
+            <span>{t("feedback.message")}</span>
             <textarea
               rows={7}
               value={form.message}
               onChange={updateForm("message")}
-              placeholder="พิมพ์คำติชม ข้อเสนอแนะ หรือปัญหาที่พบได้ที่นี่"
+              placeholder={t("feedback.messagePlaceholder")}
               required
             />
           </label>
@@ -160,7 +159,7 @@ export default function PartnerFeedbackForm() {
             disabled={submitStatus === "submitting"}
           >
             <SendIcon />
-            {submitStatus === "submitting" ? "กำลังส่ง..." : "ส่งข้อความ"}
+            {submitStatus === "submitting" ? t("feedback.submitting") : t("feedback.submit")}
           </button>
         </form>
       </section>

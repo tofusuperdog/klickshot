@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { LanguageSwitcher, usePartnerLanguage } from "@/components/PartnerLanguageProvider";
 
 const menuItems = [
-  { href: "/dashboard", label: "ภาพรวม", icon: "home" },
-  { href: "/series", label: "ซีรีส์ของฉัน", icon: "series" },
-  { href: "/feedback", label: "ข้อเสนอแนะ", icon: "feedback" },
-  { href: "/billing", label: "สรุปรอบบิล", icon: "billing" },
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: "home" },
+  { href: "/series", labelKey: "nav.series", icon: "series" },
+  { href: "/billing", labelKey: "nav.billing", icon: "billing" },
+  { href: "/feedback", labelKey: "nav.feedback", icon: "feedback" },
 ];
 
 function NavIcon({ name }) {
@@ -123,6 +124,7 @@ function MenuIcon({ isOpen }) {
 }
 
 export default function PartnerShell({ producer, children }) {
+  const { t } = usePartnerLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
@@ -201,22 +203,22 @@ export default function PartnerShell({ producer, children }) {
     }
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+      setPasswordError(t("password.missing"));
       return;
     }
 
     if (/\s/.test(passwordForm.newPassword)) {
-      setPasswordError("รหัสผ่านใหม่ต้องไม่มีช่องว่าง");
+      setPasswordError(t("password.noSpaces"));
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
-      setPasswordError("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร");
+      setPasswordError(t("password.tooShort"));
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+      setPasswordError(t("password.mismatch"));
       return;
     }
 
@@ -238,7 +240,7 @@ export default function PartnerShell({ producer, children }) {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setPasswordError(data.error || "ไม่สามารถเปลี่ยนรหัสผ่านได้");
+        setPasswordError(data.error || t("password.failed"));
         return;
       }
 
@@ -254,8 +256,8 @@ export default function PartnerShell({ producer, children }) {
       });
       setIsPasswordOpen(false);
       setNotification({
-        title: "เปลี่ยนรหัสผ่านสำเร็จ",
-        message: "รหัสผ่าน Partner ถูกอัปเดตเรียบร้อยแล้ว",
+        title: t("password.successTitle"),
+        message: t("password.successMessage"),
       });
     } finally {
       setIsChangingPassword(false);
@@ -296,7 +298,7 @@ export default function PartnerShell({ producer, children }) {
         <button
           type="button"
           className="mobile-menu-button"
-          aria-label={isMobileMenuOpen ? "ปิดเมนู" : "เปิดเมนู"}
+          aria-label={isMobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
           aria-expanded={isMobileMenuOpen}
           aria-controls="mobile-partner-menu"
           onClick={() => setIsMobileMenuOpen((current) => !current)}
@@ -321,13 +323,15 @@ export default function PartnerShell({ producer, children }) {
             <ProducerIcon />
           </div>
           <div className="producer-meta">
-            <span>เข้าสู่ระบบในนาม</span>
+            <span>{t("shell.signedInAs")}</span>
             <strong>{producer.name}</strong>
             <small>@{producer.username}</small>
           </div>
         </button>
 
-        <nav className="app-nav" aria-label="เมนู Partner">
+        <LanguageSwitcher />
+
+        <nav className="app-nav" aria-label={t("nav.menu")}>
           {menuItems.map((item) => (
             <Link
               key={item.href}
@@ -335,14 +339,14 @@ export default function PartnerShell({ producer, children }) {
               href={item.href}
             >
               <NavIcon name={item.icon} />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
 
         <button type="button" className="logout-button" onClick={() => setIsLogoutOpen(true)}>
           <LogoutIcon />
-          ออกจากระบบ
+          {t("shell.logout")}
         </button>
       </aside>
 
@@ -367,7 +371,7 @@ export default function PartnerShell({ producer, children }) {
             className="mobile-menu-panel"
             role="dialog"
             aria-modal="true"
-            aria-label="เมนู Partner"
+            aria-label={t("nav.menu")}
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -382,13 +386,15 @@ export default function PartnerShell({ producer, children }) {
                 <ProducerIcon />
               </div>
               <div className="producer-meta">
-                <span>เข้าสู่ระบบในนาม</span>
+                <span>{t("shell.signedInAs")}</span>
                 <strong>{producer.name}</strong>
                 <small>@{producer.username}</small>
               </div>
             </button>
 
-            <nav className="mobile-nav" aria-label="เมนู Partner บนมือถือ">
+            <LanguageSwitcher className="mobile-language-switcher" />
+
+            <nav className="mobile-nav" aria-label={t("nav.mobileMenu")}>
               {menuItems.map((item) => (
                 <Link
                   key={item.href}
@@ -397,7 +403,7 @@ export default function PartnerShell({ producer, children }) {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <NavIcon name={item.icon} />
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               ))}
             </nav>
@@ -411,7 +417,7 @@ export default function PartnerShell({ producer, children }) {
               }}
             >
               <LogoutIcon />
-              ออกจากระบบ
+              {t("shell.logout")}
             </button>
           </div>
         </div>
@@ -433,10 +439,10 @@ export default function PartnerShell({ producer, children }) {
               <LogoutIcon />
             </div>
             <div>
-              <p className="logout-confirm-kicker">ยืนยันการออกจากระบบ</p>
-              <h2 id="logout-confirm-title">ต้องการออกจากระบบใช่ไหม?</h2>
+              <p className="logout-confirm-kicker">{t("shell.logoutConfirmKicker")}</p>
+              <h2 id="logout-confirm-title">{t("shell.logoutConfirmTitle")}</h2>
               <p className="logout-confirm-copy">
-                เมื่อออกจากระบบแล้ว คุณต้องเข้าสู่ระบบใหม่เพื่อกลับมาจัดการข้อมูล Partner
+                {t("shell.logoutConfirmCopy")}
               </p>
             </div>
             <div className="logout-confirm-actions">
@@ -446,7 +452,7 @@ export default function PartnerShell({ producer, children }) {
                 onClick={() => setIsLogoutOpen(false)}
                 disabled={isLoggingOut}
               >
-                ยกเลิก
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -454,7 +460,7 @@ export default function PartnerShell({ producer, children }) {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
               >
-                {isLoggingOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
+                {isLoggingOut ? t("shell.loggingOut") : t("shell.logout")}
               </button>
             </div>
           </div>
@@ -478,16 +484,16 @@ export default function PartnerShell({ producer, children }) {
               <ProducerIcon />
             </div>
             <div>
-              <p className="password-modal-kicker">จัดการบัญชี Partner</p>
-              <h2 id="password-modal-title">เปลี่ยนรหัสผ่าน</h2>
+              <p className="password-modal-kicker">{t("password.accountKicker")}</p>
+              <h2 id="password-modal-title">{t("password.title")}</h2>
               <p className="password-modal-copy">
-                เปลี่ยนรหัสผ่านของ @{producer.username} โดยกรอกรหัสผ่านปัจจุบันเพื่อยืนยันตัวตนก่อนบันทึก
+                {t("password.copy", { username: producer.username })}
               </p>
             </div>
 
             <div className="password-modal-fields">
               <label>
-                <span>รหัสผ่านปัจจุบัน</span>
+                <span>{t("password.current")}</span>
                 <div className="password-modal-control">
                   <input
                     type={visiblePasswordFields.currentPassword ? "text" : "password"}
@@ -500,7 +506,7 @@ export default function PartnerShell({ producer, children }) {
                     type="button"
                     className="password-modal-toggle"
                     onClick={() => togglePasswordVisibility("currentPassword")}
-                    aria-label={visiblePasswordFields.currentPassword ? "ซ่อนรหัสผ่านปัจจุบัน" : "แสดงรหัสผ่านปัจจุบัน"}
+                    aria-label={visiblePasswordFields.currentPassword ? t("password.hideCurrent") : t("password.showCurrent")}
                     aria-pressed={visiblePasswordFields.currentPassword}
                     disabled={isChangingPassword}
                   >
@@ -509,7 +515,7 @@ export default function PartnerShell({ producer, children }) {
                 </div>
               </label>
               <label>
-                <span>รหัสผ่านใหม่</span>
+                <span>{t("password.new")}</span>
                 <div className="password-modal-control">
                   <input
                     type={visiblePasswordFields.newPassword ? "text" : "password"}
@@ -522,7 +528,7 @@ export default function PartnerShell({ producer, children }) {
                     type="button"
                     className="password-modal-toggle"
                     onClick={() => togglePasswordVisibility("newPassword")}
-                    aria-label={visiblePasswordFields.newPassword ? "ซ่อนรหัสผ่านใหม่" : "แสดงรหัสผ่านใหม่"}
+                    aria-label={visiblePasswordFields.newPassword ? t("password.hideNew") : t("password.showNew")}
                     aria-pressed={visiblePasswordFields.newPassword}
                     disabled={isChangingPassword}
                   >
@@ -531,7 +537,7 @@ export default function PartnerShell({ producer, children }) {
                 </div>
               </label>
               <label>
-                <span>ยืนยันรหัสผ่านใหม่</span>
+                <span>{t("password.confirm")}</span>
                 <div className="password-modal-control">
                   <input
                     type={visiblePasswordFields.confirmPassword ? "text" : "password"}
@@ -544,7 +550,7 @@ export default function PartnerShell({ producer, children }) {
                     type="button"
                     className="password-modal-toggle"
                     onClick={() => togglePasswordVisibility("confirmPassword")}
-                    aria-label={visiblePasswordFields.confirmPassword ? "ซ่อนรหัสผ่านยืนยัน" : "แสดงรหัสผ่านยืนยัน"}
+                    aria-label={visiblePasswordFields.confirmPassword ? t("password.hideConfirm") : t("password.showConfirm")}
                     aria-pressed={visiblePasswordFields.confirmPassword}
                     disabled={isChangingPassword}
                   >
@@ -563,14 +569,14 @@ export default function PartnerShell({ producer, children }) {
                 onClick={closePasswordModal}
                 disabled={isChangingPassword}
               >
-                ยกเลิก
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
                 className="password-modal-primary"
                 disabled={isChangingPassword}
               >
-                {isChangingPassword ? "กำลังบันทึก..." : "บันทึกรหัสผ่าน"}
+                {isChangingPassword ? t("password.saving") : t("password.save")}
               </button>
             </div>
           </form>

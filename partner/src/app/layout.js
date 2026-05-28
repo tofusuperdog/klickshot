@@ -1,4 +1,5 @@
 import "./globals.css";
+import { PartnerLanguageProvider } from "@/components/PartnerLanguageProvider";
 
 export const metadata = {
   title: "Klickshot Partner",
@@ -12,8 +13,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="th">
+      <body>
+        <PartnerLanguageProvider>{children}</PartnerLanguageProvider>
+      </body>
     </html>
   );
 }

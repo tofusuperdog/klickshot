@@ -50,7 +50,7 @@ function formatReportNameDate(value) {
 
 function buildReportName(startDate, endDate) {
   if (!startDate || !endDate) return '';
-  return `รายงาน ${formatReportNameDate(startDate)} ถึง ${formatReportNameDate(endDate)}`;
+  return `${formatReportNameDate(startDate)} - ${formatReportNameDate(endDate)}`;
 }
 
 function statusClass(status) {
@@ -221,10 +221,7 @@ export default function ReportsPage() {
     setForm((current) => {
       const next = { ...current, [field]: value };
       if ((field === 'start_date' || field === 'end_date') && next.start_date && next.end_date) {
-        const autoName = buildReportName(next.start_date, next.end_date);
-        if (!current.report_name || current.report_name.startsWith('รายงาน ') || current.report_name.startsWith('Report ')) {
-          next.report_name = autoName;
-        }
+        next.report_name = buildReportName(next.start_date, next.end_date);
       }
       return next;
     });
@@ -588,7 +585,7 @@ export default function ReportsPage() {
                   value={form.report_name}
                   readOnly
                   className="h-10 w-full cursor-not-allowed rounded bg-gray-300 px-3 text-gray-700 outline-none"
-                  placeholder="รายงาน 01/05/2026 ถึง 31/05/2026"
+                  placeholder="01/05/2026 - 31/05/2026"
                 />
               </label>
 
