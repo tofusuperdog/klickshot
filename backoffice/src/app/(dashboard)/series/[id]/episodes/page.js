@@ -54,6 +54,7 @@ const normalizeAudioTrack = (track, idx) => ({
 });
 
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
+const PLAYER_AUDIO_GAIN = 1.3;
 
 // Helper component for BytePlus VePlayer
 const VePlayerComponent = forwardRef(function VePlayerComponent({
@@ -69,6 +70,13 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
   const subtitlePluginRef = useRef(null);
   const pendingSubtitleRef = useRef(undefined);
   const onAudioTracksChangeRef = useRef(onAudioTracksChange);
+  const audioBoostRef = useRef({
+    audioContext: null,
+    sourceNode: null,
+    gainNode: null,
+    videoElement: null,
+    resumeHandler: null,
+  });
 
   useEffect(() => {
     onAudioTracksChangeRef.current = onAudioTracksChange;
@@ -95,6 +103,86 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
 
     subtitlePluginRef.current = plugin;
     return plugin;
+  };
+
+  const cleanupAudioBoost = () => {
+    const audioBoost = audioBoostRef.current;
+
+    if (audioBoost.videoElement && audioBoost.resumeHandler) {
+      audioBoost.videoElement.removeEventListener('play', audioBoost.resumeHandler);
+    }
+
+    audioBoost.sourceNode?.disconnect?.();
+    audioBoost.gainNode?.disconnect?.();
+    audioBoost.audioContext?.close?.()?.catch?.(() => {});
+
+    audioBoostRef.current = {
+      audioContext: null,
+      sourceNode: null,
+      gainNode: null,
+      videoElement: null,
+      resumeHandler: null,
+    };
+  };
+
+  const getPlayerVideoElement = () => {
+    const player = playerRef.current;
+
+    return (
+      player?.video ||
+      player?.media ||
+      player?.root?.querySelector?.('video') ||
+      containerRef.current?.querySelector?.('video') ||
+      null
+    );
+  };
+
+  const applyAudioBoost = () => {
+    if (typeof window === 'undefined') return false;
+
+    const videoElement = getPlayerVideoElement();
+    if (!videoElement) return false;
+
+    videoElement.volume = 1;
+
+    if (audioBoostRef.current.videoElement === videoElement) {
+      audioBoostRef.current.gainNode.gain.value = PLAYER_AUDIO_GAIN;
+      return true;
+    }
+
+    cleanupAudioBoost();
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return false;
+
+    try {
+      const audioContext = new AudioContext();
+      const sourceNode = audioContext.createMediaElementSource(videoElement);
+      const gainNode = audioContext.createGain();
+      const resumeHandler = () => {
+        audioContext.resume?.()?.catch?.(() => {});
+      };
+
+      gainNode.gain.value = PLAYER_AUDIO_GAIN;
+      sourceNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      videoElement.addEventListener('play', resumeHandler);
+      resumeHandler();
+
+      audioBoostRef.current = {
+        audioContext,
+        sourceNode,
+        gainNode,
+        videoElement,
+        resumeHandler,
+      };
+
+      return true;
+    } catch (error) {
+      console.warn('Unable to apply 30% audio boost to VePlayer video element:', error);
+      cleanupAudioBoost();
+      return false;
+    }
   };
 
   const applySubtitle = (subtitle) => {
@@ -390,6 +478,17 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
         playerRef.current = new VePlayer(playerConfig);
         subtitlePluginRef.current = null;
 
+        const retryAudioBoost = (attempt = 0) => {
+          if (cancelled) return;
+          if (applyAudioBoost()) return;
+
+          if (attempt < 20) {
+            window.setTimeout(() => retryAudioBoost(attempt + 1), 150);
+          }
+        };
+
+        retryAudioBoost();
+
         const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
         const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
 
@@ -451,6 +550,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent({
         playerRef.current = null;
       }
 
+      cleanupAudioBoost();
       subtitlePluginRef.current = null;
     };
   }, [vid, playUrl, lineAppId, lineUserId, subtitles]);

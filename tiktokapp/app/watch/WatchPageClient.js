@@ -28,6 +28,7 @@ const BYTEPLUS_LICENSE =
   process.env.NEXT_PUBLIC_BYTEPLUS_LICENSE ||
   "https://sf16-vod-license-multi.byteplusvod.com/obj/vod-license-sgcom/l-1122314769-ch-vod-a-1006938.lic";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
+const PLAYER_AUDIO_GAIN = 1.3;
 const ENABLE_AUDIO_TRACK_SWITCHING = true;
 
 const headers = SUPABASE_HEADERS;
@@ -659,6 +660,13 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   const onAudioTracksChangeRef = useRef(onAudioTracksChange);
   const subtitlePluginRef = useRef(null);
   const pendingSubtitleRef = useRef(undefined);
+  const audioBoostRef = useRef({
+    audioContext: null,
+    sourceNode: null,
+    gainNode: null,
+    videoElement: null,
+    resumeHandler: null,
+  });
 
   useEffect(() => {
     onPausedChangeRef.current = onPausedChange;
@@ -875,6 +883,74 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     playerRef.current?.media ||
     playerRef.current?.root?.querySelector?.("video") ||
     containerRef.current?.querySelector("video");
+
+  const cleanupAudioBoost = () => {
+    const audioBoost = audioBoostRef.current;
+
+    if (audioBoost.videoElement && audioBoost.resumeHandler) {
+      audioBoost.videoElement.removeEventListener("play", audioBoost.resumeHandler);
+    }
+
+    audioBoost.sourceNode?.disconnect?.();
+    audioBoost.gainNode?.disconnect?.();
+    audioBoost.audioContext?.close?.()?.catch?.(() => {});
+
+    audioBoostRef.current = {
+      audioContext: null,
+      sourceNode: null,
+      gainNode: null,
+      videoElement: null,
+      resumeHandler: null,
+    };
+  };
+
+  const applyAudioBoost = () => {
+    if (typeof window === "undefined") return false;
+
+    const videoElement = getVideoElement();
+    if (!videoElement) return false;
+
+    videoElement.volume = 1;
+
+    if (audioBoostRef.current.videoElement === videoElement) {
+      audioBoostRef.current.gainNode.gain.value = PLAYER_AUDIO_GAIN;
+      return true;
+    }
+
+    cleanupAudioBoost();
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return false;
+
+    try {
+      const audioContext = new AudioContext();
+      const sourceNode = audioContext.createMediaElementSource(videoElement);
+      const gainNode = audioContext.createGain();
+      const resumeHandler = () => {
+        audioContext.resume?.()?.catch?.(() => {});
+      };
+
+      gainNode.gain.value = PLAYER_AUDIO_GAIN;
+      sourceNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      videoElement.addEventListener("play", resumeHandler);
+      resumeHandler();
+
+      audioBoostRef.current = {
+        audioContext,
+        sourceNode,
+        gainNode,
+        videoElement,
+        resumeHandler,
+      };
+
+      return true;
+    } catch (error) {
+      console.warn("Unable to apply 30% audio boost to VePlayer video element:", error);
+      cleanupAudioBoost();
+      return false;
+    }
+  };
 
   const recoverAppleNativeAudioSwitch = (video, state) => {
     if (!video || !state) return;
@@ -1170,6 +1246,17 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         subtitlePluginRef.current = null;
         onPausedChangeRef.current?.(false);
 
+        const retryAudioBoost = (attempt = 0) => {
+          if (cancelled) return;
+          if (applyAudioBoost()) return;
+
+          if (attempt < 20) {
+            window.setTimeout(() => retryAudioBoost(attempt + 1), 150);
+          }
+        };
+
+        retryAudioBoost();
+
         if (ENABLE_AUDIO_TRACK_SWITCHING) {
           const audioTracksUpdatedEvent = VePlayer.Events?.AUDIO_TRACKS_UPDATED;
           const audioTrackChangeEvent = VePlayer.Events?.AUDIO_TRACK_CHANGE;
@@ -1280,6 +1367,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
       }
 
       removeVideoPlaybackListeners?.();
+      cleanupAudioBoost();
       subtitlePluginRef.current = null;
       removeDevErrorListeners?.();
       restoreConsoleError?.();
