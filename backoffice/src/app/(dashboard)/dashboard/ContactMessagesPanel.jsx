@@ -94,8 +94,8 @@ function TicketDetailModal({
 
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 px-4 backdrop-blur-[3px]">
-      <div className="relative w-full max-w-[920px] overflow-hidden rounded-xl border border-[#3a2c68] bg-[#12102f] shadow-2xl">
-        <div className="border-b border-[#2d2252] bg-[linear-gradient(135deg,rgba(108,114,255,0.20),rgba(255,72,200,0.08))] px-6 py-5">
+      <div className="relative w-full max-w-[920px] overflow-hidden rounded-xl border border-[#3a2c68] bg-[#151a3f] shadow-2xl">
+        <div className="border-b border-[#34407a] bg-[linear-gradient(135deg,rgba(108,114,255,0.20),rgba(255,72,200,0.08))] px-6 py-5">
           <button
             type="button"
             onClick={onClose}
@@ -133,7 +133,7 @@ function TicketDetailModal({
                   updatingId === ticket.id
                     ? 'cursor-wait bg-gray-700 text-gray-300'
                     : ticket.status === 'closed'
-                      ? 'cursor-pointer bg-[#6C72FF] text-white hover:bg-[#5b61f2]'
+                      ? 'cursor-pointer bg-gradient-to-r from-[#6869ff] to-[#7657f4] text-white hover:from-[#7778ff] hover:to-[#8466ff]'
                       : 'cursor-pointer bg-[#244b38] text-white hover:bg-[#2f6047]'
                 }`}
               >
@@ -153,14 +153,14 @@ function TicketDetailModal({
             <EmailCard email={ticket.email} copyState={copyState} onCopy={handleCopyEmail} />
           </div>
 
-          <div className="mt-5 rounded-lg border border-[#2d2252] bg-[#0d0a1b]/70 p-4">
+          <div className="mt-5 rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
             <div className="mb-2 text-sm font-semibold text-white">ข้อความ:</div>
             <div className="max-h-[180px] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-gray-200 custom-scrollbar">
               {ticket.message || '-'}
             </div>
           </div>
 
-          <div className="mt-5 rounded-lg border border-[#3a2c68] bg-[#181331] p-4">
+          <div className="mt-5 rounded-lg border border-[#3a2c68] bg-[#202650] p-4">
             <div className="mb-2 flex items-center justify-between gap-3">
               <label htmlFor="staff-note" className="text-sm font-semibold text-white">
                 หมายเหตุ
@@ -175,14 +175,14 @@ function TicketDetailModal({
                 setNoteState('');
               }}
               placeholder="บันทึกข้อมูลเพิ่มเติมสำหรับทีมงาน..."
-              className="min-h-[120px] w-full resize-y rounded border border-[#2d2252] bg-[#0d0a1b] p-3 text-sm leading-6 text-white placeholder:text-gray-600 focus:border-[#6C72FF] focus:outline-none"
+              className="min-h-[120px] w-full resize-y rounded border border-[#34407a] bg-[#171d42] p-3 text-sm leading-6 text-white placeholder:text-gray-600 focus:border-[#6C72FF] focus:outline-none"
             />
             <div className="mt-3 flex justify-end">
               <button
                 type="button"
                 onClick={handleSaveNote}
                 disabled={savingNote}
-                className="cursor-pointer rounded bg-[#6C72FF] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#5b61f2] disabled:cursor-wait disabled:opacity-60"
+                className="cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] px-4 py-2 text-sm font-medium text-white transition-colors hover:from-[#7778ff] hover:to-[#8466ff] disabled:cursor-wait disabled:opacity-60"
               >
                 {savingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}
               </button>
@@ -196,7 +196,7 @@ function TicketDetailModal({
 
 function InfoCard({ label, value }) {
   return (
-    <div className="rounded-lg border border-[#2d2252] bg-[#0d0a1b]/70 p-4">
+    <div className="rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
       <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</div>
       <div className="mt-1 min-w-0 break-words text-sm font-medium text-white">{value}</div>
     </div>
@@ -205,7 +205,7 @@ function InfoCard({ label, value }) {
 
 function EmailCard({ email, copyState, onCopy }) {
   return (
-    <div className="rounded-lg border border-[#2d2252] bg-[#0d0a1b]/70 p-4">
+    <div className="rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
       <div className="text-xs font-medium uppercase tracking-wide text-gray-500">อีเมล์</div>
       <div className="mt-1 flex items-center gap-2">
         <div className="min-w-0 break-words text-sm font-medium text-white">{email || '-'}</div>
@@ -226,7 +226,7 @@ function EmailCard({ email, copyState, onCopy }) {
       </div>
       {email ? (
         <div
-          className={`mt-2 flex min-h-[28px] items-center gap-2 rounded border border-[#3a2c68] bg-[#181331]/95 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 ${
+          className={`mt-2 flex min-h-[28px] items-center gap-2 rounded border border-[#3a2c68] bg-[#202650]/95 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 ${
             copyState ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
           }`}
         >
@@ -246,6 +246,11 @@ export default function ContactMessagesPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('open');
+  const [messageCounts, setMessageCounts] = useState({
+    all: 0,
+    open: 0,
+    closed: 0,
+  });
   const [updatingId, setUpdatingId] = useState(null);
   const [savingNote, setSavingNote] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -276,16 +281,35 @@ export default function ContactMessagesPanel() {
     setLoading(false);
   };
 
+  const fetchMessageCounts = async (active = true) => {
+    if (!user) return;
+
+    const entries = await Promise.all(
+      statusOptions.map(async (option) => {
+        const { data, error: queryError } = await backofficeQuery(user, 'contact_messages', {
+          limit: 50,
+          status: option.value,
+        });
+
+        return [option.value, !queryError && Array.isArray(data) ? data.length : 0];
+      })
+    );
+
+    if (!active) return;
+
+    setMessageCounts(Object.fromEntries(entries));
+  };
+
   useEffect(() => {
     let active = true;
     fetchMessages(active);
+    fetchMessageCounts(active);
 
     return () => {
       active = false;
     };
   }, [user, statusFilter]);
 
-  const totalMessages = useMemo(() => messages.length, [messages]);
   const overdueCount = useMemo(() => messages.filter(isOverdueTicket).length, [messages]);
 
   const updateMessageInState = (updatedTicket) => {
@@ -365,77 +389,87 @@ export default function ContactMessagesPanel() {
     });
     setSelectedTicket(updatedTicket);
     setUpdatingId(null);
+    fetchMessageCounts();
   };
 
   return (
-    <div className="bg-[#131024] border border-[#2d2252] rounded shadow-md h-full min-h-0 flex flex-col">
-      <div className="p-5 flex-1 overflow-y-auto custom-scrollbar pt-0">
-        <div className="my-6 w-full px-2">
-          <div className="flex items-center justify-between mb-1">
-            <h2 className="text-[17px] font-semibold text-white tracking-wide">ข้อเสนอแนะ</h2>
+    <div className="bg-[#151a3f]/95 border border-[#34407a] rounded shadow-[0_18px_40px_rgba(10,14,42,0.24)] h-full min-h-0 flex flex-col">
+      <div className="p-5 flex-1 overflow-y-auto custom-scrollbar pt-0 bg-[#151a3f]/95">
+        <div className="w-full px-1 py-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#263163] text-white">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+                </svg>
+              </div>
+              <h2 className="text-[17px] font-semibold tracking-wide text-white">ข้อเสนอแนะ</h2>
+            </div>
             <div className="flex shrink-0 items-center gap-2 text-xs">
               {overdueCount > 0 ? (
-                <span className="rounded border border-[#8f3434] bg-[#381414] px-2.5 py-1 text-[#ffb0b0]">
+                <span className="rounded-lg border border-[#8f3434] bg-[#381414] px-2.5 py-1 text-[#ffb0b0]">
                   เกิน 7 วัน {overdueCount}
                 </span>
               ) : null}
-              <span className="rounded border border-[#3c2a75] bg-[#241b46] px-2.5 py-1 text-[#b7a7ff]">
-                {totalMessages} รายการ
-              </span>
             </div>
           </div>
 
-          <div className="flex border-b border-[#2d2252] mb-6">
+          <div className="mb-3 flex border-b border-[#34407a]">
             {statusOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setStatusFilter(option.value)}
-                className={`px-6 py-3 text-[15px] font-medium transition-colors border-b-2 cursor-pointer ${
+                className={`cursor-pointer border-b-2 px-5 py-3 text-[13px] font-medium transition-colors ${
                   statusFilter === option.value
-                    ? 'border-[#6C72FF] text-[#6C72FF]'
-                    : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                    ? 'border-[#716cff] text-[#8f8cff]'
+                    : 'border-transparent text-[#a6afcf] hover:text-white'
                 }`}
               >
-                {option.label}
+                <span>{option.label}</span>
+                <span className={`ml-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none ${
+                  statusFilter === option.value
+                    ? 'bg-[#716cff]/20 text-[#c5c3ff]'
+                    : 'bg-[#252b4a] text-[#8f99bc]'
+                }`}>
+                  {messageCounts[option.value] || 0}
+                </span>
               </button>
             ))}
           </div>
 
-          {loading ? (
-            <div className="text-gray-400 py-10 text-center font-light text-sm">
-              กำลังโหลดข้อเสนอแนะ...
-            </div>
-          ) : error ? (
-            <div className="py-10 text-center text-sm text-[#ff9b9b]">
-              {error}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="bg-[#131024] border border-[#2d2252] rounded-lg p-10 text-center text-gray-400 font-light text-sm">
-              ยังไม่มีข้อเสนอแนะในขณะนี้
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {messages.map((item) => {
+          <div className="divide-y divide-[#303b73] overflow-hidden rounded-lg border border-[#34407a]/80 bg-[#202650]">
+            {loading ? (
+              <div className="py-10 text-center text-sm font-light text-gray-400">
+                กำลังโหลดข้อเสนอแนะ...
+              </div>
+            ) : error ? (
+              <div className="py-10 text-center text-sm text-[#ff9b9b]">
+                {error}
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="p-10 text-center text-sm font-light text-gray-400">
+                ยังไม่มีข้อเสนอแนะในขณะนี้
+              </div>
+            ) : (
+              messages.map((item) => {
                 const overdue = isOverdueTicket(item);
 
                 return (
                   <div
                     key={item.id}
-                    className={`bg-[#131024]/50 border rounded p-3 transition-all group flex items-center justify-between gap-3 ${
-                      overdue
-                        ? 'border-[#6f2d3b] hover:bg-[#1a142b] hover:border-[#9c4052]'
-                        : 'border-[#2d2252] hover:bg-[#1a1635] hover:border-[#3a2c68]'
+                    className={`group flex min-h-[46px] items-center justify-between gap-3 bg-[#171d42] px-3 py-2.5 transition-colors ${
+                      overdue ? 'hover:bg-[#2b1d45]' : 'hover:bg-[#1d2550]'
                     }`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-4">
                       <div className="w-[56px] shrink-0">
-                        <span className="text-[14px] font-bold text-white bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                        <span className="inline-flex h-7 min-w-[54px] items-center justify-center rounded bg-[#283052] px-2 text-[12px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                           {getTicketId(item.id)}
                         </span>
                       </div>
 
-                      <div className="min-w-0 flex-1 truncate text-sm font-medium text-white">
+                      <div className="min-w-0 flex-1 truncate text-[12px] text-[#b8c0dc]">
                         {item.name || 'ไม่ระบุหัวข้อ'}
                       </div>
 
@@ -451,11 +485,11 @@ export default function ContactMessagesPanel() {
                         </span>
                       </div>
 
-                      <div className="hidden w-[140px] shrink-0 truncate text-xs text-gray-400 md:block">
+                      <div className="hidden w-[140px] shrink-0 truncate text-xs text-[#9ca7c8] md:block">
                         {(item.locale || '-').toUpperCase()} · {formatSource(item.source)}
                       </div>
 
-                      <div className="hidden w-[106px] shrink-0 text-right text-xs text-gray-400 lg:block">
+                      <div className="hidden w-[106px] shrink-0 text-right text-xs text-[#9ca7c8] lg:block">
                         {formatMessageDate(item.created_at, { withYear: false })}
                       </div>
                     </div>
@@ -463,7 +497,7 @@ export default function ContactMessagesPanel() {
                     <button
                       type="button"
                       onClick={() => setSelectedTicket(item)}
-                      className="shrink-0 rounded p-1.5 text-gray-400 transition-all hover:bg-white/5 hover:text-[#6C72FF] cursor-pointer"
+                      className="shrink-0 cursor-pointer rounded p-1.5 text-[#9fa8c7] transition-all hover:bg-white/5 hover:text-white"
                       aria-label={`เปิดรายละเอียด ticket ${getTicketId(item.id)}`}
                       title="รายละเอียด"
                     >
@@ -475,9 +509,9 @@ export default function ContactMessagesPanel() {
                     </button>
                   </div>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </div>
       </div>
 

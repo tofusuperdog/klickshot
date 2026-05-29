@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   PARTNER_SESSION_COOKIE,
+  validateActivePartnerSession,
   verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
 
@@ -13,7 +14,7 @@ const allowedRanges = new Set([7, 14, 30]);
 
 export async function GET(request) {
   const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = verifyPartnerSessionToken(token);
+  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
 
   if (!producer) {
     return NextResponse.json(

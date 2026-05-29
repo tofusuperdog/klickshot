@@ -956,9 +956,9 @@ export default function EpisodesPage() {
         </h1>
       </div>
 
-      <div className="bg-[#181236]/70 border border-[#2d2252] rounded-lg p-8 shadow-lg space-y-8">
+      <div className="bg-[#202650]/80 border border-[#34407a] rounded-lg p-8 shadow-lg space-y-8">
         <div className="flex gap-8">
-          <div className="w-[200px] h-[280px] shrink-0 bg-[#0d0a1b] rounded overflow-hidden relative border border-gray-700 shadow-lg">
+          <div className="w-[200px] h-[280px] shrink-0 bg-[#171d42] rounded overflow-hidden relative border border-gray-700 shadow-lg">
             {series.poster_url ? (
               <Image
                 src={series.poster_url}
@@ -1046,10 +1046,10 @@ export default function EpisodesPage() {
           </div>
         </div>
 
-        <div className="border border-[#2d2252] rounded-lg overflow-hidden bg-[#12102f]/80 shadow-xl">
+        <div className="border border-[#34407a] rounded-lg overflow-hidden bg-[#151a3f]/90 shadow-xl">
           <table className="w-full text-center text-sm font-light text-gray-300">
             <thead>
-              <tr className="border-b border-[#2d2252]">
+              <tr className="border-b border-[#34407a]">
                 <th className="font-light py-4 w-[15%]">ตอน</th>
                 <th className="font-light py-4 w-[25%]">สถานะ</th>
                 <th className="font-light py-4 w-[20%]">เล่น</th>
@@ -1156,8 +1156,8 @@ export default function EpisodesPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm backdrop-grayscale">
-          <div className="bg-[#12102f] border border-[#2d2252] w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden flex flex-col relative text-white">
-            <div className="flex items-center justify-center px-6 py-4 border-b border-[#2d2252] relative">
+          <div className="bg-[#151a3f] border border-[#34407a] w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden flex flex-col relative text-white">
+            <div className="flex items-center justify-center px-6 py-4 border-b border-[#34407a] relative">
               <h2 className="text-lg font-medium tracking-wide">
                 {savedEpisodes.some(
                   (e) => e.episode_no === selectedEpisode
@@ -1169,7 +1169,7 @@ export default function EpisodesPage() {
 
             <div className="p-6">
               <div className="flex gap-5 mb-6">
-                <div className="w-[100px] h-[140px] shrink-0 bg-[#0d0a1b] rounded overflow-hidden relative border border-gray-700 shadow">
+                <div className="w-[100px] h-[140px] shrink-0 bg-[#171d42] rounded overflow-hidden relative border border-gray-700 shadow">
                   {series.poster_url ? (
                     <Image
                       src={series.poster_url}
@@ -1222,7 +1222,7 @@ export default function EpisodesPage() {
                 </div>
               </div>
 
-              <div className="bg-[#1a1738] rounded-md text-center py-2.5 mb-6 border border-[#2d2252] shadow-inner">
+              <div className="bg-[#202650] rounded-md text-center py-2.5 mb-6 border border-[#34407a] shadow-inner">
                 <span className="text-gray-200 text-[15px] font-medium tracking-wide">
                   ตอนที่ {selectedEpisode}
                 </span>
@@ -1300,7 +1300,7 @@ export default function EpisodesPage() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm backdrop-grayscale">
-          <div className="bg-[#12102f] border border-[#2d2252] w-full max-w-[400px] rounded-xl shadow-2xl overflow-hidden flex flex-col relative text-white">
+          <div className="bg-[#151a3f] border border-[#34407a] w-full max-w-[400px] rounded-xl shadow-2xl overflow-hidden flex flex-col relative text-white">
             <div className="flex flex-col items-center justify-center p-8 space-y-4">
               <h2 className="text-xl font-medium text-center tracking-wide">
                 ยืนยันการลบ
@@ -1437,7 +1437,7 @@ export default function EpisodesPage() {
             </div>
 
             <div className="mb-8 flex items-start gap-4">
-              <div className="relative h-[120px] w-[86px] shrink-0 overflow-hidden rounded bg-[#0d0a1b]">
+              <div className="relative h-[120px] w-[86px] shrink-0 overflow-hidden rounded bg-[#171d42]">
                 {series.poster_url ? (
                   <Image
                     src={series.poster_url}

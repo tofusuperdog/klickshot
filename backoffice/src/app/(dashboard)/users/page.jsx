@@ -75,7 +75,7 @@ function UserModal({ isOpen, title, formData, setFormData, onClose, onSave, isAd
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
-      <div className="bg-[#12102f] border border-[#504481] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10">
+      <div className="bg-[#151a3f] border border-[#504481] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10">
         <h2 className="text-2xl font-semibold text-gray-300 text-center mb-8 tracking-wide">
           {title}
         </h2>
@@ -186,7 +186,7 @@ function UserModal({ isOpen, title, formData, setFormData, onClose, onSave, isAd
               type="button"
               onClick={onSave}
               disabled={isSaving}
-              className="w-36 h-10 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-light disabled:opacity-50 cursor-pointer"
+              className="w-36 h-10 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-light disabled:opacity-50 cursor-pointer"
             >
               {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
@@ -424,7 +424,7 @@ export default function UsersPage() {
         <button
           type="button"
           onClick={openAdd}
-          className="bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors text-white px-5 py-2 rounded font-medium text-sm cursor-pointer"
+          className="bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all text-white px-5 py-2 rounded font-medium text-sm cursor-pointer"
         >
           เพิ่มผู้ใช้งาน
         </button>
@@ -438,9 +438,9 @@ export default function UsersPage() {
         </div>
       ) : (
         /* User List */
-        <div className="bg-[#181236] border border-[#2d2252] rounded-lg">
+        <div className="bg-[#202650] border border-[#34407a] rounded-lg">
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center border-b border-[#2d2252] text-base text-gray-300 font-light bg-[#181236] rounded-t-lg">
+          <div className="grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center border-b border-[#34407a] text-base text-gray-300 font-light bg-[#202650] rounded-t-lg">
             <div className="px-6 py-4 font-medium">ชื่อผู้ใช้งาน</div>
             {permissionColumns.map((col) => (
               <div key={col.key} className="px-4 py-4 flex justify-center items-center">
@@ -485,10 +485,10 @@ export default function UsersPage() {
             <div className="px-6 py-8 text-center text-gray-500">ยังไม่มีผู้ใช้งาน</div>
           ) : (
             users.map((user, index) => {
-              const rowBg = index % 2 === 0 ? 'bg-white/[0.04]' : 'bg-[#181236]';
+              const rowBg = index % 2 === 0 ? 'bg-white/[0.04]' : 'bg-[#202650]';
 
               return (
-                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#2d2252]/50 text-base`}>
+                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#34407a]/50 text-base`}>
                   <div className="px-6 py-4 text-gray-300">{user.username}</div>
                   {permissionColumns.map((col) => (
                     <div key={col.key} className="px-4 py-4 flex justify-center items-center">
@@ -554,7 +554,7 @@ export default function UsersPage() {
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
-          <div className="bg-[#12102f] border border-[#504481] rounded-xl w-full max-w-[380px] shadow-2xl p-8 py-10">
+          <div className="bg-[#151a3f] border border-[#504481] rounded-xl w-full max-w-[380px] shadow-2xl p-8 py-10">
 
             <h2 className="text-xl font-semibold text-white text-center mb-2 tracking-wide">
               ยืนยันการลบ
@@ -566,7 +566,7 @@ export default function UsersPage() {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="w-32 h-10 bg-[#D24949] hover:bg-red-500 transition-colors rounded text-white font-light cursor-pointer"
+                className="w-32 h-10 bg-[#D24949] hover:bg-red-500 transition-all rounded text-white font-light cursor-pointer"
               >
                 ลบ
               </button>

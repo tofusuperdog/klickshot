@@ -373,7 +373,7 @@ export default function ReportsPage() {
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-40 -mx-10 mb-4 bg-[#110d29] px-10 pb-4 shadow-[0_14px_24px_rgba(17,13,41,0.92)] before:absolute before:inset-x-0 before:bottom-full before:h-10 before:bg-[#110d29] after:absolute after:inset-x-0 after:-bottom-4 after:h-4 after:bg-[#110d29]">
+      <div className="sticky top-0 z-40 -mx-10 mb-4 bg-[#171a3d] px-10 pb-4 shadow-[0_14px_24px_rgba(10,14,42,0.32)] before:absolute before:inset-x-0 before:bottom-full before:h-10 before:bg-[#171a3d] after:absolute after:inset-x-0 after:-bottom-4 after:h-4 after:bg-[#171a3d]">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 text-white">
             <div className="relative h-9 w-9">
@@ -386,7 +386,7 @@ export default function ReportsPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="cursor-pointer rounded bg-[#5c85f1] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:bg-[#4a72d7]"
+            className="cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-colors hover:from-[#7778ff] hover:to-[#8466ff]"
           >
             สร้างรายงาน
           </button>
@@ -394,8 +394,8 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-[minmax(360px,0.45fr)_minmax(0,1fr)] gap-5">
-        <section className="overflow-hidden rounded-lg border border-[#2d2252] bg-[#12102f]/70 shadow-lg">
-          <div className="border-b border-[#2d2252] px-5 py-4">
+        <section className="overflow-hidden rounded-lg border border-[#34407a] bg-[#151a3f]/90 shadow-lg">
+          <div className="border-b border-[#34407a] px-5 py-4">
             <h2 className="text-base font-semibold text-white">รายการรายงาน</h2>
             <p className="text-sm text-gray-400">ทั้งหมด {formatNumber(reports.length)} รายการ</p>
           </div>
@@ -411,7 +411,7 @@ export default function ReportsPage() {
                   key={report.id}
                   type="button"
                   onClick={() => loadDetail(report.id)}
-                  className={`block w-full cursor-pointer border-b border-[#2d2252]/80 px-5 py-4 text-left transition-colors hover:bg-white/[0.04] ${
+                  className={`block w-full cursor-pointer border-b border-[#34407a]/80 px-5 py-4 text-left transition-colors hover:bg-white/[0.04] ${
                     selectedReport?.id === report.id ? 'bg-[#28214f]/60' : ''
                   }`}
                 >
@@ -434,7 +434,7 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="min-h-[620px] rounded-lg border border-[#2d2252] bg-[#12102f]/70 shadow-lg">
+        <section className="min-h-[620px] rounded-lg border border-[#34407a] bg-[#151a3f]/90 shadow-lg">
           {isDetailLoading ? (
             <div className="flex h-full min-h-[420px] items-center justify-center text-gray-400">กำลังโหลดรายละเอียด...</div>
           ) : !selectedReport ? (
@@ -443,7 +443,7 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div>
-              <div className="border-b border-[#2d2252] p-6">
+              <div className="border-b border-[#34407a] p-6">
                 <div className="flex items-start justify-between gap-5">
                   <div>
                     <div className="mb-3 flex items-center gap-3">
@@ -500,7 +500,7 @@ export default function ReportsPage() {
                     ['ยอดดูถ่วงน้ำหนักรวม', formatNumber(selectedReport.total_adjusted_views, 1)],
                     ['ค่าน้ำหนัก ฟรี / เสียเงิน', `${selectedReport.free_episode_weight} / ${selectedReport.paid_episode_weight}`],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-md border border-[#2d2252] bg-[#181236]/80 p-4">
+                    <div key={label} className="rounded-md border border-[#34407a] bg-[#202650]/90 p-4">
                       <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
                       <div className="mt-2 text-lg font-semibold text-white">{value}</div>
                     </div>
@@ -510,9 +510,9 @@ export default function ReportsPage() {
 
               <div className="p-6">
                 <h3 className="mb-3 text-base font-semibold text-white">สรุปรายได้ตามพาร์ทเนอร์</h3>
-                <div className="overflow-x-auto rounded-lg border border-[#2d2252]">
+                <div className="overflow-x-auto rounded-lg border border-[#34407a]">
                   <table className="w-full min-w-[820px] border-collapse text-sm">
-                    <thead className="bg-[#181236] text-left text-gray-300">
+                    <thead className="bg-[#202650] text-left text-gray-300">
                       <tr>
                         <th className="px-4 py-3 font-medium">พาร์ทเนอร์</th>
                         <th className="px-4 py-3 text-right font-medium">ตอนฟรี</th>
@@ -523,7 +523,7 @@ export default function ReportsPage() {
                     </thead>
                     <tbody>
                       {partners.map((partner) => (
-                        <tr key={partner.id} className="border-t border-[#2d2252]/80 text-gray-300">
+                        <tr key={partner.id} className="border-t border-[#34407a]/80 text-gray-300">
                           <td className="px-4 py-3 text-white">{partner.partner_name}</td>
                           <td className="px-4 py-3 text-right">{formatNumber(partner.total_free_views)}</td>
                           <td className="px-4 py-3 text-right">{formatNumber(partner.total_paid_views)}</td>
@@ -536,9 +536,9 @@ export default function ReportsPage() {
                 </div>
 
                 <h3 className="mb-3 mt-8 text-base font-semibold text-white">รายละเอียดตามซีรีย์</h3>
-                <div className="overflow-x-auto rounded-lg border border-[#2d2252]">
+                <div className="overflow-x-auto rounded-lg border border-[#34407a]">
                   <table className="w-full min-w-[920px] border-collapse text-sm">
-                    <thead className="bg-[#181236] text-left text-gray-300">
+                    <thead className="bg-[#202650] text-left text-gray-300">
                       <tr>
                         <th className="px-4 py-3 font-medium">ซีรีย์</th>
                         <th className="px-4 py-3 font-medium">พาร์ทเนอร์</th>
@@ -550,7 +550,7 @@ export default function ReportsPage() {
                     </thead>
                     <tbody>
                       {seriesRows.map((series) => (
-                        <tr key={series.id} className="border-t border-[#2d2252]/80 text-gray-300">
+                        <tr key={series.id} className="border-t border-[#34407a]/80 text-gray-300">
                           <td className="px-4 py-3 text-white">{series.series_title_th || series.series_title}</td>
                           <td className="px-4 py-3">{series.partner_name}</td>
                           <td className="px-4 py-3 text-right">{formatNumber(series.total_free_views)}</td>
@@ -570,7 +570,7 @@ export default function ReportsPage() {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-6 backdrop-blur-[1px]">
-          <form onSubmit={createReport} className="w-full max-w-[720px] rounded-xl border border-[#504481] bg-[#12102f] p-8 shadow-2xl">
+          <form onSubmit={createReport} className="w-full max-w-[720px] rounded-xl border border-[#504481] bg-[#151a3f] p-8 shadow-2xl">
             <div className="mb-6 flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-white">สร้างรายงานรายได้พาร์ทเนอร์</h2>
@@ -624,7 +624,7 @@ export default function ReportsPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="cursor-pointer rounded bg-[#5c85f1] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#4a72d7] disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] px-5 py-2 text-sm font-medium text-white transition-colors hover:from-[#7778ff] hover:to-[#8466ff] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? 'กำลังสร้างรายงาน...' : 'สร้างรายงาน'}
               </button>
@@ -635,8 +635,8 @@ export default function ReportsPage() {
 
       {confirmAction ? (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/65 p-6 backdrop-blur-[2px]">
-          <div className="w-full max-w-[480px] overflow-hidden rounded-xl border border-[#504481] bg-[#12102f] shadow-2xl">
-            <div className="border-b border-[#2d2252] bg-[#181236] px-7 py-5">
+          <div className="w-full max-w-[480px] overflow-hidden rounded-xl border border-[#504481] bg-[#151a3f] shadow-2xl">
+            <div className="border-b border-[#34407a] bg-[#202650] px-7 py-5">
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#6C72FF]/40 bg-[#6C72FF]/12 text-[#9bb8ff]">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
@@ -651,7 +651,7 @@ export default function ReportsPage() {
             </div>
 
             <div className="px-7 py-6">
-              <div className="rounded-lg border border-[#2d2252] bg-[#0f0b25] p-4">
+              <div className="rounded-lg border border-[#34407a] bg-[#0f0b25] p-4">
                 <div className="text-xs uppercase tracking-wide text-gray-500">รายงานที่เลือก</div>
                 <div className="mt-2 text-base font-semibold text-white">{confirmAction.report.report_name}</div>
                 <div className="mt-1 text-sm text-gray-400">

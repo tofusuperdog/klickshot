@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   PARTNER_SESSION_COOKIE,
+  validateActivePartnerSession,
   verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
 
@@ -12,7 +13,7 @@ const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 
 export async function POST(request) {
   const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = verifyPartnerSessionToken(token);
+  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
 
   if (!producer) {
     return NextResponse.json(

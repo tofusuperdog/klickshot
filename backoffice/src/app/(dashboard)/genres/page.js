@@ -50,7 +50,7 @@ function GenreModal({ isOpen, title, formData, setFormData, onClose, onSave, isS
       </div>
 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[1px] backdrop-grayscale">
-        <div className="bg-[#12102f] border border-[#504481] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10">
+        <div className="bg-[#151a3f] border border-[#504481] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10">
           <h2 className="text-2xl font-semibold text-white text-center mb-10 tracking-wide">
             {title}
           </h2>
@@ -86,7 +86,7 @@ function GenreModal({ isOpen, title, formData, setFormData, onClose, onSave, isS
               <button
                 type="submit"
                 disabled={isSaving}
-                className="w-36 h-10 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-light disabled:opacity-50 cursor-pointer"
+                className="w-36 h-10 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-light disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
@@ -121,7 +121,7 @@ function DeleteConfirmModal({ isOpen, genre, onClose, onConfirm, isDeleting }) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
-      <div className="bg-[#12102f] border border-[#2d2252] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10 flex flex-col items-center">
+      <div className="bg-[#151a3f] border border-[#34407a] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10 flex flex-col items-center">
 
         <h2 className="text-[20px] font-semibold text-white mb-4">ยืนยันการลบแนวเรื่อง</h2>
 
@@ -397,7 +397,7 @@ export default function GenresPage() {
         <button
           type="button"
           onClick={openAdd}
-          className="bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors text-white px-5 py-2.5 rounded font-medium text-[15px] cursor-pointer shadow-lg"
+          className="bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all text-white px-5 py-2.5 rounded font-medium text-[15px] cursor-pointer shadow-lg"
         >
           เพิ่มแนวเรื่อง
         </button>
@@ -413,14 +413,14 @@ export default function GenresPage() {
         /* List Container */
         <div className="space-y-6">
           {genres.length === 0 ? (
-            <div className="text-center text-gray-500 py-10 bg-[#12102f] rounded-lg border border-[#2d2252]">ยังไม่มีกลุ่มแนวเรื่อง</div>
+            <div className="text-center text-gray-500 py-10 bg-[#151a3f] rounded-lg border border-[#34407a]">ยังไม่มีกลุ่มแนวเรื่อง</div>
           ) : (
             genres.map((genre, index) => {
               const names = [genre.name_en, genre.name_jp, genre.name_cn].filter(Boolean).join(' - ');
               const genreSeries = allSeries.filter(s => s.genre_ids?.includes(genre.id));
 
               return (
-                <div key={genre.id} className="bg-[#12102f] shadow-lg border border-[#2d2252] rounded-lg p-6 flex flex-col group transition-colors">
+                <div key={genre.id} className="bg-[#151a3f] shadow-lg border border-[#34407a] rounded-lg p-6 flex flex-col group transition-colors">
 
                   {/* Genre Header Section */}
                   <div className="flex justify-between items-start mb-6">
@@ -505,8 +505,8 @@ export default function GenresPage() {
                     {genreSeries.map(s => {
                       const isUnpublished = s.status !== 'published';
                       return (
-                        <Link href={`/series/${s.id}`} key={s.id} className="flex-shrink-0 w-[145px] flex flex-col group cursor-pointer hover:opacity-80 transition-opacity rounded-md overflow-hidden border border-[#2d2252] shadow-md bg-[#1D1D1D]">
-                          <div className="w-full h-[204px] relative bg-[#0d0a1b]">
+                        <Link href={`/series/${s.id}`} key={s.id} className="flex-shrink-0 w-[145px] flex flex-col group cursor-pointer hover:opacity-80 transition-opacity rounded-md overflow-hidden border border-[#34407a] shadow-md bg-[#171d42]">
+                          <div className="w-full h-[204px] relative bg-[#171d42]">
                             {s.poster_url ? (
                               <Image src={s.poster_url} alt={s.title_th} fill sizes="145px" style={{ objectFit: 'cover' }} className={isUnpublished ? "grayscale" : ""} />
                             ) : (
@@ -527,7 +527,7 @@ export default function GenresPage() {
                       )
                     })}
                     {genreSeries.length === 0 && (
-                      <div className="w-full py-8 text-center text-sm text-gray-600 border border-dashed border-[#2d2252] rounded">
+                      <div className="w-full py-8 text-center text-sm text-gray-600 border border-dashed border-[#34407a] rounded">
                         ยังไม่มีซีรีส์ในแนวเรื่องนี้
                       </div>
                     )}

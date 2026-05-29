@@ -33,7 +33,7 @@ function formatValue(value) {
 
 function DetailItem({ label, value }) {
   return (
-    <div className="rounded border border-[#2d2252]/70 bg-[#181236]/50 px-3 py-2.5">
+    <div className="rounded border border-[#34407a]/70 bg-[#202650]/70 px-3 py-2.5">
       <div className="mb-1 text-[12px] font-light text-gray-400">{label}</div>
       <div className="break-words text-[14px] font-medium text-gray-100">{formatValue(value)}</div>
     </div>
@@ -130,8 +130,8 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="w-full pb-20">
-      <div className="mb-5 flex items-center justify-between">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div className="mb-5 flex shrink-0 items-center justify-between">
         <div className="flex items-center space-x-3 text-white">
           <div className="relative h-9 w-9">
             <Image src="/customers.svg" alt="Customers" fill sizes="36px" style={{ objectFit: 'contain' }} />
@@ -140,8 +140,8 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="mb-4 rounded-lg border border-[#2d2252] bg-[#12102f]/70 shadow-lg">
-        <div className="flex min-w-0 overflow-x-auto border-b border-[#2d2252]">
+      <div className="mb-4 shrink-0 rounded-lg border border-[#34407a] bg-[#151a3f]/90 shadow-lg">
+        <div className="flex min-w-0 overflow-x-auto border-b border-[#34407a]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -160,30 +160,30 @@ export default function CustomersPage() {
       </div>
 
       {activeTab === 'latest' && (
-        <section className="rounded-lg border border-[#2d2252] bg-[#12102f]/70 p-4 shadow-lg">
-          <div className="mb-3 flex items-center justify-between gap-4">
+        <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-[#34407a] bg-[#151a3f]/90 p-4 shadow-lg">
+          <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold text-white">ลูกค้าล่าสุดที่เข้าใช้งาน</h2>
               <p className="mt-1 text-[12px] text-gray-400">แสดง 20 คนล่าสุดจากเวลา login</p>
             </div>
-            <div className="rounded bg-[#181331] px-3 py-1.5 text-[12px] text-gray-300">
+            <div className="rounded bg-[#202650] px-3 py-1.5 text-[12px] text-gray-300">
               {latestCustomers.length.toLocaleString()} คน
             </div>
           </div>
 
           {latestLoading ? (
-            <div className="rounded border border-[#2d2252]/70 bg-[#181236]/40 px-4 py-10 text-center text-[14px] text-gray-400">
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded border border-[#34407a]/70 bg-[#202650]/60 px-4 py-10 text-center text-[14px] text-gray-400">
               กำลังโหลดลูกค้าล่าสุด...
             </div>
           ) : latestCustomers.length === 0 ? (
-            <div className="rounded border border-[#2d2252]/70 bg-[#181236]/40 px-4 py-10 text-center text-[14px] text-gray-400">
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded border border-[#34407a]/70 bg-[#202650]/60 px-4 py-10 text-center text-[14px] text-gray-400">
               ยังไม่มีข้อมูลการเข้าใช้งานล่าสุด
             </div>
           ) : (
-            <div className="max-h-[520px] overflow-auto rounded border border-[#2d2252]/70">
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-[#34407a]/70 custom-scrollbar">
               <table className="w-full min-w-[680px] border-collapse text-left text-[13px] text-gray-200">
                 <thead className="sticky top-0 z-10">
-                  <tr className="border-b border-[#2d2252] bg-[#0c0a1b]/60 text-gray-300">
+                  <tr className="border-b border-[#34407a] bg-[#171d42]/75 text-gray-300">
                     <th className="px-3 py-2.5 font-medium">รหัสลูกค้า</th>
                     <th className="px-3 py-2.5 font-medium">TikTok Open ID</th>
                     <th className="px-3 py-2.5 font-medium">เข้าใช้งานล่าสุด</th>
@@ -194,7 +194,7 @@ export default function CustomersPage() {
                   {latestCustomers.map((item, index) => (
                     <tr
                       key={item.id}
-                      className={`border-b border-[#2d2252]/50 ${
+                      className={`border-b border-[#34407a]/50 ${
                         index % 2 === 0 ? 'bg-[#28214f]/25' : 'bg-[#28214f]/10'
                       }`}
                     >
@@ -205,7 +205,7 @@ export default function CustomersPage() {
                         <button
                           type="button"
                           onClick={() => handleSelectLatestCustomer(item.id)}
-                          className="cursor-pointer rounded border border-[#5c85f1] px-2.5 py-1 text-[12px] font-medium text-[#9db7ff] transition-colors hover:bg-[#5c85f1]/10"
+                          className="cursor-pointer rounded border border-[#6869ff] px-2.5 py-1 text-[12px] font-medium text-[#c5c3ff] transition-colors hover:bg-[#6869ff]/10 hover:text-white"
                         >
                           ดูรายละเอียด
                         </button>
@@ -220,8 +220,8 @@ export default function CustomersPage() {
       )}
 
       {activeTab === 'search' && (
-        <>
-          <section className="rounded-lg border border-[#2d2252] bg-[#12102f]/70 p-4 shadow-lg">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-20 custom-scrollbar">
+          <section className="rounded-lg border border-[#34407a] bg-[#151a3f]/90 p-4 shadow-lg">
             <form onSubmit={handleSearch} className="flex flex-col gap-3 md:flex-row md:items-end">
               <label className="flex-1">
                 <span className="mb-2 block text-[13px] font-medium text-gray-300">ค้นหารหัสลูกค้า</span>
@@ -232,13 +232,13 @@ export default function CustomersPage() {
                   value={customerId}
                   onChange={(event) => setCustomerId(event.target.value)}
                   placeholder="เช่น 123"
-                  className="h-11 w-full rounded border border-[#3b2a75] bg-[#181331] px-4 text-white outline-none transition-colors placeholder:text-gray-500 hover:border-[#6C72FF] focus:border-[#6C72FF]"
+                  className="h-11 w-full rounded border border-[#3b2a75] bg-[#202650] px-4 text-white outline-none transition-colors placeholder:text-gray-500 hover:border-[#6C72FF] focus:border-[#6C72FF]"
                 />
               </label>
               <button
                 type="submit"
                 disabled={loading}
-                className="h-11 cursor-pointer rounded bg-[#5c85f1] px-8 text-[15px] font-medium tracking-wide text-white shadow-md transition-colors hover:bg-[#4a72d7] disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-11 cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] px-8 text-[15px] font-medium tracking-wide text-white shadow-md transition-colors hover:from-[#7778ff] hover:to-[#8466ff] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
               </button>
@@ -253,7 +253,7 @@ export default function CustomersPage() {
 
           {customer && (
             <div className="mt-4 flex flex-col gap-4">
-              <section className="rounded-lg border border-[#2d2252] bg-[#12102f]/70 p-4 shadow-lg">
+              <section className="rounded-lg border border-[#34407a] bg-[#151a3f]/90 p-4 shadow-lg">
                 <div className="mb-3">
                   <h2 className="text-base font-semibold text-white">ข้อมูลลูกค้า</h2>
                   <p className="mt-1 text-[13px] text-gray-400">รหัสลูกค้า #{customer.id}</p>
@@ -266,12 +266,12 @@ export default function CustomersPage() {
                 </div>
               </section>
 
-              <section className="rounded-lg border border-[#2d2252] bg-[#12102f]/70 shadow-lg">
-                <div className="flex items-center justify-between border-b border-[#2d2252] px-4 py-3">
+              <section className="rounded-lg border border-[#34407a] bg-[#151a3f]/90 shadow-lg">
+                <div className="flex items-center justify-between border-b border-[#34407a] px-4 py-3">
                   <div>
                     <h2 className="text-base font-semibold text-white">ประวัติการซื้อ VIP</h2>
                   </div>
-                  <div className="rounded bg-[#181331] px-3 py-1.5 text-[12px] text-gray-300">
+                  <div className="rounded bg-[#202650] px-3 py-1.5 text-[12px] text-gray-300">
                     {vipSubscriptions.length.toLocaleString()} รายการ
                   </div>
                 </div>
@@ -281,10 +281,10 @@ export default function CustomersPage() {
                     ยังไม่มีประวัติการซื้อ VIP
                   </div>
                 ) : (
-                  <div className="max-h-[420px] overflow-auto">
+                  <div className="max-h-[420px] overflow-auto custom-scrollbar">
                     <table className="w-full min-w-[860px] border-collapse text-left text-[13px] text-gray-200">
                       <thead className="sticky top-0 z-10">
-                        <tr className="border-b border-[#2d2252] bg-[#0c0a1b]/60 text-gray-300">
+                        <tr className="border-b border-[#34407a] bg-[#171d42]/75 text-gray-300">
                           <th className="px-3 py-2.5 font-medium">วันที่ซื้อ</th>
                           <th className="px-3 py-2.5 font-medium">แพ็กเกจ</th>
                           <th className="px-3 py-2.5 font-medium">จำนวนวัน</th>
@@ -298,7 +298,7 @@ export default function CustomersPage() {
                         {vipSubscriptions.map((subscription, index) => (
                           <tr
                             key={subscription.id}
-                            className={`border-b border-[#2d2252]/50 ${
+                            className={`border-b border-[#34407a]/50 ${
                               index % 2 === 0 ? 'bg-[#28214f]/25' : 'bg-[#28214f]/10'
                             }`}
                           >
@@ -307,7 +307,7 @@ export default function CustomersPage() {
                             <td className="px-3 py-2.5">{subscription.duration_days?.toLocaleString()} วัน</td>
                             <td className="px-3 py-2.5">{subscription.bean_amount?.toLocaleString()}</td>
                             <td className="px-3 py-2.5">
-                              <span className="rounded bg-[#181331] px-2 py-1 text-[12px] text-gray-200">
+                              <span className="rounded bg-[#202650] px-2 py-1 text-[12px] text-gray-200">
                                 {statusLabels[subscription.status] || subscription.status || '-'}
                               </span>
                             </td>
@@ -322,7 +322,7 @@ export default function CustomersPage() {
               </section>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

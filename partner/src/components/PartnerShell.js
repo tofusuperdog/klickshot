@@ -157,6 +157,28 @@ export default function PartnerShell({ producer, children }) {
     return () => window.clearTimeout(timeoutId);
   }, [notification]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkSession = async () => {
+      const response = await fetch("/api/partner/session", {
+        credentials: "include",
+        cache: "no-store",
+      }).catch(() => null);
+
+      if (!cancelled && response && !response.ok) {
+        router.replace("/");
+      }
+    };
+
+    const intervalId = window.setInterval(checkSession, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [router]);
+
   const openPasswordModal = () => {
     setPasswordForm({
       currentPassword: "",

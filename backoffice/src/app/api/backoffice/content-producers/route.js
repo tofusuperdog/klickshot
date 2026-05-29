@@ -45,6 +45,13 @@ export async function POST(request) {
       p_session_token: token,
       p_content_producer_id: body.content_producer_id,
     };
+  } else if (body.action === 'set_status') {
+    rpcName = 'backoffice_content_producers_set_status_secure';
+    args = {
+      p_session_token: token,
+      p_content_producer_id: body.content_producer_id,
+      p_status: body.status,
+    };
   } else {
     return NextResponse.json({ error: 'Unsupported content producer action' }, { status: 400 });
   }

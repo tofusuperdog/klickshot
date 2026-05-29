@@ -249,7 +249,7 @@ export default function CreateSeriesPage() {
         </h1>
       </div>
 
-      <div className="bg-[#181236] border border-[#2d2252] rounded-lg p-8 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-12">
+      <div className="bg-[#202650] border border-[#34407a] rounded-lg p-8 grid grid-cols-1 md:grid-cols-[300px_1fr] gap-12">
         {/* Left: Poster */}
         <div className="flex flex-col items-center">
           <div className="w-[220px] h-[300px] border border-dashed border-gray-600 rounded bg-transparent flex flex-col items-center justify-center relative overflow-hidden mb-4">
@@ -419,7 +419,7 @@ export default function CreateSeriesPage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="w-28 h-10 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-light text-[15px] cursor-pointer disabled:opacity-50 flex items-center justify-center"
+            className="w-28 h-10 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-light text-[15px] cursor-pointer disabled:opacity-50 flex items-center justify-center"
           >
             {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>

@@ -41,7 +41,7 @@ function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isS
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale">
-      <div className="bg-[#12102f] border border-[#2d2252] rounded-xl w-full max-w-[620px] shadow-2xl p-8 py-10 relative">
+      <div className="bg-[#151a3f] border border-[#34407a] rounded-xl w-full max-w-[620px] shadow-2xl p-8 py-10 relative">
         <h2 className="text-2xl font-semibold text-white text-center mb-8 tracking-wide flex items-center justify-center gap-3">
           แบนเนอร์
           <span className="w-9 h-9 rounded-full bg-[#544081] text-white flex items-center justify-center text-[18px] font-medium shadow-md">
@@ -74,7 +74,7 @@ function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isS
           {/* Series Detail preview */}
           {selectedSeries && (
             <div className="flex gap-5 mb-8">
-              <div className="w-[130px] aspect-[2/3] relative rounded overflow-hidden shadow-md shrink-0 bg-[#0d0a1b]">
+              <div className="w-[130px] aspect-[2/3] relative rounded overflow-hidden shadow-md shrink-0 bg-[#171d42]">
                 {selectedSeries.poster_url ? (
                   <Image src={selectedSeries.poster_url} alt={selectedSeries.title_th} fill sizes="130px" style={{ objectFit: 'cover' }} />
                 ) : (
@@ -104,7 +104,7 @@ function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isS
           )}
 
           {!selectedSeries && (
-            <div className="h-[195px] mb-8 border border-dashed border-[#2d2252] rounded-lg flex items-center justify-center bg-[#181236]/30 text-gray-500 font-light text-[14px]">
+            <div className="h-[195px] mb-8 border border-dashed border-[#34407a] rounded-lg flex items-center justify-center bg-[#202650]/45 text-gray-500 font-light text-[14px]">
               กรุณาเลือกซีรีส์เพื่อดูข้อมูล
             </div>
           )}
@@ -120,7 +120,7 @@ function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isS
             <button
               onClick={() => onSave(bannerIndex, selectedSeriesId)}
               disabled={isSaving || !selectedSeriesId}
-              className="w-[160px] h-11 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-[160px] h-11 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
@@ -143,7 +143,7 @@ function DubbedLanguageModal({ isOpen, onClose, dubbedLanguages, onToggleLanguag
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="bg-[#1a1733] border border-[#3b2b64] rounded-xl w-full max-w-[500px] shadow-2xl p-6 relative">
+      <div className="bg-[#202650] border border-[#3b2b64] rounded-xl w-full max-w-[500px] shadow-2xl p-6 relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white transition cursor-pointer">
            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
@@ -171,7 +171,7 @@ function DubbedLanguageModal({ isOpen, onClose, dubbedLanguages, onToggleLanguag
                      onClick={() => onToggleLanguage(lang.id, !lang.is_published, lang.code)}
                      className={`relative w-10 h-[22px] rounded-full flex items-center px-0.5 cursor-pointer transition-colors ${lang.is_published ? 'bg-[#34d399]' : 'bg-[#bfc3cf]'}`}
                    >
-                      <div className={`w-[16px] h-[16px] bg-[#1a1733] rounded-full shadow-sm transition-transform ${lang.is_published ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                      <div className={`w-[16px] h-[16px] bg-[#202650] rounded-full shadow-sm transition-transform ${lang.is_published ? 'translate-x-4' : 'translate-x-0'}`}></div>
                    </div>
                  </div>
                </div>
@@ -234,7 +234,7 @@ function AddCategoryModal({ isOpen, onClose, onSave, isSaving }) {
       </div>
 
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale">
-        <div className="bg-[#121633] border border-[#2d2252] rounded-xl w-full max-w-[500px] shadow-2xl p-8 py-10 relative">
+        <div className="bg-[#121633] border border-[#34407a] rounded-xl w-full max-w-[500px] shadow-2xl p-8 py-10 relative">
           <h2 className="text-xl font-medium text-white text-center mb-8 tracking-wide">
             เพิ่มหมวดคอนเทนต์
           </h2>
@@ -274,7 +274,7 @@ function AddCategoryModal({ isOpen, onClose, onSave, isSaving }) {
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="w-[160px] h-11 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-[160px] h-11 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
@@ -306,7 +306,7 @@ function CategoryDeleteModal({ category, isOpen, onClose, onConfirm, isSaving })
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-      <div className="bg-[#12102f] border border-[#3b2b64] rounded-xl w-full max-w-[480px] shadow-2xl p-8 pt-10 relative flex flex-col text-center">
+      <div className="bg-[#151a3f] border border-[#3b2b64] rounded-xl w-full max-w-[480px] shadow-2xl p-8 pt-10 relative flex flex-col text-center">
         <h2 className="text-[22px] font-bold text-white mb-4">ยืนยันการลบหมวดคอนเทนต์</h2>
         
         <p className="text-gray-300 text-[15px] mb-2 font-light">
@@ -336,7 +336,7 @@ function CategoryDeleteModal({ category, isOpen, onClose, onConfirm, isSaving })
           <button
             onClick={() => isCorrect && onConfirm()}
             disabled={!isCorrect || isSaving}
-            className="w-[140px] h-11 bg-[#8f3a4b] hover:bg-[#a64055] transition-colors rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-[140px] h-11 bg-[#8f3a4b] hover:bg-[#a64055] transition-all rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? 'กำลังลบ...' : 'ลบหมวดคอนเทนต์'}
           </button>
@@ -538,7 +538,7 @@ function CategoryEditModal({ category, onClose, seriesList, onSave, onDelete, us
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="w-[120px] h-10 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-medium cursor-pointer text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-[120px] h-10 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium cursor-pointer text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
@@ -724,7 +724,7 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
       </div>
 
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-        <div className="bg-[#12102f] border border-[#3b2b64] rounded-xl w-full max-w-[900px] shadow-2xl p-8 relative flex flex-col max-h-[90vh]">
+        <div className="bg-[#151a3f] border border-[#3b2b64] rounded-xl w-full max-w-[900px] shadow-2xl p-8 relative flex flex-col max-h-[90vh]">
           
           <div className="mb-6">
              <h2 className="text-[22px] font-medium text-white tracking-wide">อันดับยอดนิยม</h2>
@@ -805,7 +805,7 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
             <button
               onClick={handleSave}
               disabled={isSaving || loading}
-              className="w-[160px] h-11 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-[160px] h-11 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
@@ -1140,10 +1140,10 @@ export default function DisplaysPage() {
       </div>
 
       {/* Tabs Container */}
-      <div className="w-full bg-[#16132e] border border-[#2d2252] rounded-lg flex flex-col shadow-lg overflow-hidden">
+      <div className="w-full bg-[#151a3f] border border-[#34407a] rounded-lg flex flex-col shadow-lg overflow-hidden">
 
         {/* Tab Headers */}
-        <div className="flex border-b border-[#2d2252] bg-[#1a1733]">
+        <div className="flex border-b border-[#34407a] bg-[#202650]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -1192,7 +1192,7 @@ export default function DisplaysPage() {
                         {hasBanner ? (
                           <>
                             {/* Poster Area */}
-                            <div className="w-full aspect-[2/3] relative bg-[#0d0a1b]">
+                            <div className="w-full aspect-[2/3] relative bg-[#171d42]">
                               {bannerData.series.poster_url && (
                                 <Image src={bannerData.series.poster_url} alt={bannerData.series.title_th} fill sizes="240px" style={{ objectFit: 'cover' }} className="z-0" />
                               )}
@@ -1228,7 +1228,7 @@ export default function DisplaysPage() {
                 <span className="text-gray-300 font-medium">{contentCategories.length} หมวดคอนเทนต์</span>
                 <button 
                   onClick={() => setIsAddingCategory(true)}
-                  className="bg-[#5c85f1] hover:bg-[#4a72d7] text-white px-5 py-2 rounded text-[14px] transition-colors shadow-sm cursor-pointer"
+                  className="bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] text-white px-5 py-2 rounded text-[14px] transition-colors shadow-sm cursor-pointer"
                 >
                   เพิ่มหมวด
                 </button>
@@ -1345,7 +1345,7 @@ export default function DisplaysPage() {
                             onClick={() => handleTogglePublishCategory(cat.id, cat.is_published)}
                             className={`relative w-9 h-[20px] rounded-full flex items-center px-0.5 cursor-pointer transition-colors ${cat.is_published ? 'bg-[#34d399]' : 'bg-[#4c5075]'}`}
                           >
-                            <div className={`w-[16px] h-[16px] bg-[#1a1733] rounded-full shadow-sm transition-transform ${cat.is_published ? 'ml-auto' : 'ml-0'}`}></div>
+                            <div className={`w-[16px] h-[16px] bg-[#202650] rounded-full shadow-sm transition-transform ${cat.is_published ? 'ml-auto' : 'ml-0'}`}></div>
                           </div>
                         </div>
                       </div>

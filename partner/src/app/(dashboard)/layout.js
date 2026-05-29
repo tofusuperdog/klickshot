@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import PartnerShell from "@/components/PartnerShell";
 import {
   PARTNER_SESSION_COOKIE,
+  validateActivePartnerSession,
   verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
 
@@ -15,5 +16,11 @@ export default async function DashboardLayout({ children }) {
     redirect("/");
   }
 
-  return <PartnerShell producer={producer}>{children}</PartnerShell>;
+  const activeProducer = await validateActivePartnerSession(producer);
+
+  if (!activeProducer) {
+    redirect("/");
+  }
+
+  return <PartnerShell producer={activeProducer}>{children}</PartnerShell>;
 }

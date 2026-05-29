@@ -347,7 +347,7 @@ export default function EditSeriesPage() {
         </h1>
       </div>
 
-      <div className="bg-[#181236]/70 border border-[#2d2252] rounded-lg p-8 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-14 shadow-lg">
+      <div className="bg-[#202650]/80 border border-[#34407a] rounded-lg p-8 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-14 shadow-lg">
         {/* Left: Poster */}
         <div className="flex flex-col items-center pt-2">
           <div className="w-[200px] h-[280px] border border-dashed border-gray-600 rounded bg-transparent flex flex-col items-center justify-center relative overflow-hidden mb-3">
@@ -381,7 +381,7 @@ export default function EditSeriesPage() {
               <button
                 type="button"
                 onClick={handleDeleteImage}
-                className="text-[#6495ED] hover:text-[#4a72d7] underline text-sm transition-colors cursor-pointer font-light"
+                className="text-[#c5c3ff] hover:text-[#8466ff] underline text-sm transition-colors cursor-pointer font-light"
               >
                 ลบรูปภาพ
               </button>
@@ -389,7 +389,7 @@ export default function EditSeriesPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[#6495ED] hover:text-[#4a72d7] underline text-sm transition-colors cursor-pointer font-light"
+                className="text-[#c5c3ff] hover:text-[#8466ff] underline text-sm transition-colors cursor-pointer font-light"
               >
                 เพิ่มรูปภาพ
               </button>
@@ -532,7 +532,7 @@ export default function EditSeriesPage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="w-28 h-10 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-light text-[15px] cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg"
+            className="w-28 h-10 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-light text-[15px] cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg"
           >
             {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
@@ -540,8 +540,8 @@ export default function EditSeriesPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-6 bg-[#181236]/70 border border-[#2d2252] rounded-lg shadow-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#2d2252]">
+      <div className="mt-6 bg-[#202650]/80 border border-[#34407a] rounded-lg shadow-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#34407a]">
           <h2 className="text-base font-semibold text-white tracking-wide">โซนอันตราย</h2>
         </div>
         <div className="p-6 pb-8">
@@ -558,7 +558,7 @@ export default function EditSeriesPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
-          <div className="bg-[#12102f] border border-[#504481] rounded-xl w-full max-w-[520px] shadow-2xl p-8 py-10">
+          <div className="bg-[#151a3f] border border-[#504481] rounded-xl w-full max-w-[520px] shadow-2xl p-8 py-10">
             <h2 className="text-xl font-semibold text-white text-center mb-3 tracking-wide">
               ยืนยันการลบซีรีส์
             </h2>
@@ -586,7 +586,7 @@ export default function EditSeriesPage() {
                 type="button"
                 onClick={handleDeleteSeries}
                 disabled={isDeleting || parseInt(mathAnswer) !== (mathChallenge.num1 + mathChallenge.num2)}
-                className="w-32 h-10 bg-[#D24949] hover:bg-red-500 transition-colors rounded text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-32 h-10 bg-[#D24949] hover:bg-red-500 transition-all rounded text-white font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isDeleting ? 'กำลังลบ...' : 'ลบซีรีส์'}
               </button>

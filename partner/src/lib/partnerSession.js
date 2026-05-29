@@ -38,6 +38,7 @@ export function createPartnerSessionToken(producer, remember = false) {
         id: producer.id,
         name: producer.name,
         username: producer.username,
+        session_version: producer.session_version,
       },
     }),
   );
@@ -65,10 +66,42 @@ export function verifyPartnerSessionToken(token) {
     const data = JSON.parse(base64UrlDecode(payload));
     if (!data.exp || data.exp < Math.floor(Date.now() / 1000)) return null;
     if (!data.producer?.id || !data.producer?.username) return null;
+    if (!Number.isInteger(data.producer?.session_version)) return null;
     return data.producer;
   } catch {
     return null;
   }
+}
+
+export async function validateActivePartnerSession(producer) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
+
+  if (!producer || !supabaseUrl || !supabaseKey || !partnerLoginSecret) {
+    return null;
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/partner_session_validate`, {
+    method: "POST",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      p_producer_id: producer.id,
+      p_username: producer.username,
+      p_session_version: producer.session_version,
+      p_app_secret: partnerLoginSecret,
+    }),
+    cache: "no-store",
+  }).catch(() => null);
+
+  if (!response?.ok) return null;
+
+  const data = await response.json().catch(() => []);
+  return Array.isArray(data) ? data[0] || null : null;
 }
 
 export function getPartnerCookieOptions(maxAge) {

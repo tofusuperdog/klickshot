@@ -176,8 +176,8 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-[#3b2a75] bg-[#131024]/95 p-3 shadow-2xl backdrop-blur-md">
-      <p className="mb-2 border-b border-[#2d2252] pb-1 text-[11px] font-medium text-gray-400">
+    <div className="rounded-lg border border-[#3b2a75] bg-[#151a3f]/95 p-3 shadow-2xl backdrop-blur-md">
+      <p className="mb-2 border-b border-[#34407a] pb-1 text-[11px] font-medium text-gray-400">
         วันที่ {label}
       </p>
       <div className="space-y-1.5">
@@ -289,8 +289,8 @@ export default function DashboardGraph() {
   }, [activeTab, config, dateRange, streamingRows, visitRows, beanRows, vipRows]);
 
   return (
-    <div className="bg-[#131024] border border-[#2d2252] rounded shadow-md p-4 h-full min-h-0 flex flex-col">
-      <div className="flex items-end justify-between gap-4 border-b border-[#2d2252] mb-6 shrink-0">
+    <div className="bg-[#151a3f]/95 border border-[#34407a] rounded shadow-[0_18px_40px_rgba(10,14,42,0.24)] p-4 h-full min-h-0 flex flex-col">
+      <div className="flex items-end justify-between gap-4 border-b border-[#34407a] mb-6 shrink-0">
         <div className="flex min-w-0 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -299,8 +299,8 @@ export default function DashboardGraph() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 text-[15px] font-medium transition-colors border-b-2 cursor-pointer whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'border-[#6C72FF] text-[#6C72FF]'
-                  : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                  ? 'border-[#7f83ff] text-[#aeb1ff]'
+                  : 'border-transparent text-[#aab4d6] hover:text-white hover:bg-white/5'
               }`}
             >
               {tab.label}
@@ -309,24 +309,38 @@ export default function DashboardGraph() {
         </div>
 
         <div className="shrink-0 pb-2">
-          <select
-            value={dateRange}
-            onChange={(event) => setDateRange(Number(event.target.value))}
-            className="h-9 rounded border border-[#3b2a75] bg-[#181331] px-3 text-sm text-white outline-none transition-colors hover:border-[#6C72FF] focus:border-[#6C72FF]"
-          >
-            {rangeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex h-10 overflow-hidden rounded-lg border border-[#2f3a72] bg-[#111735]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+            <div className="flex items-center gap-2 border-r border-[#2f3a72] px-3 text-[13px] font-medium text-[#aab4d6]">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              ช่วงเวลา
+            </div>
+            <div className="relative">
+              <select
+                value={dateRange}
+                onChange={(event) => setDateRange(Number(event.target.value))}
+                className="h-full min-w-[108px] cursor-pointer appearance-none bg-[#151a3f] pl-5 pr-10 text-[14px] font-semibold text-white outline-none transition-colors hover:bg-[#1b2250] focus:bg-[#1b2250]"
+              >
+                {rangeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#aab4d6]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="w-full flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2d2252" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#34407a" />
             <XAxis
               dataKey="date"
               stroke="#9ca3af"
@@ -360,7 +374,7 @@ export default function DashboardGraph() {
                   dataKey={item.key}
                   stroke={item.color}
                   strokeWidth={3}
-                  dot={dateRange <= 14 ? { r: 4, strokeWidth: 2, fill: '#131024' } : false}
+                  dot={dateRange <= 14 ? { r: 4, strokeWidth: 2, fill: '#151a3f' } : false}
                   activeDot={{ r: 6 }}
                 />
               ))
@@ -371,7 +385,7 @@ export default function DashboardGraph() {
                 dataKey="value"
                 stroke={config.color}
                 strokeWidth={3}
-                dot={dateRange <= 14 ? { r: 4, strokeWidth: 2, fill: '#131024' } : false}
+                dot={dateRange <= 14 ? { r: 4, strokeWidth: 2, fill: '#151a3f' } : false}
                 activeDot={{ r: 6 }}
               />
             )}

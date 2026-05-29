@@ -104,6 +104,7 @@ export async function POST(request) {
       id: producer.id,
       name: producer.name,
       username: producer.username,
+      session_version: producer.session_version,
     },
   });
   nextResponse.cookies.set(

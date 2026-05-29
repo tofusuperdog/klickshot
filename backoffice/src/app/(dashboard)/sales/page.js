@@ -122,7 +122,7 @@ export default function SalesPage() {
         <h1 className="text-xl text-gray-300 font-semibold tracking-wide">การขาย</h1>
       </div>
 
-      <div className="border border-[#2d2252] rounded-lg overflow-hidden shadow-lg bg-[#12102f]/60">
+      <div className="border border-[#34407a] rounded-lg overflow-hidden shadow-lg bg-[#151a3f]/85">
         <div className="p-8">
           <div className="w-full max-w-[1200px] mx-auto flex flex-col items-center animate-fadeIn">
             <div className="w-full flex justify-end items-center mb-6">
@@ -180,10 +180,10 @@ export default function SalesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 w-full bg-[#12102f]/40 rounded-xl p-4 overflow-x-auto border border-[#2d2252]/50">
+              <div className="flex-1 w-full bg-[#151a3f]/70 rounded-xl p-4 overflow-x-auto border border-[#34407a]/50">
                 <table className="w-full text-center text-[13px] font-medium text-white border-collapse min-w-[560px]">
                   <thead>
-                    <tr className="border-b-[0.5px] border-b-gray-700 bg-[#0c0a1b]/60">
+                    <tr className="border-b-[0.5px] border-b-gray-700 bg-[#171d42]/75">
                       <th className="py-3 px-2 font-medium tracking-wide">ประเภท</th>
                       <th className="py-3 px-2 font-medium tracking-wide">จำนวนวัน</th>
                       <th className="py-3 px-2 font-medium tracking-wide">ราคา (Beans)</th>
@@ -245,7 +245,7 @@ export default function SalesPage() {
                 type="button"
                 onClick={handleCancelVip}
                 disabled={!isVipDirty || isSaving}
-                className="w-40 h-11 bg-transparent border border-[#5c85f1] hover:bg-[#5c85f1]/10 transition-colors rounded text-[#5c85f1] font-medium tracking-widest cursor-pointer disabled:opacity-30 disabled:border-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-[15px]"
+                className="w-40 h-11 bg-transparent border border-[#6869ff] hover:bg-[#6869ff]/10 transition-colors rounded text-[#c5c3ff] hover:text-white font-medium tracking-widest cursor-pointer disabled:opacity-30 disabled:border-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed text-[15px]"
               >
                 ยกเลิก
               </button>
@@ -253,7 +253,7 @@ export default function SalesPage() {
                 type="button"
                 onClick={handleSaveVip}
                 disabled={!isVipDirty || isSaving}
-                className="w-40 h-11 bg-[#5c85f1] hover:bg-[#4a72d7] transition-colors rounded text-white font-medium tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-[15px] shadow-md"
+                className="w-40 h-11 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium tracking-widest cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-[15px] shadow-md"
               >
                 {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
