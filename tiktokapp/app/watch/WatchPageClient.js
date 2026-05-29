@@ -28,7 +28,7 @@ const BYTEPLUS_LICENSE =
   process.env.NEXT_PUBLIC_BYTEPLUS_LICENSE ||
   "https://sf16-vod-license-multi.byteplusvod.com/obj/vod-license-sgcom/l-1122314769-ch-vod-a-1006938.lic";
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
-const PLAYER_AUDIO_GAIN = 1.3;
+const PLAYER_AUDIO_GAIN = 2.5;
 const ENABLE_AUDIO_TRACK_SWITCHING = true;
 
 const headers = SUPABASE_HEADERS;
