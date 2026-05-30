@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
 import {
   createPartnerSessionToken,
+  forbiddenResponse,
   getPartnerCookieOptions,
+  isSameOriginRequest,
+  jsonResponse,
   PARTNER_SESSION_COOKIE,
+  readJsonBody,
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
@@ -13,6 +16,7 @@ const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 const loginAttempts = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 10;
+const LOGIN_BODY_LIMIT_BYTES = 8 * 1024;
 
 function getClientKey(request, username) {
   const forwardedFor = request.headers.get("x-forwarded-for") || "";
@@ -38,28 +42,39 @@ function resetRateLimit(key) {
 }
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) return forbiddenResponse();
+
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "Partner login is not configured." },
       { status: 500 },
     );
   }
 
-  const body = await request.json().catch(() => ({}));
+  const parsedBody = await readJsonBody(request, LOGIN_BODY_LIMIT_BYTES);
+  if (parsedBody.error) {
+    return jsonResponse({ error: parsedBody.error }, { status: parsedBody.status });
+  }
+
+  const body = parsedBody.data || {};
   const username = String(body.username || "").trim();
   const password = String(body.password || "");
   const remember = Boolean(body.remember);
 
   if (!username || !password) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน" },
       { status: 400 },
     );
   }
 
+  if (username.length > 128 || password.length > 512) {
+    return jsonResponse({ error: "Invalid credentials" }, { status: 401 });
+  }
+
   const rateLimitKey = getClientKey(request, username);
   if (isRateLimited(rateLimitKey)) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง" },
       { status: 429 },
     );
@@ -80,7 +95,7 @@ export async function POST(request) {
   });
 
   if (!response.ok) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "ไม่สามารถเข้าสู่ระบบได้ในขณะนี้" },
       { status: 502 },
     );
@@ -90,7 +105,7 @@ export async function POST(request) {
   const producer = Array.isArray(data) ? data[0] : null;
 
   if (!producer) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" },
       { status: 401 },
     );
@@ -99,7 +114,7 @@ export async function POST(request) {
   resetRateLimit(rateLimitKey);
 
   const session = createPartnerSessionToken(producer, remember);
-  const nextResponse = NextResponse.json({
+  const nextResponse = jsonResponse({
     producer: {
       id: producer.id,
       name: producer.name,

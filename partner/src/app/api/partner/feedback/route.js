@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  forbiddenResponse,
+  isSameOriginRequest,
+  jsonResponse,
   PARTNER_SESSION_COOKIE,
+  readJsonBody,
   validateActivePartnerSession,
   verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
@@ -17,6 +21,8 @@ function isValidEmail(value) {
 }
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) return forbiddenResponse();
+
   const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
   const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
 
@@ -34,14 +40,12 @@ export async function POST(request) {
     );
   }
 
-  let body;
-
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  const parsedBody = await readJsonBody(request);
+  if (parsedBody.error) {
+    return jsonResponse({ error: parsedBody.error }, { status: parsedBody.status });
   }
 
+  const body = parsedBody.data || {};
   const email = String(body?.email || "").trim();
   const message = String(body?.message || "").trim();
   const requestedCategory = String(body?.category || "feedback").trim();

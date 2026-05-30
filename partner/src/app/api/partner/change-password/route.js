@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  forbiddenResponse,
+  isSameOriginRequest,
+  jsonResponse,
   PARTNER_SESSION_COOKIE,
+  readJsonBody,
   validateActivePartnerSession,
   verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
@@ -12,6 +16,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) return forbiddenResponse();
+
   const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
   const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
 
@@ -29,7 +35,12 @@ export async function POST(request) {
     );
   }
 
-  const body = await request.json().catch(() => ({}));
+  const parsedBody = await readJsonBody(request, 8 * 1024);
+  if (parsedBody.error) {
+    return jsonResponse({ error: parsedBody.error }, { status: parsedBody.status });
+  }
+
+  const body = parsedBody.data || {};
   const currentPassword = String(body.currentPassword || "");
   const newPassword = String(body.newPassword || "");
 

@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
 import {
   createBackofficeSupabaseClient,
   forbiddenResponse,
   getBackofficeToken,
   isSameOriginRequest,
+  jsonResponse,
+  readJsonBody,
   unauthorizedResponse,
 } from '@/lib/backofficeServer';
 
@@ -16,16 +17,21 @@ export async function POST(request) {
   const token = getBackofficeToken(request);
   if (!token) return unauthorizedResponse();
 
+  const body = await readJsonBody(request);
+  if (body.error) {
+    return jsonResponse({ error: body.error }, { status: body.status });
+  }
+
   const {
     table,
     action,
     payload = {},
     filter = {},
     onConflict = null,
-  } = await request.json().catch(() => ({}));
+  } = body.data || {};
 
   if (!table || !action) {
-    return NextResponse.json({ error: 'Missing mutation target' }, { status: 400 });
+    return jsonResponse({ error: 'Missing mutation target' }, { status: 400 });
   }
 
   const supabase = createBackofficeSupabaseClient();
@@ -39,8 +45,8 @@ export async function POST(request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 403 });
+    return jsonResponse({ error: 'Forbidden' }, { status: 403 });
   }
 
-  return NextResponse.json({ data });
+  return jsonResponse({ data });
 }

@@ -136,18 +136,12 @@ export default function Home() {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/system_versions?system_type=eq.website&select=version_number&order=release_date.desc&limit=1`,
-          {
-            headers: {
-              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-            },
-          },
-        );
+        const response = await fetch("/api/version");
+        if (!response.ok) return;
+
         const data = await response.json();
-        if (data && data.length > 0) {
-          setVersion(data[0].version_number);
+        if (data?.version) {
+          setVersion(data.version);
         }
       } catch (error) {
         console.error("Error fetching version:", error);

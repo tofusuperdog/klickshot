@@ -1,9 +1,17 @@
 import crypto from "crypto";
+import { NextResponse } from "next/server";
 
 export const PARTNER_SESSION_COOKIE = "partner_session";
 
 const SESSION_DURATION_SECONDS = 12 * 60 * 60;
 const REMEMBER_DURATION_SECONDS = 30 * 24 * 60 * 60;
+const JSON_BODY_LIMIT_BYTES = 32 * 1024;
+
+export const SECURITY_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  Pragma: "no-cache",
+  "X-Content-Type-Options": "nosniff",
+};
 
 function getSessionSecret() {
   const secret = process.env.PARTNER_SESSION_SECRET;
@@ -50,9 +58,11 @@ export function createPartnerSessionToken(producer, remember = false) {
 }
 
 export function verifyPartnerSessionToken(token) {
-  if (!token || !token.includes(".")) return null;
+  if (!token || !token.includes(".") || token.length > 4096) return null;
 
   const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+
   const expectedSignature = sign(payload);
   const signatureBuffer = Buffer.from(signature || "");
   const expectedSignatureBuffer = Buffer.from(expectedSignature);
@@ -70,6 +80,57 @@ export function verifyPartnerSessionToken(token) {
     return data.producer;
   } catch {
     return null;
+  }
+}
+
+export function isSameOriginRequest(request) {
+  const origin = request.headers.get("origin");
+  const secFetchSite = request.headers.get("sec-fetch-site");
+
+  if (secFetchSite && !["same-origin", "same-site", "none"].includes(secFetchSite)) {
+    return false;
+  }
+
+  if (!origin) return true;
+
+  return origin === request.nextUrl.origin;
+}
+
+export function jsonResponse(body, init = {}) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: {
+      ...SECURITY_HEADERS,
+      ...(init.headers || {}),
+    },
+  });
+}
+
+export function forbiddenResponse(message = "Forbidden") {
+  return jsonResponse({ error: message }, { status: 403 });
+}
+
+export async function readJsonBody(request, maxBytes = JSON_BODY_LIMIT_BYTES) {
+  const contentLength = Number(request.headers.get("content-length") || 0);
+
+  if (contentLength > maxBytes) {
+    return { data: null, error: "Request body too large", status: 413 };
+  }
+
+  const rawBody = await request.text().catch(() => "");
+
+  if (!rawBody) {
+    return { data: {}, error: null, status: 200 };
+  }
+
+  if (Buffer.byteLength(rawBody, "utf8") > maxBytes) {
+    return { data: null, error: "Request body too large", status: 413 };
+  }
+
+  try {
+    return { data: JSON.parse(rawBody), error: null, status: 200 };
+  } catch {
+    return { data: null, error: "Invalid JSON body", status: 400 };
   }
 }
 

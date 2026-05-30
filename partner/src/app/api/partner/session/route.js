@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import {
   getPartnerCookieOptions,
+  jsonResponse,
   PARTNER_SESSION_COOKIE,
   validateActivePartnerSession,
   verifyPartnerSessionToken,
@@ -13,7 +13,7 @@ export async function GET(request) {
   const producer = verifyPartnerSessionToken(token);
 
   if (!producer) {
-    const response = NextResponse.json({ producer: null }, { status: 401 });
+    const response = jsonResponse({ producer: null }, { status: 401 });
     response.cookies.set(PARTNER_SESSION_COOKIE, "", getPartnerCookieOptions(0));
     return response;
   }
@@ -21,10 +21,10 @@ export async function GET(request) {
   const activeProducer = await validateActivePartnerSession(producer);
 
   if (!activeProducer) {
-    const response = NextResponse.json({ producer: null }, { status: 401 });
+    const response = jsonResponse({ producer: null }, { status: 401 });
     response.cookies.set(PARTNER_SESSION_COOKIE, "", getPartnerCookieOptions(0));
     return response;
   }
 
-  return NextResponse.json({ producer: activeProducer });
+  return jsonResponse({ producer: activeProducer });
 }

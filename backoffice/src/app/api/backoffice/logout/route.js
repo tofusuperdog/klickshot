@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
 import {
   clearBackofficeSessionCookie,
   createBackofficeSupabaseClient,
   forbiddenResponse,
   getBackofficeToken,
   isSameOriginRequest,
+  jsonResponse,
 } from '@/lib/backofficeServer';
 
 export const runtime = 'nodejs';
@@ -20,7 +20,7 @@ export async function POST(request) {
     await supabase.rpc('backoffice_logout', { p_session_token: token });
   }
 
-  const response = NextResponse.json({ ok: true });
+  const response = jsonResponse({ ok: true });
   clearBackofficeSessionCookie(response);
   return response;
 }
