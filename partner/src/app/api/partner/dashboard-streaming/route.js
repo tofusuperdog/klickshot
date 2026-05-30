@@ -1,37 +1,27 @@
-import { NextResponse } from "next/server";
 import {
-  PARTNER_SESSION_COOKIE,
-  validateActivePartnerSession,
-  verifyPartnerSessionToken,
+  getActivePartnerFromRequest,
+  getSupabaseConfig,
+  jsonResponse,
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 const allowedRanges = new Set([7, 14, 30]);
 
 export async function GET(request) {
-  const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
+  const producer = await getActivePartnerFromRequest(request);
 
   if (!producer) {
-    return NextResponse.json(
-      { error: "กรุณาเข้าสู่ระบบใหม่อีกครั้ง" },
-      { status: 401 },
-    );
+    return jsonResponse({ error: "Please sign in again." }, { status: 401 });
   }
 
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
-    return NextResponse.json(
-      { error: "Partner dashboard is not configured." },
-      { status: 500 },
-    );
+    return jsonResponse({ error: "Partner dashboard is not configured." }, { status: 500 });
   }
 
-  const url = new URL(request.url);
-  const requestedDays = Number(url.searchParams.get("days") || 7);
+  const requestedDays = Number(request.nextUrl.searchParams.get("days") || 7);
   const days = allowedRanges.has(requestedDays) ? requestedDays : 7;
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/partner_dashboard_streaming`, {
@@ -46,16 +36,14 @@ export async function GET(request) {
       p_days: days,
       p_app_secret: partnerLoginSecret,
     }),
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    return NextResponse.json(
-      { error: "ไม่สามารถดึงข้อมูลกราฟได้ในขณะนี้" },
-      { status: 502 },
-    );
+    return jsonResponse({ error: "Unable to load dashboard data." }, { status: 502 });
   }
 
   const rows = await response.json().catch(() => []);
 
-  return NextResponse.json({ rows, days });
+  return jsonResponse({ rows, days });
 }

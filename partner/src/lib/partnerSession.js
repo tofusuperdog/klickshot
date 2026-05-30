@@ -6,6 +6,7 @@ export const PARTNER_SESSION_COOKIE = "partner_session";
 const SESSION_DURATION_SECONDS = 12 * 60 * 60;
 const REMEMBER_DURATION_SECONDS = 30 * 24 * 60 * 60;
 const JSON_BODY_LIMIT_BYTES = 32 * 1024;
+const rateLimitBuckets = new Map();
 
 export const SECURITY_HEADERS = {
   "Cache-Control": "no-store, max-age=0",
@@ -134,10 +135,39 @@ export async function readJsonBody(request, maxBytes = JSON_BODY_LIMIT_BYTES) {
   }
 }
 
+export function getSupabaseConfig() {
+  return {
+    supabaseUrl: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    partnerLoginSecret: process.env.PARTNER_LOGIN_SECRET,
+  };
+}
+
+export async function getActivePartnerFromRequest(request) {
+  const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
+  return validateActivePartnerSession(verifyPartnerSessionToken(token));
+}
+
+export function getClientIp(request) {
+  const forwardedFor = request.headers.get("x-forwarded-for") || "";
+  return forwardedFor.split(",")[0]?.trim() || "unknown";
+}
+
+export function isRateLimited(key, limit, windowMs) {
+  const now = Date.now();
+  const record = rateLimitBuckets.get(key);
+
+  if (!record || record.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  record.count += 1;
+  return record.count > limit;
+}
+
 export async function validateActivePartnerSession(producer) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
 
   if (!producer || !supabaseUrl || !supabaseKey || !partnerLoginSecret) {
     return null;

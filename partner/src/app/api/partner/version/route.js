@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
+import { getSupabaseConfig, jsonResponse } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 export async function GET() {
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
+
   if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.json({ version: null }, { status: 200 });
+    return jsonResponse({ version: null }, { status: 200 });
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/public_partner_version`, {
@@ -23,12 +22,12 @@ export async function GET() {
   });
 
   if (!response.ok) {
-    return NextResponse.json({ version: null }, { status: 200 });
+    return jsonResponse({ version: null }, { status: 200 });
   }
 
   const data = await response.json().catch(() => null);
 
-  return NextResponse.json({
+  return jsonResponse({
     version: typeof data === "string" ? data : null,
   });
 }

@@ -1,20 +1,21 @@
-import { NextResponse } from "next/server";
 import {
   forbiddenResponse,
+  getActivePartnerFromRequest,
+  getClientIp,
+  getSupabaseConfig,
+  isRateLimited,
   isSameOriginRequest,
   jsonResponse,
-  PARTNER_SESSION_COOKIE,
   readJsonBody,
-  validateActivePartnerSession,
-  verifyPartnerSessionToken,
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 const allowedCategories = new Set(["feedback", "suggestion", "issue"]);
+const FEEDBACK_BODY_LIMIT_BYTES = 16 * 1024;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -23,24 +24,26 @@ function isValidEmail(value) {
 export async function POST(request) {
   if (!isSameOriginRequest(request)) return forbiddenResponse();
 
-  const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
+  const producer = await getActivePartnerFromRequest(request);
 
   if (!producer) {
-    return NextResponse.json(
-      { error: "กรุณาเข้าสู่ระบบใหม่อีกครั้ง" },
-      { status: 401 },
+    return jsonResponse({ error: "Please sign in again." }, { status: 401 });
+  }
+
+  const rateLimitKey = `feedback:${getClientIp(request)}:${producer.id}`;
+  if (isRateLimited(rateLimitKey, RATE_LIMIT_MAX_ATTEMPTS, RATE_LIMIT_WINDOW_MS)) {
+    return jsonResponse(
+      { error: "Too many feedback submissions. Please try again later." },
+      { status: 429 },
     );
   }
 
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
-    return NextResponse.json(
-      { error: "Partner feedback is not configured." },
-      { status: 500 },
-    );
+    return jsonResponse({ error: "Partner feedback is not configured." }, { status: 500 });
   }
 
-  const parsedBody = await readJsonBody(request);
+  const parsedBody = await readJsonBody(request, FEEDBACK_BODY_LIMIT_BYTES);
   if (parsedBody.error) {
     return jsonResponse({ error: parsedBody.error }, { status: parsedBody.status });
   }
@@ -54,17 +57,15 @@ export async function POST(request) {
     : "feedback";
 
   if (!email || !message) {
-    return NextResponse.json(
-      { error: "กรุณากรอกอีเมลและข้อความ" },
-      { status: 400 },
-    );
+    return jsonResponse({ error: "Please enter an email and message." }, { status: 400 });
   }
 
-  if (!isValidEmail(email)) {
-    return NextResponse.json(
-      { error: "รูปแบบอีเมลไม่ถูกต้อง" },
-      { status: 400 },
-    );
+  if (email.length > 254 || !isValidEmail(email)) {
+    return jsonResponse({ error: "Invalid email address." }, { status: 400 });
+  }
+
+  if (message.length > 5000) {
+    return jsonResponse({ error: "Message is too long." }, { status: 400 });
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/partner_contact_message_create`, {
@@ -83,20 +84,19 @@ export async function POST(request) {
       p_message: message,
       p_app_secret: partnerLoginSecret,
     }),
+    cache: "no-store",
   });
-  const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    return NextResponse.json(
-      {
-        error: "ไม่สามารถส่งข้อความได้ในขณะนี้",
-        details: data?.message || data?.error || null,
-      },
+    return jsonResponse(
+      { error: "Unable to send feedback right now." },
       { status: response.status === 404 ? 404 : 502 },
     );
   }
 
-  return NextResponse.json({
+  const data = await response.json().catch(() => null);
+
+  return jsonResponse({
     ok: true,
     id: Array.isArray(data) ? data[0]?.id || null : data?.id || null,
   });

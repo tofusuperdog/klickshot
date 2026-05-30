@@ -1,45 +1,32 @@
-import { NextResponse } from "next/server";
 import {
-  PARTNER_SESSION_COOKIE,
-  validateActivePartnerSession,
-  verifyPartnerSessionToken,
+  getActivePartnerFromRequest,
+  getSupabaseConfig,
+  jsonResponse,
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 const allowedRanges = new Set([1, 7, 14]);
 
 export async function GET(request) {
-  const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
+  const producer = await getActivePartnerFromRequest(request);
 
   if (!producer) {
-    return NextResponse.json(
-      { error: "กรุณาเข้าสู่ระบบใหม่อีกครั้ง" },
-      { status: 401 },
-    );
+    return jsonResponse({ error: "Please sign in again." }, { status: 401 });
   }
 
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
-    return NextResponse.json(
-      { error: "Partner series detail is not configured." },
-      { status: 500 },
-    );
+    return jsonResponse({ error: "Partner series detail is not configured." }, { status: 500 });
   }
 
-  const url = new URL(request.url);
-  const seriesId = Number(url.searchParams.get("seriesId"));
-  const requestedDays = Number(url.searchParams.get("days") || 1);
+  const seriesId = Number(request.nextUrl.searchParams.get("seriesId"));
+  const requestedDays = Number(request.nextUrl.searchParams.get("days") || 1);
   const days = allowedRanges.has(requestedDays) ? requestedDays : 1;
 
-  if (!Number.isInteger(seriesId) || seriesId <= 0) {
-    return NextResponse.json(
-      { error: "ไม่พบรหัสซีรีส์" },
-      { status: 400 },
-    );
+  if (!Number.isSafeInteger(seriesId) || seriesId <= 0) {
+    return jsonResponse({ error: "Invalid series id." }, { status: 400 });
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/partner_series_episode_views`, {
@@ -55,16 +42,17 @@ export async function GET(request) {
       p_days: days,
       p_app_secret: partnerLoginSecret,
     }),
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    return NextResponse.json(
-      { error: "ไม่สามารถดึงข้อมูลรายละเอียดซีรีส์ได้ในขณะนี้" },
+    return jsonResponse(
+      { error: "Unable to load series detail data." },
       { status: response.status === 404 ? 404 : 502 },
     );
   }
 
   const rows = await response.json().catch(() => []);
 
-  return NextResponse.json({ rows, days });
+  return jsonResponse({ rows, days });
 }

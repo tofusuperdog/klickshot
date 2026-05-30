@@ -10,10 +10,14 @@ export const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
 };
 
+const rateLimitBuckets = new Map();
+
 export function createBackofficeSupabaseClient() {
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
+
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseKey,
     {
       auth: {
         persistSession: false,
@@ -21,6 +25,31 @@ export function createBackofficeSupabaseClient() {
       },
     }
   );
+}
+
+export function getSupabaseConfig() {
+  return {
+    supabaseUrl: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+}
+
+export function getClientIp(request) {
+  const forwardedFor = request.headers.get('x-forwarded-for') || '';
+  return forwardedFor.split(',')[0]?.trim() || 'unknown';
+}
+
+export function isRateLimited(key, limit, windowMs) {
+  const now = Date.now();
+  const record = rateLimitBuckets.get(key);
+
+  if (!record || record.resetAt <= now) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+
+  record.count += 1;
+  return record.count > limit;
 }
 
 export function getBackofficeToken(request) {

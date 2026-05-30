@@ -1,7 +1,9 @@
 import {
   createPartnerSessionToken,
   forbiddenResponse,
+  getClientIp,
   getPartnerCookieOptions,
+  getSupabaseConfig,
   isSameOriginRequest,
   jsonResponse,
   PARTNER_SESSION_COOKIE,
@@ -9,19 +11,15 @@ import {
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
 const loginAttempts = new Map();
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 10;
 const LOGIN_BODY_LIMIT_BYTES = 8 * 1024;
 
 function getClientKey(request, username) {
-  const forwardedFor = request.headers.get("x-forwarded-for") || "";
-  const ip = forwardedFor.split(",")[0]?.trim() || "unknown";
-  return `${ip}:${username.toLowerCase()}`;
+  return `${getClientIp(request)}:${username.toLowerCase()}`;
 }
 
 function isRateLimited(key) {
@@ -44,6 +42,7 @@ function resetRateLimit(key) {
 export async function POST(request) {
   if (!isSameOriginRequest(request)) return forbiddenResponse();
 
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
     return jsonResponse(
       { error: "Partner login is not configured." },
@@ -92,6 +91,7 @@ export async function POST(request) {
       p_password: password,
       p_app_secret: partnerLoginSecret,
     }),
+    cache: "no-store",
   });
 
   if (!response.ok) {

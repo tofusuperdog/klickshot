@@ -1,18 +1,16 @@
-import { NextResponse } from "next/server";
 import {
-  PARTNER_SESSION_COOKIE,
-  validateActivePartnerSession,
-  verifyPartnerSessionToken,
+  getActivePartnerFromRequest,
+  getSupabaseConfig,
+  jsonResponse,
 } from "@/lib/partnerSession";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const partnerLoginSecret = process.env.PARTNER_LOGIN_SECRET;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function callBillingRpc(name, body) {
+async function callBillingRpc(config, name, body) {
+  const { supabaseUrl, supabaseKey } = config;
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: {
@@ -21,34 +19,38 @@ async function callBillingRpc(name, body) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    cache: "no-store",
   });
-
-  const data = await response.json().catch(() => null);
 
   if (!response.ok) {
     return {
       data: null,
-      error: data?.message || "Unable to load billing reports.",
+      error: "Unable to load billing reports.",
       status: 502,
     };
   }
 
+  const data = await response.json().catch(() => null);
   return { data, error: null, status: 200 };
 }
 
 export async function GET(request) {
-  const token = request.cookies.get(PARTNER_SESSION_COOKIE)?.value;
-  const producer = await validateActivePartnerSession(verifyPartnerSessionToken(token));
+  const producer = await getActivePartnerFromRequest(request);
 
   if (!producer) {
-    return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+    return jsonResponse({ error: "Please sign in again." }, { status: 401 });
   }
 
+  const { supabaseUrl, supabaseKey, partnerLoginSecret } = getSupabaseConfig();
   if (!supabaseUrl || !supabaseKey || !partnerLoginSecret) {
-    return NextResponse.json({ error: "Partner billing is not configured." }, { status: 500 });
+    return jsonResponse({ error: "Partner billing is not configured." }, { status: 500 });
   }
 
   const reportId = request.nextUrl.searchParams.get("reportId");
+  if (reportId && !UUID_PATTERN.test(reportId)) {
+    return jsonResponse({ error: "Invalid report id." }, { status: 400 });
+  }
+
   const rpcName = reportId ? "partner_billing_report_detail" : "partner_billing_reports";
   const payload = reportId
     ? {
@@ -61,11 +63,11 @@ export async function GET(request) {
         p_app_secret: partnerLoginSecret,
       };
 
-  const result = await callBillingRpc(rpcName, payload);
+  const result = await callBillingRpc({ supabaseUrl, supabaseKey }, rpcName, payload);
 
   if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return jsonResponse({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({ data: result.data });
+  return jsonResponse({ data: result.data });
 }
