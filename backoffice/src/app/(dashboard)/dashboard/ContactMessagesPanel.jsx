@@ -93,77 +93,99 @@ function TicketDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 px-4 backdrop-blur-[3px]">
-      <div className="relative w-full max-w-[920px] overflow-hidden rounded-xl border border-[#3a2c68] bg-[#151a3f] shadow-2xl">
-        <div className="border-b border-[#34407a] bg-[linear-gradient(135deg,rgba(108,114,255,0.20),rgba(255,72,200,0.08))] px-6 py-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 cursor-pointer rounded p-1.5 text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-            aria-label="ปิดหน้าต่างรายละเอียด"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
+    <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 px-3 py-6 backdrop-blur-[3px] sm:px-4">
+      <div className="relative w-full max-w-[960px] overflow-hidden rounded-lg border border-[#34407a] bg-[#0f1533]/95 shadow-2xl">
+        <div
+          className={`pointer-events-none absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-[#34407a] bg-[#171d42]/95 px-4 py-2 text-sm font-medium text-white shadow-xl transition-all duration-300 ${
+            copyState ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+          }`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#85e0ad" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          <span>{copyState}</span>
+        </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pr-8">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <h3 className="text-lg font-semibold text-white">Ticket {getTicketId(ticket.id)}</h3>
-                <span
-                  className={`rounded px-2.5 py-1 text-xs font-medium ${
-                    ticket.status === 'closed'
-                      ? 'bg-[#17462e] text-[#85e0ad]'
-                      : 'bg-[#28305c] text-[#b8c3ff]'
-                  }`}
-                >
-                  {statusText}
-                </span>
+        <div className="border-b border-[#293761] bg-[linear-gradient(135deg,rgba(94,102,255,0.20),rgba(30,37,82,0.38))] px-6 py-7">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-[#5b60d8]/60 bg-[#273064] text-[#9c9aff] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+                </svg>
               </div>
-              <p className="mt-2 truncate text-sm text-gray-300">{ticket.name || 'ไม่ระบุหัวข้อ'}</p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-[26px] font-bold leading-tight text-white">Ticket {getTicketId(ticket.id)}</h3>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                      ticket.status === 'closed'
+                        ? 'bg-[#17462e] text-[#85e0ad]'
+                        : 'bg-[#28305c] text-[#b8c3ff]'
+                    }`}
+                  >
+                    <span className="h-2 w-2 rounded-full bg-current" />
+                    {statusText}
+                  </span>
+                </div>
+                <p className="mt-2 truncate text-sm font-medium text-[#b5bddb]">{ticket.name || 'ไม่ระบุหัวข้อ'}</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 pr-5">
+            <div className="flex shrink-0 items-center gap-6 sm:pl-4">
               <button
                 type="button"
                 disabled={updatingId === ticket.id}
                 onClick={() => onToggleStatus(ticket)}
-                className={`rounded px-4 py-2 text-sm font-medium transition-colors ${
+                className={`min-w-[116px] cursor-pointer rounded-lg px-5 py-3 text-sm font-semibold transition-colors ${
                   updatingId === ticket.id
                     ? 'cursor-wait bg-gray-700 text-gray-300'
                     : ticket.status === 'closed'
-                      ? 'cursor-pointer bg-gradient-to-r from-[#6869ff] to-[#7657f4] text-white hover:from-[#7778ff] hover:to-[#8466ff]'
-                      : 'cursor-pointer bg-[#244b38] text-white hover:bg-[#2f6047]'
+                      ? 'bg-gradient-to-r from-[#6869ff] to-[#9c3dff] text-white hover:from-[#7778ff] hover:to-[#a954ff]'
+                      : 'bg-[#244b38] text-white hover:bg-[#2f6047]'
                 }`}
               >
                 {updatingId === ticket.id ? 'กำลังอัปเดต...' : actionText}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="cursor-pointer rounded p-1.5 text-[#9ca7c8] transition-colors hover:bg-white/5 hover:text-white"
+                aria-label="ปิดหน้าต่างรายละเอียด"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="max-h-[76vh] overflow-y-auto p-6 custom-scrollbar">
+        <div className="max-h-[76vh] overflow-y-auto px-6 py-5 custom-scrollbar">
           <div className="grid gap-4 lg:grid-cols-3">
-            <InfoCard label="ภาษา" value={ticket.locale || '-'} />
-            <InfoCard label="ช่องทาง" value={formatSource(ticket.source)} />
-            <InfoCard label="รหัสลูกค้า" value={ticket.customer_id || '-'} />
-            <InfoCard label="วันที่รับข้อเสนอแนะ" value={formatMessageDate(ticket.created_at)} />
-            <InfoCard label="อัปเดตล่าสุด" value={formatMessageDate(ticket.updated_at || ticket.created_at)} />
-            <EmailCard email={ticket.email} copyState={copyState} onCopy={handleCopyEmail} />
+            <InfoCard icon="language" label="ภาษา" value={(ticket.locale || '-').toUpperCase()} />
+            <InfoCard icon="channel" label="ช่องทาง" value={formatSource(ticket.source)} />
+            <InfoCard icon="customer" label="รหัสลูกค้า" value={ticket.customer_id || '-'} />
+            <InfoCard icon="calendar" label="วันที่รับข้อเสนอแนะ" value={formatMessageDate(ticket.created_at)} />
+            <InfoCard icon="clock" label="อัปเดตล่าสุด" value={formatMessageDate(ticket.updated_at || ticket.created_at)} />
+            <EmailCard email={ticket.email} onCopy={handleCopyEmail} />
           </div>
 
-          <div className="mt-5 rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
-            <div className="mb-2 text-sm font-semibold text-white">ข้อความ:</div>
-            <div className="max-h-[180px] overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-gray-200 custom-scrollbar">
+          <section className="mt-5 rounded-lg border border-[#293761] bg-[#151b3d]/80 p-4">
+            <div className="mb-4 flex items-center gap-3 text-sm font-semibold text-white">
+              <Icon name="message" />
+              <span>ข้อความ</span>
+            </div>
+            <div className="max-h-[210px] overflow-y-auto rounded-lg border border-[#293761] bg-[#111735] p-4 whitespace-pre-wrap text-sm leading-7 text-gray-200 custom-scrollbar">
               {ticket.message || '-'}
             </div>
-          </div>
+          </section>
 
-          <div className="mt-5 rounded-lg border border-[#3a2c68] bg-[#202650] p-4">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label htmlFor="staff-note" className="text-sm font-semibold text-white">
-                หมายเหตุ
+          <section className="mt-4 rounded-lg border border-[#293761] bg-[#151b3d]/80 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <label htmlFor="staff-note" className="flex items-center gap-3 text-sm font-semibold text-white">
+                <Icon name="note" />
+                <span>หมายเหตุภายใน</span>
               </label>
               {noteState ? <span className="text-xs text-[#9f93ff]">{noteState}</span> : null}
             </div>
@@ -175,18 +197,26 @@ function TicketDetailModal({
                 setNoteState('');
               }}
               placeholder="บันทึกข้อมูลเพิ่มเติมสำหรับทีมงาน..."
-              className="min-h-[120px] w-full resize-y rounded border border-[#34407a] bg-[#171d42] p-3 text-sm leading-6 text-white placeholder:text-gray-600 focus:border-[#6C72FF] focus:outline-none"
+              className="min-h-[126px] w-full resize-y rounded-lg border border-[#293761] bg-[#111735] p-4 text-sm leading-6 text-white placeholder:text-gray-600 focus:border-[#6C72FF] focus:outline-none"
             />
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={handleSaveNote}
-                disabled={savingNote}
-                className="cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] px-4 py-2 text-sm font-medium text-white transition-colors hover:from-[#7778ff] hover:to-[#8466ff] disabled:cursor-wait disabled:opacity-60"
-              >
-                {savingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}
-              </button>
-            </div>
+          </section>
+
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-w-[124px] cursor-pointer rounded-lg border border-[#34407a] bg-[#121832] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1c2448]"
+            >
+              ปิด
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveNote}
+              disabled={savingNote}
+              className="min-w-[190px] cursor-pointer rounded-lg bg-gradient-to-r from-[#6869ff] to-[#9c3dff] px-5 py-3 text-sm font-semibold text-white transition-colors hover:from-[#7778ff] hover:to-[#a954ff] disabled:cursor-wait disabled:opacity-60"
+            >
+              {savingNote ? 'กำลังบันทึก...' : 'บันทึกหมายเหตุ'}
+            </button>
           </div>
         </div>
       </div>
@@ -194,21 +224,105 @@ function TicketDetailModal({
   );
 }
 
-function InfoCard({ label, value }) {
+function Icon({ name }) {
+  const common = {
+    width: 23,
+    height: 23,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+
+  const paths = {
+    language: (
+      <>
+        <path d="m5 8 6 6" />
+        <path d="m4 14 6-6 2-3" />
+        <path d="M2 5h12" />
+        <path d="M7 2h1" />
+        <path d="m22 22-5-10-5 10" />
+        <path d="M14 18h6" />
+      </>
+    ),
+    channel: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20" />
+        <path d="M12 2a15.3 15.3 0 0 1 0 20" />
+        <path d="M12 2a15.3 15.3 0 0 0 0 20" />
+      </>
+    ),
+    customer: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M7 9h4" />
+        <path d="M7 13h2" />
+        <path d="M14 13h3" />
+        <path d="M14 9h3" />
+      </>
+    ),
+    calendar: (
+      <>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+      </>
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </>
+    ),
+    email: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+      </>
+    ),
+    message: <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />,
+    note: (
+      <>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" />
+        <path d="M8 13h8" />
+        <path d="M8 17h5" />
+      </>
+    ),
+  };
+
   return (
-    <div className="rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</div>
-      <div className="mt-1 min-w-0 break-words text-sm font-medium text-white">{value}</div>
+    <svg {...common} className="shrink-0 text-[#7478ff]">
+      {paths[name]}
+    </svg>
+  );
+}
+
+function InfoCard({ icon, label, value }) {
+  return (
+    <div className="flex min-h-[80px] items-center gap-4 rounded-lg border border-[#293761] bg-[#151b3d]/80 px-4 py-3">
+      <Icon name={icon} />
+      <div className="min-w-0">
+        <div className="text-xs font-medium text-[#8d95b5]">{label}</div>
+        <div className="mt-1 min-w-0 break-words text-sm font-semibold text-white">{value}</div>
+      </div>
     </div>
   );
 }
 
-function EmailCard({ email, copyState, onCopy }) {
+function EmailCard({ email, onCopy }) {
   return (
-    <div className="rounded-lg border border-[#34407a] bg-[#171d42]/80 p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">อีเมล์</div>
-      <div className="mt-1 flex items-center gap-2">
-        <div className="min-w-0 break-words text-sm font-medium text-white">{email || '-'}</div>
+    <div className="flex min-h-[80px] items-center gap-4 rounded-lg border border-[#293761] bg-[#151b3d]/80 px-4 py-3">
+      <Icon name="email" />
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-medium text-[#8d95b5]">อีเมล</div>
+        <div className="mt-1 min-w-0 break-words text-sm font-semibold text-white">{email || '-'}</div>
+      </div>
+      <div className="shrink-0">
         {email ? (
           <button
             type="button"
@@ -224,18 +338,6 @@ function EmailCard({ email, copyState, onCopy }) {
           </button>
         ) : null}
       </div>
-      {email ? (
-        <div
-          className={`mt-2 flex min-h-[28px] items-center gap-2 rounded border border-[#3a2c68] bg-[#202650]/95 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-all duration-300 ${
-            copyState ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
-          }`}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#85e0ad" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-          <span>{copyState}</span>
-        </div>
-      ) : null}
     </div>
   );
 }
