@@ -37,6 +37,20 @@ body {
   bottom: 25%;
 }
 
+.veplayer-raised-subtitle xg-text-track.xg-text-track xg-text-track-inner {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 4px rgba(0, 0, 0, 0.75) !important;
+}
+
+.veplayer-raised-subtitle xg-text-track.xg-text-track xg-text-track-span {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .veplayer-raised-subtitle .xgplayer-playbackrate,
 .veplayer-raised-subtitle .xgplayer-mobile-playBackRate,
 .veplayer-raised-subtitle .xgplayer-audio-track,
@@ -46,8 +60,14 @@ body {
 .veplayer-raised-subtitle [class*="audio-track"],
 .veplayer-raised-subtitle [class*="audioTrack"],
 .veplayer-raised-subtitle [class*="audiotrack"],
-.veplayer-raised-subtitle .xgplayer-fullscreen,
-.veplayer-raised-subtitle .xgplayer-vttsub,
-.veplayer-raised-subtitle .xgplayer-aisub {
+.veplayer-raised-subtitle .xgplayer-fullscreen {
   display: none !important;
+}
+
+.veplayer-raised-subtitle video::cue {
+  background: transparent;
+  color: white;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.95),
+    0 0 4px rgba(0, 0, 0, 0.75);
 }

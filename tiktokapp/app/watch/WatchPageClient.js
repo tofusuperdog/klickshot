@@ -232,6 +232,60 @@ const normalizeSubtitle = (sub, idx) => ({
   isDefault: Boolean(sub.default || sub.isDefault) || idx === 0,
 });
 
+const parseSubtitleTimestamp = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .replace(",", ".");
+  const parts = normalized.split(":");
+  const seconds = Number(parts.pop());
+  const minutes = Number(parts.pop() || 0);
+  const hours = Number(parts.pop() || 0);
+
+  if (![seconds, minutes, hours].every(Number.isFinite)) return null;
+
+  return hours * 3600 + minutes * 60 + seconds;
+};
+
+const stripSubtitleCueSettings = (value) =>
+  String(value || "")
+    .trim()
+    .split(/\s+/)[0];
+
+const parseSubtitleCues = (content) => {
+  const normalized = String(content || "")
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+
+  return normalized
+    .split(/\n{2,}/)
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const timingIndex = lines.findIndex((line) => line.includes("-->"));
+
+      if (timingIndex < 0) return null;
+
+      const [startRaw, endRaw] = lines[timingIndex].split("-->");
+      const start = parseSubtitleTimestamp(stripSubtitleCueSettings(startRaw));
+      const end = parseSubtitleTimestamp(stripSubtitleCueSettings(endRaw));
+      const text = lines
+        .slice(timingIndex + 1)
+        .join("\n")
+        .replace(/<[^>]+>/g, "")
+        .trim();
+
+      if (!Number.isFinite(start) || !Number.isFinite(end) || !text) {
+        return null;
+      }
+
+      return { start, end, text };
+    })
+    .filter(Boolean);
+};
+
 const getAudioTrackId = (track, idx) =>
   String(
     track?.id ??
@@ -724,6 +778,10 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   const onAudioTracksChangeRef = useRef(onAudioTracksChange);
   const subtitlePluginRef = useRef(null);
   const pendingSubtitleRef = useRef(undefined);
+  const fallbackSubtitleCuesRef = useRef([]);
+  const fallbackSubtitleUrlRef = useRef("");
+  const nativeSubtitleTrackRef = useRef(null);
+  const [fallbackSubtitleText, setFallbackSubtitleText] = useState("");
   const audioBoostRef = useRef({
     audioContext: null,
     sourceNode: null,
@@ -768,6 +826,11 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   };
 
   const applySubtitle = (subtitle) => {
+    if (isAppleMobileWebKit()) {
+      pendingSubtitleRef.current = undefined;
+      return true;
+    }
+
     const subtitlePlugin = resolveSubtitlePlugin();
 
     if (!subtitlePlugin) {
@@ -947,6 +1010,31 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     playerRef.current?.media ||
     playerRef.current?.root?.querySelector?.("video") ||
     containerRef.current?.querySelector("video");
+
+  const updateFallbackSubtitleText = () => {
+    if (!isAppleMobileWebKit()) return;
+
+    const video = getVideoElement();
+    const currentTime = Number(video?.currentTime);
+    const parsedCue = Number.isFinite(currentTime)
+      ? fallbackSubtitleCuesRef.current.find(
+          (cue) => currentTime >= cue.start && currentTime < cue.end,
+        )
+      : null;
+    const nativeCueText =
+      video?.textTracks?.length && Number.isFinite(currentTime)
+        ? Array.from(video.textTracks).reduce((text, track) => {
+            if (text || !track?.activeCues?.length) return text;
+
+            return Array.from(track.activeCues)
+              .map((cue) => cue.text || "")
+              .filter(Boolean)
+              .join("\n");
+          }, "")
+        : "";
+
+    setFallbackSubtitleText(parsedCue?.text || nativeCueText || "");
+  };
 
   const cleanupAudioBoost = () => {
     const audioBoost = audioBoostRef.current;
@@ -1172,6 +1260,192 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     },
   }));
 
+  const getActiveFallbackSubtitle = () => {
+    const normalizedSubtitles = Array.isArray(subtitles)
+      ? subtitles
+          .filter((sub) => sub && getSubtitleUrl(sub).length > 0)
+          .map(normalizeSubtitle)
+      : [];
+
+    if (activeSubtitle === null) return null;
+
+    return activeSubtitle
+      ? normalizedSubtitles.find((subtitle) =>
+          subtitlesMatch(subtitle, activeSubtitle),
+        ) || activeSubtitle
+      : normalizedSubtitles.find((subtitle) => subtitle.default) ||
+          normalizedSubtitles[0] ||
+          null;
+  };
+
+  useEffect(() => {
+    if (!isAppleMobileWebKit()) {
+      fallbackSubtitleCuesRef.current = [];
+      fallbackSubtitleUrlRef.current = "";
+      setFallbackSubtitleText("");
+      return undefined;
+    }
+
+    if (activeSubtitle === null) {
+      fallbackSubtitleCuesRef.current = [];
+      fallbackSubtitleUrlRef.current = "";
+      setFallbackSubtitleText("");
+      return undefined;
+    }
+
+    const selectedSubtitle = getActiveFallbackSubtitle();
+    const subtitleUrl = getSubtitleUrl(selectedSubtitle);
+
+    if (!subtitleUrl) {
+      fallbackSubtitleCuesRef.current = [];
+      fallbackSubtitleUrlRef.current = "";
+      setFallbackSubtitleText("");
+      return undefined;
+    }
+
+    let cancelled = false;
+    fallbackSubtitleUrlRef.current = subtitleUrl;
+    fallbackSubtitleCuesRef.current = [];
+    setFallbackSubtitleText("");
+
+    fetch(subtitleUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Subtitle request failed with ${response.status}`);
+        }
+
+        return response.text();
+      })
+      .then((content) => {
+        if (cancelled || fallbackSubtitleUrlRef.current !== subtitleUrl) return;
+
+        fallbackSubtitleCuesRef.current = parseSubtitleCues(content);
+        if (nativeSubtitleTrackRef.current?.track) {
+          nativeSubtitleTrackRef.current.track.mode = "hidden";
+        }
+        updateFallbackSubtitleText();
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("Unable to load iOS subtitle fallback:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSubtitle, subtitles]);
+
+  useEffect(() => {
+    if (!isAppleMobileWebKit()) return undefined;
+
+    const selectedSubtitle = getActiveFallbackSubtitle();
+    const subtitleUrl = getSubtitleUrl(selectedSubtitle);
+
+    if (!subtitleUrl) return undefined;
+
+    let cancelled = false;
+    let lookupTimer = null;
+    let cleanupTrack = null;
+
+    const attachNativeSubtitleTrack = () => {
+      const video = getVideoElement();
+
+      if (!video) return false;
+
+      const existingTracks = video.querySelectorAll("track[data-klingshot-ios-subtitle]");
+      existingTracks.forEach((track) => track.remove());
+
+      const track = document.createElement("track");
+      track.dataset.klingshotIosSubtitle = "true";
+      track.kind = "subtitles";
+      track.label = selectedSubtitle?.text || selectedSubtitle?.language || "Subtitle";
+      track.srclang =
+        selectedSubtitle?.srclang ||
+        selectedSubtitle?.lang ||
+        selectedSubtitle?.language ||
+        "th";
+      track.src = subtitleUrl;
+      track.default = true;
+
+      video.appendChild(track);
+      nativeSubtitleTrackRef.current = track;
+
+      try {
+        track.track.mode = "hidden";
+      } catch {}
+
+      cleanupTrack = () => {
+        if (nativeSubtitleTrackRef.current === track) {
+          nativeSubtitleTrackRef.current = null;
+        }
+        track.remove();
+      };
+
+      return true;
+    };
+
+    if (!attachNativeSubtitleTrack()) {
+      lookupTimer = window.setInterval(() => {
+        if (cancelled || attachNativeSubtitleTrack()) {
+          clearInterval(lookupTimer);
+          lookupTimer = null;
+        }
+      }, 150);
+    }
+
+    return () => {
+      cancelled = true;
+      if (lookupTimer) clearInterval(lookupTimer);
+      cleanupTrack?.();
+    };
+  }, [activeSubtitle, subtitles, playback?.url]);
+
+  useEffect(() => {
+    if (!isAppleMobileWebKit()) return undefined;
+
+    let cancelled = false;
+    let removeListeners = null;
+    let lookupTimer = null;
+    let updateTimer = null;
+
+    const attachVideoListeners = () => {
+      const video = getVideoElement();
+
+      if (!video) return false;
+
+      video.addEventListener("timeupdate", updateFallbackSubtitleText);
+      video.addEventListener("seeked", updateFallbackSubtitleText);
+      video.addEventListener("play", updateFallbackSubtitleText);
+      updateFallbackSubtitleText();
+      updateTimer = window.setInterval(updateFallbackSubtitleText, 250);
+
+      removeListeners = () => {
+        video.removeEventListener("timeupdate", updateFallbackSubtitleText);
+        video.removeEventListener("seeked", updateFallbackSubtitleText);
+        video.removeEventListener("play", updateFallbackSubtitleText);
+        if (updateTimer) clearInterval(updateTimer);
+      };
+
+      return true;
+    };
+
+    if (!attachVideoListeners()) {
+      lookupTimer = window.setInterval(() => {
+        if (cancelled || attachVideoListeners()) {
+          clearInterval(lookupTimer);
+          lookupTimer = null;
+        }
+      }, 150);
+    }
+
+    return () => {
+      cancelled = true;
+      if (lookupTimer) clearInterval(lookupTimer);
+      if (updateTimer) clearInterval(updateTimer);
+      removeListeners?.();
+    };
+  }, [playback?.url]);
+
   useEffect(() => {
     if (!containerRef.current || !vid || !playback?.url) {
       return;
@@ -1310,10 +1584,14 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           ignores: ["audioTrack", "AudioTrack", "audio", "definition"],
         };
 
-        if (playerSubtitles.length > 0 && VePlayer.Subtitle) {
+        if (
+          playerSubtitles.length > 0 &&
+          !isAppleMobileWebKit() &&
+          VePlayer.Subtitle
+        ) {
           playerConfig.plugins = [VePlayer.Subtitle];
           playerConfig.Subtitle = {
-            mode: isAppleMobileWebKit() ? "native" : "external",
+            mode: "external",
             isDefaultOpen: activeSubtitle !== null,
             list: playerSubtitles,
             style: {
@@ -1462,10 +1740,28 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
   return (
     <div
-      ref={containerRef}
       onClick={handlePlayerClick}
-      className="w-full h-full bg-black veplayer-raised-subtitle"
-    />
+      className="relative h-full w-full bg-black veplayer-raised-subtitle"
+    >
+      <div ref={containerRef} className="h-full w-full bg-black" />
+      {fallbackSubtitleText ? (
+        <div
+          className="pointer-events-none absolute left-0 right-0 z-10 flex justify-center px-5 text-center"
+          style={{ bottom: `${SUBTITLE_OFFSET_BOTTOM_PERCENT}%` }}
+        >
+          <div
+            className="max-w-[92%] whitespace-pre-line text-[19px] font-semibold leading-snug text-white"
+            style={{
+              textShadow:
+                "0 1px 2px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.75)",
+              WebkitTextStroke: "0.2px rgba(0,0,0,0.55)",
+            }}
+          >
+            {fallbackSubtitleText}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 });
 
