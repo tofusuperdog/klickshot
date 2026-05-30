@@ -64,6 +64,55 @@ function loadVePlayerModule() {
   return vePlayerModulePromise;
 }
 
+function invokeTikTokCaptureProtection(protect) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const ttMinis = window.TTMinis;
+  const callback = (response) => {
+    if (response && response.isSuccess === false) {
+      console.warn("TikTok capture protection was not applied:", response);
+    }
+  };
+
+  try {
+    if (protect && typeof ttMinis?.disableCapture === "function") {
+      ttMinis.disableCapture(callback);
+      return true;
+    }
+
+    if (!protect && typeof ttMinis?.enableCapture === "function") {
+      ttMinis.enableCapture(callback);
+      return true;
+    }
+
+    if (protect && typeof ttMinis?.call === "function") {
+      ttMinis.call("disableCapture", {}, callback);
+      return true;
+    }
+
+    if (!protect && typeof ttMinis?.call === "function") {
+      ttMinis.call("enableCapture", {}, callback);
+      return true;
+    }
+
+    if (protect && typeof ttMinis?.invoke === "function") {
+      ttMinis.invoke("disableCapture", {}, callback);
+      return true;
+    }
+
+    if (!protect && typeof ttMinis?.invoke === "function") {
+      ttMinis.invoke("enableCapture", {}, callback);
+      return true;
+    }
+  } catch (error) {
+    console.warn("Unable to update TikTok capture protection:", error);
+  }
+
+  return false;
+}
+
 function invokeNativeSnapshotProtection(allow) {
   if (typeof window === "undefined") {
     return false;
@@ -106,11 +155,13 @@ function invokeNativeSnapshotProtection(allow) {
 }
 
 function enableProtectedPlaybackSurface() {
-  const nativeApplied = invokeNativeSnapshotProtection(false);
+  const captureProtectionApplied = invokeTikTokCaptureProtection(true);
+  const snapshotProtectionApplied = invokeNativeSnapshotProtection(false);
 
   return () => {
+    invokeTikTokCaptureProtection(false);
     invokeNativeSnapshotProtection(true);
-    return nativeApplied;
+    return captureProtectionApplied || snapshotProtectionApplied;
   };
 }
 
@@ -160,12 +211,25 @@ const getSubtitleLabel = (sub, idx) => {
   return sub?.text || `Subtitle ${idx + 1}`;
 };
 
+const getSubtitleUrl = (sub) =>
+  typeof (sub?.url || sub?.src) === "string"
+    ? (sub.url || sub.src).trim()
+    : "";
+
 const normalizeSubtitle = (sub, idx) => ({
   id: getSubtitleId(sub, idx),
-  src: (sub.src || sub.url).trim(),
+  url: getSubtitleUrl(sub),
+  src: getSubtitleUrl(sub),
   text: getSubtitleLabel(sub, idx),
   language: sub.language || getSubtitleLabel(sub, idx).toLowerCase(),
+  kind: sub.kind || "subtitles",
+  srclang:
+    sub.srclang ||
+    sub.lang ||
+    sub.language ||
+    getSubtitleLabel(sub, idx).toLowerCase(),
   default: Boolean(sub.default || sub.isDefault) || idx === 0,
+  isDefault: Boolean(sub.default || sub.isDefault) || idx === 0,
 });
 
 const getAudioTrackId = (track, idx) =>
@@ -1087,6 +1151,19 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   };
 
   useImperativeHandle(ref, () => ({
+    pause() {
+      const player = playerRef.current?.player || playerRef.current;
+      const video = getVideoElement();
+
+      if (typeof player?.pause === "function") {
+        player.pause();
+        onPausedChangeRef.current?.(true);
+        return;
+      }
+
+      video?.pause?.();
+      onPausedChangeRef.current?.(true);
+    },
     switchSubtitle(subtitle) {
       applySubtitle(subtitle);
     },
@@ -1183,12 +1260,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
             : undefined;
         const normalizedSubtitles = Array.isArray(subtitles)
           ? subtitles
-              .filter(
-                (sub) =>
-                  sub &&
-                  typeof (sub.url || sub.src) === "string" &&
-                  (sub.url || sub.src).trim().length > 0,
-              )
+              .filter((sub) => sub && getSubtitleUrl(sub).length > 0)
               .map(normalizeSubtitle)
           : [];
         const selectedSubtitle =
@@ -1220,6 +1292,13 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           license: BYTEPLUS_LICENSE || undefined,
           ...(vodLogOpts ? { vodLogOpts } : {}),
           autoplay: true,
+          playsinline: true,
+          useCssFullscreen: true,
+          videoAttributes: {
+            playsInline: true,
+            webkitPlaysInline: true,
+            x5PlaysInline: true,
+          },
           enableMenu: true,
           controls: true,
           ...(playback.enableHlsMSE && !isAppleMobileWebKit()
@@ -1234,6 +1313,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         if (playerSubtitles.length > 0 && VePlayer.Subtitle) {
           playerConfig.plugins = [VePlayer.Subtitle];
           playerConfig.Subtitle = {
+            mode: isAppleMobileWebKit() ? "native" : "external",
             isDefaultOpen: activeSubtitle !== null,
             list: playerSubtitles,
             style: {
@@ -1423,6 +1503,8 @@ export default function WatchPage() {
   const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
   const [privacyOverlayVisible, setPrivacyOverlayVisible] = useState(false);
   const [hasActiveVip, setHasActiveVip] = useState(false);
+  const showPlayer =
+    episode?.video_url && playback?.url && !error;
 
   useEffect(() => {
     loadVePlayerModule().catch(() => {});
@@ -1476,7 +1558,15 @@ export default function WatchPage() {
   }, []);
 
   useEffect(() => {
+    if (!showPlayer) {
+      return undefined;
+    }
+
     const restoreProtectedSurface = enableProtectedPlaybackSurface();
+
+    const reapplyProtectedSurface = () => {
+      enableProtectedPlaybackSurface();
+    };
 
     const protectInactiveSurface = () => {
       if (document.visibilityState === "hidden") {
@@ -1484,6 +1574,7 @@ export default function WatchPage() {
         playerControlRef.current?.pause?.();
       } else {
         setPrivacyOverlayVisible(false);
+        reapplyProtectedSurface();
       }
     };
 
@@ -1494,28 +1585,28 @@ export default function WatchPage() {
 
     const handleFocus = () => {
       setPrivacyOverlayVisible(false);
+      reapplyProtectedSurface();
     };
 
     document.addEventListener("visibilitychange", protectInactiveSurface);
+    window.addEventListener("pagehide", restoreProtectedSurface);
+    window.addEventListener("pageshow", reapplyProtectedSurface);
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
 
     return () => {
       restoreProtectedSurface();
       document.removeEventListener("visibilitychange", protectInactiveSurface);
+      window.removeEventListener("pagehide", restoreProtectedSurface);
+      window.removeEventListener("pageshow", reapplyProtectedSurface);
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [showPlayer]);
 
   const subtitleOptions = Array.isArray(subtitles)
     ? subtitles
-        .filter(
-          (sub) =>
-            sub &&
-            typeof (sub.url || sub.src) === "string" &&
-            (sub.url || sub.src).trim().length > 0,
-        )
+        .filter((sub) => sub && getSubtitleUrl(sub).length > 0)
         .map(normalizeSubtitle)
     : [];
   const orderedSubtitleOptions = getOrderedSubtitleOptions(subtitleOptions);
@@ -1603,12 +1694,7 @@ export default function WatchPage() {
   const applyFetchedSubtitles = useCallback(
     (fetchedSubtitles) => {
       const normalizedSubtitles = fetchedSubtitles
-        .filter(
-          (sub) =>
-            sub &&
-            typeof (sub.url || sub.src) === "string" &&
-            (sub.url || sub.src).trim().length > 0,
-        )
+        .filter((sub) => sub && getSubtitleUrl(sub).length > 0)
         .map(normalizeSubtitle);
       const orderedSubtitles = getOrderedSubtitleOptions(normalizedSubtitles);
       const defaultSubtitle =
@@ -1947,9 +2033,6 @@ export default function WatchPage() {
 
     fetchPlayerData();
   }, [seriesId, language, labels.tokenError, loadEpisodeVideo]);
-
-  const showPlayer =
-    episode?.video_url && playback?.url && !error;
 
   return (
     <div
