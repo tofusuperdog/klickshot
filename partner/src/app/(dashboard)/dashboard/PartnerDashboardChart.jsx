@@ -184,7 +184,7 @@ export default function PartnerDashboardChart() {
             <div className="partner-chart-state">{t("common.loading")}</div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartRows} margin={{ top: 8, right: 18, left: 10, bottom: 4 }}>
+              <LineChart data={chartRows} margin={{ top: 36, right: 18, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(167,255,217,0.12)" />
                 <XAxis
                   dataKey="date"
@@ -195,13 +195,15 @@ export default function PartnerDashboardChart() {
                 <YAxis
                   stroke="rgba(228,242,237,0.58)"
                   tick={{ fill: "rgba(228,242,237,0.68)", fontSize: 12 }}
-                  width={64}
+                  width={54}
                   label={{
                     value: t("dashboard.yAxisEpisodes"),
-                    angle: -90,
-                    position: "insideLeft",
+                    angle: 0,
+                    position: "insideTopLeft",
                     fill: "rgba(228,242,237,0.68)",
                     fontSize: 12,
+                    dx: 0,
+                    dy: -26,
                   }}
                 />
                 <Tooltip content={<CustomTooltip locale={locale} t={t} />} />
