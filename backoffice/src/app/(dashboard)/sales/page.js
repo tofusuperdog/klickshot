@@ -18,6 +18,16 @@ function CustomRadio({ checked, onChange }) {
   );
 }
 
+const isNonNegativeNumber = (value) => {
+  const normalizedValue = value === '' || value === null || value === undefined ? 0 : Number(value);
+  return Number.isFinite(normalizedValue) && normalizedValue >= 0;
+};
+
+const parsePrice = (value) => {
+  if (value === '' || value === null || value === undefined) return 0;
+  return Number(value);
+};
+
 export default function SalesPage() {
   const { user } = useAuth();
   const [isVipActive, setIsVipActive] = useState(true);
@@ -83,12 +93,15 @@ export default function SalesPage() {
       !pkg.type?.trim() ||
       !Number.isInteger(Number(pkg.bean_amount)) ||
       Number(pkg.bean_amount) < 0 ||
+      !isNonNegativeNumber(pkg.price_usd) ||
+      !isNonNegativeNumber(pkg.price_thb) ||
+      !isNonNegativeNumber(pkg.price_jpy) ||
       !Number.isInteger(Number(pkg.duration_days)) ||
       Number(pkg.duration_days) <= 0
     );
 
     if (invalidPackage) {
-      alert('กรุณากรอกประเภท ราคา Beans และจำนวนวันให้ถูกต้อง');
+      alert('กรุณากรอกประเภท ราคา Beans ราคา USD ราคาเงินบาท ราคาเยน และจำนวนวันให้ถูกต้อง');
       return;
     }
 
@@ -101,6 +114,9 @@ export default function SalesPage() {
         {
           type: pkg.type?.trim() || '',
           bean_amount: pkg.bean_amount === '' ? 0 : parseInt(pkg.bean_amount, 10),
+          price_usd: parsePrice(pkg.price_usd),
+          price_thb: parsePrice(pkg.price_thb),
+          price_jpy: parsePrice(pkg.price_jpy),
           duration_days: pkg.duration_days === '' ? 0 : parseInt(pkg.duration_days, 10),
           is_recommended: pkg.is_recommended
         },
@@ -180,20 +196,23 @@ export default function SalesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 w-full bg-[#151a3f]/70 rounded-xl p-4 overflow-x-auto border border-[#34407a]/50">
-                <table className="w-full text-center text-[13px] font-medium text-white border-collapse min-w-[560px]">
+              <div className="flex-1 w-full bg-[#151a3f]/70 rounded-xl p-4 border border-[#34407a]/50">
+                <table className="w-full table-fixed text-center text-[12px] font-medium text-white border-collapse min-w-0">
                   <thead>
                     <tr className="border-b-[0.5px] border-b-gray-700 bg-[#171d42]/75">
-                      <th className="py-3 px-2 font-medium tracking-wide">ประเภท</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">จำนวนวัน</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">ราคา (Beans)</th>
-                      <th className="py-3 px-2 font-medium tracking-wide">แพ็กเกจแนะนำ</th>
+                      <th className="w-[19%] py-3 px-1 font-medium tracking-wide">ประเภท</th>
+                      <th className="w-[11%] py-3 px-1 font-medium tracking-wide">จำนวนวัน</th>
+                      <th className="w-[14%] py-3 px-1 font-medium tracking-wide">ราคา (Beans)</th>
+                      <th className="w-[13%] py-3 px-1 font-medium tracking-wide">ราคา (USD)</th>
+                      <th className="w-[13%] py-3 px-1 font-medium tracking-wide">ราคา (บาท)</th>
+                      <th className="w-[13%] py-3 px-1 font-medium tracking-wide">ราคา (เยน)</th>
+                      <th className="w-[17%] py-3 px-1 font-medium tracking-wide">แพ็กเกจแนะนำ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={4} className="py-10 text-gray-500 font-light text-[14px]">กำลังโหลดแพ็กเกจ...</td>
+                        <td colSpan={7} className="py-10 text-gray-500 font-light text-[14px]">กำลังโหลดแพ็กเกจ...</td>
                       </tr>
                     ) : vipPackages.map((pkg, idx) => (
                       <tr key={pkg.id} className={`${idx % 2 === 0 ? 'bg-[#28214f]/30' : 'bg-[#28214f]/10'} hover:bg-[#3d3278]/20 transition-colors`}>
@@ -202,7 +221,7 @@ export default function SalesPage() {
                             type="text"
                             value={pkg.type}
                             readOnly
-                            className="w-full max-w-[180px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[13px] rounded-sm cursor-default"
+                            className="w-full max-w-[130px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[12px] rounded-sm cursor-default"
                           />
                         </td>
                         <td className="py-2 px-2">
@@ -212,7 +231,7 @@ export default function SalesPage() {
                             min="1"
                             value={pkg.duration_days ?? 0}
                             readOnly
-                            className="w-full max-w-[90px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[13px] rounded-sm cursor-default"
+                            className="w-full max-w-[58px] h-7 bg-[#d1d5db] text-[#374151] text-center focus:outline-none text-[12px] rounded-sm cursor-default"
                           />
                         </td>
                         <td className="py-2 px-2">
@@ -222,7 +241,37 @@ export default function SalesPage() {
                             min="0"
                             value={pkg.bean_amount ?? 0}
                             onChange={(e) => handleVipChange(pkg.id, 'bean_amount', e.target.value)}
-                            className="w-full max-w-[110px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[13px] rounded-sm"
+                            className="w-full max-w-[74px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[12px] rounded-sm"
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={pkg.price_usd ?? 0}
+                            onChange={(e) => handleVipChange(pkg.id, 'price_usd', e.target.value)}
+                            className="w-full max-w-[74px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[12px] rounded-sm"
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={pkg.price_thb ?? 0}
+                            onChange={(e) => handleVipChange(pkg.id, 'price_thb', e.target.value)}
+                            className="w-full max-w-[74px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[12px] rounded-sm"
+                          />
+                        </td>
+                        <td className="py-2 px-2">
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={pkg.price_jpy ?? 0}
+                            onChange={(e) => handleVipChange(pkg.id, 'price_jpy', e.target.value)}
+                            className="w-full max-w-[74px] h-7 bg-[#e5e7eb] text-black text-center focus:outline-none focus:ring-2 focus:ring-[#709bf0] text-[12px] rounded-sm"
                           />
                         </td>
                         <td className="py-2 px-2">

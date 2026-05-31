@@ -138,6 +138,10 @@ function getStoredTikTokUser() {
   }
 }
 
+function getTikTokOpenId(user) {
+  return user?.open_id || user?.openId || user?.tiktok_open_id || "";
+}
+
 async function saveCustomerLanguage({
   customerId,
   openId,
@@ -170,10 +174,10 @@ function recordAppVisit(user = null) {
 
   const url = getApiUrl("/api/customer/app-visit");
   const body = JSON.stringify(
-    user?.id && user?.open_id && user?.customer_auth_token
+    user?.id && getTikTokOpenId(user) && user?.customer_auth_token
       ? {
           customerId: user.id,
-          openId: user.open_id,
+          openId: getTikTokOpenId(user),
           customerAuthToken: user.customer_auth_token,
         }
       : {},
@@ -207,10 +211,10 @@ function LanguageBottomSheet({
   const options = getLanguageSheetOptions();
 
   const handleChooseLanguage = async (lang) => {
-    changeLanguage(lang);
     setError("");
 
     if (mode !== "tiktok") {
+      changeLanguage(lang);
       onClose();
       return;
     }
@@ -229,14 +233,20 @@ function LanguageBottomSheet({
         language: lang,
       });
 
-      const storedUser = window.localStorage.getItem("minchap_tiktok_user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        window.localStorage.setItem(
-          "minchap_tiktok_user",
-          JSON.stringify({ ...user, preferred_language: lang }),
-        );
-        window.dispatchEvent(new Event("minchap:tiktok-user-updated"));
+      changeLanguage(lang);
+
+      try {
+        const storedUser = window.localStorage.getItem(TIKTOK_USER_STORAGE_KEY);
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          window.localStorage.setItem(
+            TIKTOK_USER_STORAGE_KEY,
+            JSON.stringify({ ...user, preferred_language: lang }),
+          );
+          window.dispatchEvent(new Event("minchap:tiktok-user-updated"));
+        }
+      } catch (storageError) {
+        console.warn("Failed to update cached language:", storageError);
       }
 
       onClose();
@@ -250,7 +260,12 @@ function LanguageBottomSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9998] flex items-end bg-black/60 sm:hidden">
+    <div
+      className="fixed inset-0 z-[9998] flex items-end bg-black/60 sm:hidden"
+      role="dialog"
+      aria-modal="true"
+      onClick={(event) => event.stopPropagation()}
+    >
       <div className="w-full rounded-t-2xl border border-white/10 bg-[#111111] px-4 pb-8 pt-4 shadow-2xl">
         <div className="overflow-hidden rounded-xl bg-[#1f1d23]">
           {options.map((lang, index) => {
@@ -348,16 +363,21 @@ function LayoutContent({ children }) {
       }
 
       if (status === "success") {
-        recordAppVisit(user || getStoredTikTokUser());
+        const activeUser = user || getStoredTikTokUser();
 
-        if (user?.preferred_language && LANGUAGES.includes(user.preferred_language)) {
-          changeLanguage(user.preferred_language);
+        recordAppVisit(activeUser);
+
+        if (
+          activeUser?.preferred_language &&
+          LANGUAGES.includes(activeUser.preferred_language)
+        ) {
+          changeLanguage(activeUser.preferred_language);
           setLanguageSheet({
             isOpen: false,
             mode: "tiktok",
-            customerId: user.id || null,
-            openId: user.open_id || null,
-            customerAuthToken: user.customer_auth_token || null,
+            customerId: activeUser.id || null,
+            openId: getTikTokOpenId(activeUser) || null,
+            customerAuthToken: activeUser.customer_auth_token || null,
           });
           return;
         }
@@ -367,43 +387,21 @@ function LayoutContent({ children }) {
         if (savedLanguage) {
           changeLanguage(savedLanguage);
           setLanguageSheet({
-            isOpen: false,
+            isOpen: true,
             mode: "tiktok",
-            customerId: user?.id || null,
-            openId: user?.open_id || null,
-            customerAuthToken: user?.customer_auth_token || null,
+            customerId: activeUser?.id || null,
+            openId: getTikTokOpenId(activeUser) || null,
+            customerAuthToken: activeUser?.customer_auth_token || null,
           });
-
-          saveCustomerLanguage({
-            customerId: user?.id || null,
-            openId: user?.open_id || null,
-            customerAuthToken: user?.customer_auth_token || null,
-            language: savedLanguage,
-          })
-            .then(() => {
-              if (!user?.id) return;
-
-              window.localStorage.setItem(
-                TIKTOK_USER_STORAGE_KEY,
-                JSON.stringify({
-                  ...user,
-                  preferred_language: savedLanguage,
-                }),
-              );
-              window.dispatchEvent(new Event("minchap:tiktok-user-updated"));
-            })
-            .catch((error) => {
-              console.error("Failed to save early language selection:", error);
-            });
           return;
         }
 
         setLanguageSheet({
           isOpen: true,
           mode: "tiktok",
-          customerId: user?.id || null,
-          openId: user?.open_id || null,
-          customerAuthToken: user?.customer_auth_token || null,
+          customerId: activeUser?.id || null,
+          openId: getTikTokOpenId(activeUser) || null,
+          customerAuthToken: activeUser?.customer_auth_token || null,
         });
       }
 

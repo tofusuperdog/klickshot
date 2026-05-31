@@ -33,6 +33,7 @@ const ENABLE_AUDIO_TRACK_SWITCHING = true;
 
 const headers = SUPABASE_HEADERS;
 let vePlayerModulePromise = null;
+let vePlayerLicensePromise = null;
 
 const isAppleMobileWebKit = () => {
   if (typeof navigator === "undefined") return false;
@@ -62,6 +63,23 @@ function loadVePlayerModule() {
   }
 
   return vePlayerModulePromise;
+}
+
+function ensureVePlayerLicense(VePlayer) {
+  if (
+    !BYTEPLUS_LICENSE ||
+    typeof VePlayer?.setLicenseConfig !== "function"
+  ) {
+    return Promise.resolve();
+  }
+
+  if (!vePlayerLicensePromise) {
+    vePlayerLicensePromise = VePlayer.setLicenseConfig({
+      license: BYTEPLUS_LICENSE,
+    });
+  }
+
+  return vePlayerLicensePromise;
 }
 
 function invokeTikTokCaptureProtection(protect) {
@@ -781,6 +799,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   const fallbackSubtitleCuesRef = useRef([]);
   const fallbackSubtitleUrlRef = useRef("");
   const nativeSubtitleTrackRef = useRef(null);
+  const endedTriggeredRef = useRef(false);
   const [fallbackSubtitleText, setFallbackSubtitleText] = useState("");
   const audioBoostRef = useRef({
     audioContext: null,
@@ -1005,15 +1024,27 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     return true;
   };
 
-  const getVideoElement = () =>
-    playerRef.current?.video ||
-    playerRef.current?.media ||
-    playerRef.current?.root?.querySelector?.("video") ||
-    containerRef.current?.querySelector("video");
+  const isUsableVideoElement = (element) =>
+    element &&
+    typeof element.addEventListener === "function" &&
+    typeof element.removeEventListener === "function" &&
+    typeof element.currentTime === "number";
+
+  const getVideoElement = () => {
+    const domVideo =
+      containerRef.current?.querySelector("video") ||
+      playerRef.current?.root?.querySelector?.("video");
+
+    if (isUsableVideoElement(domVideo)) return domVideo;
+
+    return (
+      [playerRef.current?.video, playerRef.current?.media].find(
+        isUsableVideoElement,
+      ) || null
+    );
+  };
 
   const updateFallbackSubtitleText = () => {
-    if (!isAppleMobileWebKit()) return;
-
     const video = getVideoElement();
     const currentTime = Number(video?.currentTime);
     const parsedCue = Number.isFinite(currentTime)
@@ -1279,13 +1310,6 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   };
 
   useEffect(() => {
-    if (!isAppleMobileWebKit()) {
-      fallbackSubtitleCuesRef.current = [];
-      fallbackSubtitleUrlRef.current = "";
-      setFallbackSubtitleText("");
-      return undefined;
-    }
-
     if (activeSubtitle === null) {
       fallbackSubtitleCuesRef.current = [];
       fallbackSubtitleUrlRef.current = "";
@@ -1401,8 +1425,6 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   }, [activeSubtitle, subtitles, playback?.url]);
 
   useEffect(() => {
-    if (!isAppleMobileWebKit()) return undefined;
-
     let cancelled = false;
     let removeListeners = null;
     let lookupTimer = null;
@@ -1416,6 +1438,8 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
       video.addEventListener("timeupdate", updateFallbackSubtitleText);
       video.addEventListener("seeked", updateFallbackSubtitleText);
       video.addEventListener("play", updateFallbackSubtitleText);
+      video.addEventListener("loadedmetadata", updateFallbackSubtitleText);
+      video.addEventListener("canplay", updateFallbackSubtitleText);
       updateFallbackSubtitleText();
       updateTimer = window.setInterval(updateFallbackSubtitleText, 250);
 
@@ -1423,6 +1447,8 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
         video.removeEventListener("timeupdate", updateFallbackSubtitleText);
         video.removeEventListener("seeked", updateFallbackSubtitleText);
         video.removeEventListener("play", updateFallbackSubtitleText);
+        video.removeEventListener("loadedmetadata", updateFallbackSubtitleText);
+        video.removeEventListener("canplay", updateFallbackSubtitleText);
         if (updateTimer) clearInterval(updateTimer);
       };
 
@@ -1456,6 +1482,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     let removeDevErrorListeners = null;
     let removeVideoPlaybackListeners = null;
     let videoListenerTimer = null;
+    endedTriggeredRef.current = false;
 
     if (process.env.NODE_ENV === "development") {
       const originalConsoleError = console.error;
@@ -1515,12 +1542,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
         containerRef.current.id = playerId;
 
-        if (
-          BYTEPLUS_LICENSE &&
-          typeof VePlayer.setLicenseConfig === "function"
-        ) {
-          await VePlayer.setLicenseConfig({ license: BYTEPLUS_LICENSE });
-        }
+        await ensureVePlayerLicense(VePlayer);
 
         if (cancelled) return;
 
@@ -1532,28 +1554,6 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
                 line_user_id: lineUserId || `web-${Date.now()}`,
               }
             : undefined;
-        const normalizedSubtitles = Array.isArray(subtitles)
-          ? subtitles
-              .filter((sub) => sub && getSubtitleUrl(sub).length > 0)
-              .map(normalizeSubtitle)
-          : [];
-        const selectedSubtitle =
-          activeSubtitle === null
-            ? null
-            : activeSubtitle
-              ? normalizedSubtitles.find((subtitle) =>
-                  subtitlesMatch(subtitle, activeSubtitle),
-                ) || activeSubtitle
-              : null;
-        const playerSubtitles =
-          selectedSubtitle === null || activeSubtitle === undefined
-            ? normalizedSubtitles
-            : normalizedSubtitles.map((subtitle) => ({
-                ...subtitle,
-                default: subtitlesMatch(subtitle, selectedSubtitle),
-                isDefault: subtitlesMatch(subtitle, selectedSubtitle),
-              }));
-
         const playerConfig = {
           id: playerId,
           root: containerRef.current,
@@ -1583,22 +1583,6 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           },
           ignores: ["audioTrack", "AudioTrack", "audio", "definition"],
         };
-
-        if (
-          playerSubtitles.length > 0 &&
-          !isAppleMobileWebKit() &&
-          VePlayer.Subtitle
-        ) {
-          playerConfig.plugins = [VePlayer.Subtitle];
-          playerConfig.Subtitle = {
-            mode: "external",
-            isDefaultOpen: activeSubtitle !== null,
-            list: playerSubtitles,
-            style: {
-              offsetBottom: SUBTITLE_OFFSET_BOTTOM_PERCENT,
-            },
-          };
-        }
 
         playerRef.current = new VePlayer(playerConfig);
         subtitlePluginRef.current = null;
@@ -1653,17 +1637,37 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
           const handlePause = () => onPausedChangeRef.current?.(true);
           const handlePlay = () => onPausedChangeRef.current?.(false);
-          const handleEnded = () => onEndedRef.current?.();
+          const handleEnded = () => {
+            if (endedTriggeredRef.current) return;
+
+            endedTriggeredRef.current = true;
+            onEndedRef.current?.();
+          };
+          const handleTimeUpdate = () => {
+            const duration = Number(video.duration);
+            const currentTime = Number(video.currentTime);
+
+            if (
+              Number.isFinite(duration) &&
+              duration > 0 &&
+              Number.isFinite(currentTime) &&
+              duration - currentTime <= 0.35
+            ) {
+              handleEnded();
+            }
+          };
 
           video.addEventListener("pause", handlePause);
           video.addEventListener("play", handlePlay);
           video.addEventListener("ended", handleEnded);
+          video.addEventListener("timeupdate", handleTimeUpdate);
           onPausedChangeRef.current?.(video.paused);
 
           removeVideoPlaybackListeners = () => {
             video.removeEventListener("pause", handlePause);
             video.removeEventListener("play", handlePlay);
             video.removeEventListener("ended", handleEnded);
+            video.removeEventListener("timeupdate", handleTimeUpdate);
           };
         };
 
@@ -1746,7 +1750,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
       <div ref={containerRef} className="h-full w-full bg-black" />
       {fallbackSubtitleText ? (
         <div
-          className="pointer-events-none absolute left-0 right-0 z-10 flex justify-center px-5 text-center"
+          className="pointer-events-none absolute left-0 right-0 z-20 flex justify-center px-5 text-center"
           style={{ bottom: `${SUBTITLE_OFFSET_BOTTOM_PERCENT}%` }}
         >
           <div
@@ -1775,6 +1779,7 @@ export default function WatchPage() {
   const playerControlRef = useRef(null);
   const subtitlePreferenceRef = useRef("");
   const audioTrackPreferenceRef = useRef("");
+  const autoAdvanceLockRef = useRef(false);
 
   const [episode, setEpisode] = useState(null);
   const [episodes, setEpisodes] = useState([]);
@@ -1906,9 +1911,11 @@ export default function WatchPage() {
         .map(normalizeSubtitle)
     : [];
   const orderedSubtitleOptions = getOrderedSubtitleOptions(subtitleOptions);
+  const visibleSubtitleOptions =
+    orderedSubtitleOptions.length > 0 ? orderedSubtitleOptions : subtitleOptions;
 
   const subtitleMenuOptions = [
-    ...orderedSubtitleOptions.map((subtitle) => ({
+    ...visibleSubtitleOptions.map((subtitle) => ({
       id: subtitle.id,
       label: getOrderedSubtitleDisplayName(subtitle, language),
       subtitle,
@@ -1996,6 +2003,8 @@ export default function WatchPage() {
       const defaultSubtitle =
         orderedSubtitles.find((subtitle) => subtitle.default) ||
         orderedSubtitles[0] ||
+        normalizedSubtitles.find((subtitle) => subtitle.default) ||
+        normalizedSubtitles[0] ||
         null;
       const preferredSubtitle =
         subtitlePreferenceRef.current === ""
@@ -2084,6 +2093,9 @@ export default function WatchPage() {
         return false;
       }
 
+      applyFetchedSubtitles(
+        Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
+      );
       setPlayback({
         url: hlsPlaybackUrl,
         streamType: playAuthData.preferredPlaybackStreamType || "hls",
@@ -2119,9 +2131,6 @@ export default function WatchPage() {
           }
         }).catch(() => {});
       }
-      applyFetchedSubtitles(
-        Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
-      );
       recordEpisodeView(targetEpisode);
       return true;
     },
@@ -2199,7 +2208,7 @@ export default function WatchPage() {
   }, [isVideoPaused]);
 
   const handleVideoEnded = useCallback(async () => {
-    if (!episode || isEpisodeLoading) return;
+    if (!episode || isEpisodeLoading || autoAdvanceLockRef.current) return;
 
     const currentEpisodeIndex = episodes.findIndex(
       (item) => item?.id === episode.id,
@@ -2209,12 +2218,14 @@ export default function WatchPage() {
 
     if (!nextEpisode) return;
 
+    autoAdvanceLockRef.current = true;
     setIsEpisodeMenuOpen(false);
     setIsSubtitleMenuOpen(false);
 
     if (nextEpisode.is_free === false && !hasActiveVip) {
       setVipLockedEpisode(nextEpisode);
       setIsVideoPaused(true);
+      autoAdvanceLockRef.current = false;
       return;
     }
 
@@ -2228,6 +2239,7 @@ export default function WatchPage() {
       setError(labels.tokenError);
     } finally {
       setIsEpisodeLoading(false);
+      autoAdvanceLockRef.current = false;
     }
   }, [
     episode,
@@ -2277,7 +2289,7 @@ export default function WatchPage() {
       setVipLockedEpisode(null);
 
       try {
-        const [episodeResponse, seriesResponse, vipStatusPayload] = await Promise.all([
+        const [episodeResponse, seriesResponse] = await Promise.all([
           fetch(
             supabaseRestUrl(
               `episode?select=id,series_id,episode_no,video_url,is_free&series_id=eq.${encodeURIComponent(seriesId)}&order=episode_no.asc`,
@@ -2290,19 +2302,11 @@ export default function WatchPage() {
             ),
             { headers },
           ),
-          loadCustomerVipSubscription().catch(() => ({
-            is_active: false,
-            subscription: null,
-          })),
         ]);
         const episodeData = await episodeResponse.json();
         const seriesData = await seriesResponse.json();
         const firstEpisode = episodeData?.[0] || null;
-        const latestHasActiveVip = isVipSubscriptionActive(
-          vipStatusPayload?.subscription,
-        );
 
-        setHasActiveVip(latestHasActiveVip);
         setEpisodes(Array.isArray(episodeData) ? episodeData : []);
         const fetchedSeries = seriesData?.[0] || null;
         setCurrentSeries(fetchedSeries);
@@ -2312,7 +2316,7 @@ export default function WatchPage() {
         loadFavoriteSeriesStatus(fetchedSeries?.id).then((favoriteStatus) => {
           setIsFavorite(favoriteStatus);
         });
-        if (firstEpisode?.is_free === false && !latestHasActiveVip) {
+        if (firstEpisode?.is_free === false && !hasActiveVip) {
           setEpisode(firstEpisode);
           setVipLockedEpisode(firstEpisode);
           setIsVideoPaused(true);

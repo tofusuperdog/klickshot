@@ -60,6 +60,16 @@ body {
 .veplayer-raised-subtitle [class*="audio-track"],
 .veplayer-raised-subtitle [class*="audioTrack"],
 .veplayer-raised-subtitle [class*="audiotrack"],
+.veplayer-raised-subtitle .xgplayer-controls [class*="subtitle"],
+.veplayer-raised-subtitle .xgplayer-controls [class*="Subtitle"],
+.veplayer-raised-subtitle .xgplayer-controls [class*="caption"],
+.veplayer-raised-subtitle .xgplayer-controls [class*="Caption"],
+.veplayer-raised-subtitle .xgplayer-controls [aria-label*="subtitle" i],
+.veplayer-raised-subtitle .xgplayer-controls [aria-label*="caption" i],
+.veplayer-raised-subtitle .xgplayer-controls [title*="subtitle" i],
+.veplayer-raised-subtitle .xgplayer-controls [title*="caption" i],
+.veplayer-raised-subtitle .xgplayer-controls [aria-label="CC"],
+.veplayer-raised-subtitle .xgplayer-controls [title="CC"],
 .veplayer-raised-subtitle .xgplayer-fullscreen {
   display: none !important;
 }

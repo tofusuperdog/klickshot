@@ -46,6 +46,56 @@ export default function VipPage() {
     { id: 3, text: t("unlimited_rewatch") },
   ];
 
+  const getApproxPriceLabel = () => {
+    switch (language) {
+      case "EN":
+        return "Approx. price";
+      case "JP":
+        return "\u76ee\u5b89\u4fa1\u683c";
+      case "CN":
+        return "\u9884\u4f30\u4ef7\u683c";
+      default:
+        return "\u0e23\u0e32\u0e04\u0e32\u0e1b\u0e23\u0e30\u0e21\u0e32\u0e13";
+    }
+  };
+
+  const formatPriceAmount = (value, currency) => {
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount) || amount <= 0) return "-";
+
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: currency === "JPY" ? 0 : 2,
+    }).format(amount);
+  };
+
+  const getApproxPriceText = (pkg) => {
+    if (!pkg) return "";
+
+    switch (language) {
+      case "JP":
+        return `${getApproxPriceLabel()} ${formatPriceAmount(
+          pkg.price_jpy,
+          "JPY",
+        )} \u5186`;
+      case "EN":
+      case "CN":
+        return `${getApproxPriceLabel()} ${formatPriceAmount(
+          pkg.price_usd,
+          "USD",
+        )} USD`;
+      default:
+        return `${getApproxPriceLabel()} ${formatPriceAmount(
+          pkg.price_thb,
+          "THB",
+        )} \u0e1a\u0e32\u0e17`;
+    }
+  };
+
+  const featuredPackage =
+    packages.find((pkg) => pkg?.is_recommended) || packages[0] || null;
+
   // Map database type to localized title if possible, else use DB type
   const getPackageTitle = (pkg) => {
     const type = pkg.type.toLowerCase();
@@ -57,12 +107,7 @@ export default function VipPage() {
   };
 
   const getPackageDescription = (pkg) => {
-    const type = pkg.type.toLowerCase();
-    if (type.includes("weekly"))
-      return t("weekly_vip_desc");
-    if (type.includes("monthly"))
-      return t("monthly_vip_desc");
-    return t("unlimited_watch");
+    return getApproxPriceText(pkg);
   };
 
   // TikTok Minis payments use Beans as the payment unit.
@@ -249,7 +294,9 @@ export default function VipPage() {
               {t("subscribe_vip")}
             </h1>
             <p className="text-[15px] font-medium leading-tight text-white/64">
-              {t("unlimited_watch")}
+              {loading
+                ? ""
+                : getApproxPriceText(featuredPackage) || t("unlimited_watch")}
             </p>
           </div>
         </div>

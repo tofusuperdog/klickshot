@@ -5,6 +5,7 @@ const ALLOWED_HOST_SUFFIXES = [
   "bytepluscdn.com",
   "byteplusapi.com",
   "byteplusvod.com",
+  "klickshotseries.com",
   "minchapseries.com",
 ];
 
