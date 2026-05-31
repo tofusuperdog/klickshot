@@ -318,8 +318,11 @@ export async function GET(request) {
             sub.BackupUrl ||
             sub.FileUrl ||
             "";
+          const signedSubtitleUrl = subtitleUrl
+            ? signCdnUrl(normalizePlaybackUrl(subtitleUrl))
+            : "";
           const proxiedSubtitleUrl = getSubtitleProxyUrl(
-            subtitleUrl,
+            signedSubtitleUrl,
             request.nextUrl.origin,
           );
 
