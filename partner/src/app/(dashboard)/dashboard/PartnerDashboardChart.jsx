@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -17,9 +16,9 @@ const rangeOptions = [7, 14, 30];
 
 const lineSeries = [
   { key: "platform_views", labelKey: "dashboard.allPartners", color: "#7dd3fc" },
-  { key: "partner_views", labelKey: "dashboard.thisPartner", color: "#a7ffd9" },
-  { key: "partner_free_views", labelKey: "common.free", color: "#34d399" },
+  { key: "partner_views", labelKey: "dashboard.partnerTotal", color: "#a7ffd9" },
   { key: "partner_paid_views", labelKey: "common.paid", color: "#ffd36c" },
+  { key: "partner_free_views", labelKey: "common.free", color: "#34d399" },
 ];
 
 function formatDateLabel(value) {
@@ -63,6 +62,19 @@ function CustomTooltip({ active, payload, label, locale, t }) {
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CustomLegend({ items }) {
+  return (
+    <div className="partner-chart-legend" aria-label="Chart legend">
+      {items.map((item) => (
+        <span key={item.key}>
+          <i style={{ backgroundColor: item.color }} />
+          {item.label}
+        </span>
+      ))}
     </div>
   );
 }
@@ -123,6 +135,15 @@ export default function PartnerDashboardChart() {
       paid: sumRows(rows, "partner_paid_views"),
     }),
     [rows],
+  );
+  const legendItems = useMemo(
+    () =>
+      lineSeries.map((series) => ({
+        color: series.color,
+        key: series.key,
+        label: t(series.labelKey),
+      })),
+    [t],
   );
 
   return (
@@ -207,10 +228,6 @@ export default function PartnerDashboardChart() {
                   }}
                 />
                 <Tooltip content={<CustomTooltip locale={locale} t={t} />} />
-                <Legend
-                  iconType="plainline"
-                  wrapperStyle={{ color: "rgba(228,242,237,0.72)", fontSize: 12, paddingTop: 10 }}
-                />
                 {lineSeries.map((series) => (
                   <Line
                     key={series.key}
@@ -227,6 +244,7 @@ export default function PartnerDashboardChart() {
             </ResponsiveContainer>
           )}
         </div>
+        {!isLoading ? <CustomLegend items={legendItems} /> : null}
       </section>
     </>
   );
