@@ -84,7 +84,8 @@ function validateForm(form) {
     ['ค่าน้ำหนักตอนฟรี', form.free_episode_weight],
     ['ค่าน้ำหนักตอนเสียเงิน', form.paid_episode_weight],
   ]) {
-    if (!/^(0(\.\d)?|1(\.0)?)$/.test(String(value))) {
+    const numericValue = Number(value);
+    if (value === '' || !Number.isFinite(numericValue) || numericValue < 0 || numericValue > 1 || !/^\d+(\.\d)?$/.test(String(value))) {
       return `${label} ต้องอยู่ระหว่าง 0 ถึง 1 และใส่ทศนิยมได้ 1 ตำแหน่ง`;
     }
   }
@@ -594,8 +595,8 @@ export default function ReportsPage() {
                 ['end_date', 'วันที่สิ้นสุด', 'date', ''],
                 ['tiktok_revenue', 'รายได้จาก TikTok', 'number', '0.01'],
                 ['platform_expense', 'ค่าใช้จ่ายแพลตฟอร์ม', 'number', '0.01'],
-                ['free_episode_weight', 'ค่าน้ำหนักตอนฟรี', 'number', '0.1'],
-                ['paid_episode_weight', 'ค่าน้ำหนักตอนเสียเงิน', 'number', '0.1'],
+                ['free_episode_weight', 'ค่าน้ำหนักตอนฟรี (0 - 1)', 'number', '0.1'],
+                ['paid_episode_weight', 'ค่าน้ำหนักตอนเสียเงิน (0 - 1)', 'number', '0.1'],
               ].map(([field, label, type, step]) => (
                 <label key={field}>
                   <span className="mb-1.5 block text-sm text-gray-300">{label}</span>

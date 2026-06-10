@@ -53,6 +53,7 @@ export default function CreateSeriesPage() {
     title_jp: '',
     title_cn: '',
     content_producer_id: '',
+    contract_ends_on: '',
     genre_ids: [],
     total_episodes: 1,
     dub_th: false,
@@ -192,6 +193,7 @@ export default function CreateSeriesPage() {
         title_jp: formData.title_jp,
         title_cn: formData.title_cn,
         content_producer_id: parseInt(formData.content_producer_id, 10),
+        contract_ends_on: formData.contract_ends_on || null,
         genre_ids: formData.genre_ids,
         total_episodes: parseInt(formData.total_episodes),
         dub_th: formData.dub_th,
@@ -214,6 +216,7 @@ export default function CreateSeriesPage() {
     }
     
     setIsSaving(false);
+    window.dispatchEvent(new Event('backoffice:contract-notifications-refresh'));
     router.push('/series');
   };
 
@@ -368,6 +371,21 @@ export default function CreateSeriesPage() {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="flex items-start">
+            <span className="w-[120px] text-base font-light text-white shrink-0 pt-2">วันสิ้นสุดสัญญา</span>
+            <div className="flex-1">
+              <input
+                type="date"
+                value={formData.contract_ends_on}
+                onChange={(e) => handleInputChange('contract_ends_on', e.target.value)}
+                className="h-9 w-full rounded bg-white px-3 text-black font-medium focus:outline-none focus:ring-2 focus:ring-[#709bf0]"
+              />
+              <div className="mt-1 text-xs font-light text-gray-400">
+                ไม่กรอกได้ หากไม่มีวันสิ้นสุดสัญญา
+              </div>
             </div>
           </div>
 

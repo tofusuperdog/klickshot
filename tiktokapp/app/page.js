@@ -86,7 +86,8 @@ export default function AppHome() {
               { headers }
             );
             const topData = await topRes.json();
-            topData.forEach(t => allSeriesIdsToFetch.add(t.series_id));
+            const activeTopData = topData.filter(t => t.series_id);
+            activeTopData.forEach(t => allSeriesIdsToFetch.add(t.series_id));
             return {
               id: cat.id,
               type: "top",
@@ -94,7 +95,7 @@ export default function AppHome() {
               name_en: cat.name_en,
               name_jp: cat.name_jp,
               name_cn: cat.name_cn,
-              itemsData: topData
+              itemsData: activeTopData
             };
           } else if (cat.name === "ซีรีส์พากย์ตามภาษา") {
             const currentLangCode = language.toLowerCase();

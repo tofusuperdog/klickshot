@@ -6,6 +6,79 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { backofficeMutation, backofficeQuery } from "@/lib/backoffice";
 
+const CONTRACT_WARNING_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getBangkokDateString(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function parseBangkokDate(value) {
+  if (!value) return null;
+  const datePart = String(value).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+  return new Date(`${datePart}T00:00:00+07:00`);
+}
+
+function getContractInfo(value) {
+  const endDate = parseBangkokDate(value);
+  if (!endDate) {
+    return {
+      label: "ไม่มีวันสิ้นสุด",
+      tone: "none",
+    };
+  }
+
+  const today = parseBangkokDate(getBangkokDateString());
+  const daysUntilEnd = Math.round((endDate.getTime() - today.getTime()) / DAY_MS);
+  const formattedDate = endDate.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "Asia/Bangkok",
+  });
+
+  if (daysUntilEnd < 0) {
+    return {
+      label: `หมดสัญญาแล้ว (${formattedDate})`,
+      tone: "expired",
+    };
+  }
+
+  if (daysUntilEnd <= CONTRACT_WARNING_DAYS) {
+    return {
+      label: `ใกล้หมดสัญญา (${formattedDate})`,
+      tone: "warning",
+    };
+  }
+
+  return {
+    label: `หมดสัญญา: ${formattedDate}`,
+    tone: "normal",
+  };
+}
+
+function ContractBadge({ value }) {
+  const info = getContractInfo(value);
+  const toneClass = {
+    none: "border-[#34407a] bg-[#171d42] text-[#9ca7c8]",
+    normal: "border-[#5362b7] bg-[#263163] text-[#d9e0ff]",
+    warning: "border-[#FDE047]/60 bg-[#4c3f16]/55 text-[#FDE047]",
+    expired: "border-[#ff6674]/60 bg-[#4a1a28]/55 text-[#ff8490]",
+  }[info.tone];
+
+  return (
+    <span className={`inline-flex w-fit rounded border px-2.5 py-1 text-[11px] font-medium ${toneClass}`}>
+      {info.label}
+    </span>
+  );
+}
+
 // Minor badges for language
 function LangBadge({ label, active }) {
   if (!active) return null;
@@ -38,6 +111,8 @@ function StatusColumn({
   seriesId,
   onPublish,
   onUnpublish,
+  onExpire,
+  onRenew,
 }) {
   const linkClass =
     "cursor-pointer text-[#cbd3ff] hover:text-white underline text-[13px] font-light transition-colors";
@@ -56,10 +131,37 @@ function StatusColumn({
           จัดการตอน
         </Link>
         <button
+          onClick={() => onExpire(seriesId)}
+          className="cursor-pointer text-[13px] font-semibold text-[#FDE047] underline transition-colors hover:text-[#fff39a]"
+        >
+          หมดสัญญา
+        </button>
+        <button
           onClick={() => onUnpublish(seriesId)}
           className="cursor-pointer text-[13px] font-semibold text-[#ff6b79] underline transition-colors hover:text-[#ff9aa4]"
         >
           ยกเลิกการเผยแพร่
+        </button>
+      </div>
+    );
+  } else if (status === "expired") {
+    return (
+      <div className="flex w-[170px] flex-col items-center justify-center gap-3">
+        <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#ff6674] bg-[#4a1a28]/45 py-2 text-[13px] font-semibold tracking-wide text-[#ff8490]">
+          <Image src="/notready.svg" alt="Expired" width={20} height={20} />
+          <span>หมดสัญญา</span>
+        </div>
+        <Link href={`/series/${seriesId}`} className={linkClass}>
+          รายละเอียด
+        </Link>
+        <Link href={`/series/${seriesId}/episodes`} className={linkClass}>
+          จัดการตอน
+        </Link>
+        <button
+          onClick={() => onRenew(seriesId)}
+          className="cursor-pointer text-[13px] font-semibold text-[#FDE047] underline transition-colors hover:text-[#fff39a]"
+        >
+          ต่อสัญญา
         </button>
       </div>
     );
@@ -105,6 +207,120 @@ function StatusColumn({
   }
 }
 
+function ExpireSeriesModal({
+  seriesItem,
+  placements,
+  isChecking,
+  isSaving,
+  onClose,
+  onConfirm,
+}) {
+  if (!seriesItem) return null;
+
+  const bannerSlots = placements?.banners || [];
+  const topRanks = placements?.topSeries || [];
+  const hasBlockers = bannerSlots.length > 0 || topRanks.length > 0;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
+      <div className="w-full max-w-[560px] rounded-xl border border-[#504481] bg-[#151a3f] p-6 shadow-2xl sm:p-8">
+        <div className="mb-5 flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#FDE047]/45 bg-[#4c3f16]/70 text-[#FDE047]">
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-[20px] font-semibold tracking-wide text-white">
+              ยืนยันสถานะหมดสัญญา
+            </h2>
+            <p className="mt-2 text-[14px] font-light leading-6 text-gray-300">
+              ซีรีส์ <span className="font-medium text-white">{seriesItem.title_th || "-"}</span>{" "}
+              จะถูกย้ายไปสถานะหมดสัญญา และจะไม่ถูกลบหรือแทนที่จากหน้าแสดงผลให้อัตโนมัติ
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-[#34407a] bg-[#202650]/70 p-4">
+          <div className="mb-3 text-[13px] font-semibold text-[#d8dcff]">
+            ตรวจสอบตำแหน่งแสดงผล
+          </div>
+
+          {isChecking ? (
+            <div className="flex items-center gap-3 rounded border border-[#34407a] bg-[#171d42] px-4 py-3 text-[13px] text-[#b6c0e4]">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#6f63ff] border-t-transparent" />
+              กำลังตรวจสอบแบนเนอร์หลักและอันดับยอดนิยม...
+            </div>
+          ) : hasBlockers ? (
+            <div className="space-y-3">
+              <div className="rounded border border-[#ff6674]/55 bg-[#4a1a28]/55 px-4 py-3 text-[13px] leading-6 text-[#ffb3bb]">
+                ไม่สามารถเปลี่ยนเป็นหมดสัญญาได้ กรุณานำซีรีส์นี้ออกจากตำแหน่งด้านล่างในหน้า{" "}
+                <Link href="/displays" className="font-semibold text-white underline">
+                  /displays
+                </Link>{" "}
+                ก่อน
+              </div>
+              {bannerSlots.length > 0 && (
+                <div className="rounded border border-[#34407a] bg-[#171d42] px-4 py-3">
+                  <div className="text-[12px] font-semibold text-[#ff8490]">
+                    แบนเนอร์หลัก
+                  </div>
+                  <div className="mt-1 text-[13px] text-gray-300">
+                    ตำแหน่ง {bannerSlots.map((item) => item.id).join(", ")}
+                  </div>
+                </div>
+              )}
+              {topRanks.length > 0 && (
+                <div className="rounded border border-[#34407a] bg-[#171d42] px-4 py-3">
+                  <div className="text-[12px] font-semibold text-[#ff8490]">
+                    อันดับยอดนิยม
+                  </div>
+                  <div className="mt-1 text-[13px] text-gray-300">
+                    อันดับ {topRanks.map((item) => item.rank).join(", ")}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded border border-[#34d981]/45 bg-[#123f35]/45 px-4 py-3 text-[13px] leading-6 text-[#7ee68f]">
+              ผ่านการตรวจสอบแล้ว ซีรีส์นี้ไม่ได้อยู่ในแบนเนอร์หลักหรืออันดับยอดนิยม
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="h-10 cursor-pointer rounded border border-gray-500 px-5 text-[14px] font-light text-gray-300 transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isChecking || isSaving || hasBlockers}
+            className="h-10 cursor-pointer rounded bg-[#D24949] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isSaving ? "กำลังบันทึก..." : "ยืนยันหมดสัญญา"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SeriesPage() {
   const { user } = useAuth();
   const [series, setSeries] = useState([]);
@@ -121,6 +337,13 @@ export default function SeriesPage() {
 
   const [errorMsg, setErrorMsg] = useState("");
   const [errorVisible, setErrorVisible] = useState(false);
+  const [expireModalSeries, setExpireModalSeries] = useState(null);
+  const [expirePlacements, setExpirePlacements] = useState({
+    banners: [],
+    topSeries: [],
+  });
+  const [isCheckingExpire, setIsCheckingExpire] = useState(false);
+  const [isExpiring, setIsExpiring] = useState(false);
   const errorTimeoutRef = useRef(null);
 
   const showError = (msg) => {
@@ -244,6 +467,107 @@ export default function SeriesPage() {
     );
   };
 
+  const checkExpirePlacements = async (id) => {
+    setIsCheckingExpire(true);
+    setExpirePlacements({ banners: [], topSeries: [] });
+
+    const [bannerResult, topSeriesResult] = await Promise.all([
+      supabase.from("main_banner").select("id").eq("series_id", id),
+      supabase
+        .from("top_series")
+        .select("rank, series_id")
+        .eq("series_id", id)
+        .order("rank", { ascending: true }),
+    ]);
+
+    setIsCheckingExpire(false);
+
+    if (bannerResult.error || topSeriesResult.error) {
+      setExpireModalSeries(null);
+      showError("เกิดข้อผิดพลาดในการตรวจสอบตำแหน่งแสดงผล");
+      return false;
+    }
+
+    setExpirePlacements({
+      banners: bannerResult.data || [],
+      topSeries: topSeriesResult.data || [],
+    });
+    return true;
+  };
+
+  const handleExpire = async (id) => {
+    const targetSeries = series.find((item) => item.id === id);
+    if (!targetSeries) return;
+
+    setExpireModalSeries(targetSeries);
+    await checkExpirePlacements(id);
+  };
+
+  const closeExpireModal = () => {
+    if (isExpiring) return;
+    setExpireModalSeries(null);
+    setExpirePlacements({ banners: [], topSeries: [] });
+  };
+
+  const confirmExpire = async () => {
+    if (!expireModalSeries) return;
+    if (
+      expirePlacements.banners.length > 0 ||
+      expirePlacements.topSeries.length > 0
+    ) {
+      showError("ไม่สามารถเปลี่ยนเป็นหมดสัญญาได้ กรุณาจัดการตำแหน่งแสดงผลก่อน");
+      return;
+    }
+
+    setIsExpiring(true);
+    const { error } = await backofficeMutation(
+      user,
+      "series",
+      "update",
+      { status: "expired" },
+      { id: expireModalSeries.id },
+    );
+    setIsExpiring(false);
+
+    if (error) {
+      showError("เกิดข้อผิดพลาดในการเปลี่ยนสถานะหมดสัญญา");
+      return;
+    }
+
+    setSeries((prev) =>
+      prev.map((s) =>
+        s.id === expireModalSeries.id ? { ...s, status: "expired" } : s,
+      ),
+    );
+    window.dispatchEvent(new Event("backoffice:contract-notifications-refresh"));
+    closeExpireModal();
+  };
+
+  const handleRenew = async (id) => {
+    const confirmed = window.confirm(
+      "ต่อสัญญาซีรีส์นี้และเปลี่ยนสถานะกลับเป็นพร้อมเผยแพร่? ระบบจะไม่แก้วันสิ้นสุดสัญญาให้อัตโนมัติ",
+    );
+    if (!confirmed) return;
+
+    const { error } = await backofficeMutation(
+      user,
+      "series",
+      "update",
+      { status: "ready" },
+      { id },
+    );
+
+    if (error) {
+      showError("เกิดข้อผิดพลาดในการต่อสัญญาซีรีส์");
+      return;
+    }
+
+    setSeries((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: "ready" } : s)),
+    );
+    window.dispatchEvent(new Event("backoffice:contract-notifications-refresh"));
+  };
+
   const getGenreNames = (genreIds) => {
     if (!genreIds || !Array.isArray(genreIds)) return [];
     return genreIds
@@ -266,6 +590,7 @@ export default function SeriesPage() {
       0,
       (item.total_episodes || 0) - readyEpisodes,
     );
+    if (item.status === "expired") return "expired";
     if (item.status === "published") return "published";
     return missingEpisodes <= 0 ? "ready" : "not_ready";
   };
@@ -281,6 +606,7 @@ export default function SeriesPage() {
       {
         all: 0,
         published: 0,
+        expired: 0,
         ready: 0,
         not_ready: 0,
       },
@@ -352,6 +678,13 @@ export default function SeriesPage() {
       label: "ไม่พร้อมเผยแพร่",
       count: statusCounts.not_ready,
       className: "text-[#ff6674]",
+      activeClassName: "bg-[#4a1a28] text-[#ff8490] border-[#ff6674]/50",
+    },
+    {
+      id: "expired",
+      label: "หมดสัญญา",
+      count: statusCounts.expired,
+      className: "text-[#ff8490]",
       activeClassName: "bg-[#4a1a28] text-[#ff8490] border-[#ff6674]/50",
     },
   ];
@@ -540,11 +873,7 @@ export default function SeriesPage() {
                     0,
                     s.total_episodes - readyEpisodes,
                   );
-                  let computedStatus = s.status;
-                  if (s.status !== "published") {
-                    computedStatus =
-                      missingEpisodes <= 0 ? "ready" : "not_ready";
-                  }
+                  const computedStatus = getComputedStatus(s);
                   const contentProducerName = getContentProducerName(
                     s.content_producer_id,
                   );
@@ -613,6 +942,9 @@ export default function SeriesPage() {
                               </span>{" "}
                               {contentProducerName || "-"}
                             </div>
+                          </div>
+                          <div className="mt-3">
+                            <ContractBadge value={s.contract_ends_on} />
                           </div>
                         </div>
 
@@ -748,6 +1080,8 @@ export default function SeriesPage() {
                           seriesId={s.id}
                           onPublish={handlePublish}
                           onUnpublish={handleUnpublish}
+                          onExpire={handleExpire}
+                          onRenew={handleRenew}
                         />
                       </div>
                     </div>
@@ -841,6 +1175,14 @@ export default function SeriesPage() {
           </>
         )}
       </div>
+      <ExpireSeriesModal
+        seriesItem={expireModalSeries}
+        placements={expirePlacements}
+        isChecking={isCheckingExpire}
+        isSaving={isExpiring}
+        onClose={closeExpireModal}
+        onConfirm={confirmExpire}
+      />
     </div>
   );
 }

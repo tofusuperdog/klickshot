@@ -24,6 +24,21 @@ function badRequest(message) {
   return jsonResponse({ error: message }, { status: 400 });
 }
 
+function reportCreateErrorMessage(error) {
+  const message = String(error?.message || '');
+  const knownMessages = [
+    'date range already exists',
+    'report for this date range already exists',
+    'total adjusted views must be greater than zero',
+    'invalid report date range',
+    'revenue and expense must be non-negative',
+    'weights must be between 0 and 1 with one decimal place',
+    'permission denied',
+  ];
+
+  return knownMessages.find((knownMessage) => message.includes(knownMessage)) || 'Unable to create report';
+}
+
 function rateLimited(request, token) {
   const key = `backoffice-reports:${getClientIp(request)}:${token.slice(0, 16)}`;
   return isRateLimited(key, RATE_LIMIT_MAX_ATTEMPTS, RATE_LIMIT_WINDOW_MS);
@@ -35,12 +50,23 @@ function validReportPayload(payload) {
   if (!DATE_PATTERN.test(String(payload.start_date || ''))) return false;
   if (!DATE_PATTERN.test(String(payload.end_date || ''))) return false;
 
-  return [
-    payload.tiktok_revenue,
-    payload.platform_expense,
-    payload.free_episode_weight,
-    payload.paid_episode_weight,
-  ].every((value) => Number.isFinite(Number(value)));
+  const tiktokRevenue = Number(payload.tiktok_revenue);
+  const platformExpense = Number(payload.platform_expense);
+  const freeEpisodeWeight = Number(payload.free_episode_weight);
+  const paidEpisodeWeight = Number(payload.paid_episode_weight);
+
+  return (
+    Number.isFinite(tiktokRevenue) &&
+    Number.isFinite(platformExpense) &&
+    Number.isFinite(freeEpisodeWeight) &&
+    Number.isFinite(paidEpisodeWeight) &&
+    tiktokRevenue >= 0 &&
+    platformExpense >= 0 &&
+    freeEpisodeWeight >= 0 &&
+    freeEpisodeWeight <= 1 &&
+    paidEpisodeWeight >= 0 &&
+    paidEpisodeWeight <= 1
+  );
 }
 
 export async function GET(request) {
@@ -109,7 +135,7 @@ export async function POST(request) {
     });
 
     if (error) {
-      return jsonResponse({ error: 'Unable to create report' }, { status: 400 });
+      return jsonResponse({ error: reportCreateErrorMessage(error) }, { status: 400 });
     }
 
     return jsonResponse({ data });

@@ -34,7 +34,8 @@ export default function AppSearch() {
           { headers }
         );
         const topData = await topRes.json();
-        const seriesIds = topData.map(t => t.series_id);
+        const activeTopData = topData.filter(t => t.series_id);
+        const seriesIds = activeTopData.map(t => t.series_id);
 
         if (seriesIds.length === 0) return;
 
@@ -68,7 +69,7 @@ export default function AppSearch() {
         seriesData.forEach(s => { seriesMap[s.id] = s; });
 
         // Build result sorted by rank
-        const combined = topData
+        const combined = activeTopData
           .map(t => ({
             rank: t.rank,
             series: seriesMap[t.series_id],

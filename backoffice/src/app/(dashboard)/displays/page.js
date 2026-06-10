@@ -1,34 +1,89 @@
 'use client';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { backofficeMutation, backofficeQuery } from '@/lib/backoffice';
 
-function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isSaving, currentSeriesId }) {
+const CONTRACT_WARNING_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function getBangkokDateString(date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function parseBangkokDate(value) {
+  if (!value) return null;
+  const datePart = String(value).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+  return new Date(`${datePart}T00:00:00+07:00`);
+}
+
+function getPlacementWarning(series) {
+  if (!series) return '';
+
+  if (series.status === 'expired') {
+    return 'ซีรีส์นี้ถูกตั้งเป็นหมดสัญญาแล้ว';
+  }
+
+  const endDate = parseBangkokDate(series.contract_ends_on);
+  if (!endDate) return '';
+
+  const today = parseBangkokDate(getBangkokDateString());
+  const daysUntilEnd = Math.round((endDate.getTime() - today.getTime()) / DAY_MS);
+
+  if (daysUntilEnd < 0) return 'ซีรีส์นี้เลยวันสิ้นสุดสัญญาแล้ว';
+  if (daysUntilEnd <= CONTRACT_WARNING_DAYS) {
+    return `ซีรีส์นี้จะหมดสัญญาในอีก ${daysUntilEnd.toLocaleString('th-TH')} วัน`;
+  }
+
+  return '';
+}
+
+function PlacementWarning({ series }) {
+  const warning = getPlacementWarning(series);
+  if (!warning) return null;
+
+  return (
+    <div className="mt-2 rounded border border-[#FDE047]/45 bg-[#4c3f16]/45 px-3 py-2 text-[12px] font-medium leading-5 text-[#FDE047]">
+      {warning}
+    </div>
+  );
+}
+
+function BannerDetailPanel({ bannerIndex, currentSeriesId, seriesList, onSave, isSaving }) {
   const [selectedSeriesId, setSelectedSeriesId] = useState('');
   const [selectedSeries, setSelectedSeries] = useState(null);
 
   useEffect(() => {
-    if (isOpen) {
-      if (currentSeriesId && seriesList && seriesList.length > 0) {
-        const found = seriesList.find(s => String(s.id) === String(currentSeriesId));
-        if (found) {
-          setSelectedSeriesId(String(found.id));
-          setSelectedSeries(found);
-          return;
-        }
-      }
+    if (!bannerIndex) {
+      setSelectedSeriesId('');
+      setSelectedSeries(null);
+      return;
+    }
 
-      if (seriesList && seriesList.length > 0) {
-        setSelectedSeriesId(String(seriesList[0].id));
-        setSelectedSeries(seriesList[0]);
-      } else {
-        setSelectedSeriesId('');
-        setSelectedSeries(null);
+    if (currentSeriesId && seriesList.length > 0) {
+      const found = seriesList.find(s => String(s.id) === String(currentSeriesId));
+      if (found) {
+        setSelectedSeriesId(String(found.id));
+        setSelectedSeries(found);
+        return;
       }
     }
-  }, [isOpen, seriesList, currentSeriesId]);
+
+    if (seriesList.length > 0) {
+      setSelectedSeriesId(String(seriesList[0].id));
+      setSelectedSeries(seriesList[0]);
+    } else {
+      setSelectedSeriesId('');
+      setSelectedSeries(null);
+    }
+  }, [bannerIndex, currentSeriesId, seriesList]);
 
   const handleSelectChange = (e) => {
     const id = e.target.value;
@@ -37,97 +92,90 @@ function BannerEditModal({ isOpen, onClose, bannerIndex, seriesList, onSave, isS
     setSelectedSeries(series || null);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale">
-      <div className="bg-[#151a3f] border border-[#34407a] rounded-xl w-full max-w-[620px] shadow-2xl p-8 py-10 relative">
-        <h2 className="text-2xl font-semibold text-white text-center mb-8 tracking-wide flex items-center justify-center gap-3">
-          แบนเนอร์
-          <span className="w-9 h-9 rounded-full bg-[#544081] text-white flex items-center justify-center text-[18px] font-medium shadow-md">
-            {bannerIndex}
-          </span>
-        </h2>
+    <aside className="min-h-[430px] rounded-lg border border-[#34407a] bg-[#202650]/70 p-5 shadow-lg lg:w-[340px] xl:w-[380px] shrink-0">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-[18px] font-medium text-white">รายละเอียดแบนเนอร์</h2>
+          <p className="mt-1 text-[13px] font-light text-gray-400">เลือก poster เพื่อแก้ไขตำแหน่ง</p>
+        </div>
+        <span className="rounded-full bg-[#544081] px-3 py-1 text-[12px] font-medium text-white">
+          ตำแหน่ง {bannerIndex || '-'}
+        </span>
+      </div>
 
-        <div className="px-2">
-          <span className="block text-[15px] font-light text-gray-300 mb-2">เลือกซีรีส์</span>
-
-          <div className="relative mb-6">
-            <select
-              value={selectedSeriesId}
-              onChange={handleSelectChange}
-              disabled={isSaving}
-              className="w-full h-11 px-4 bg-white rounded text-black font-medium text-[15px] focus:outline-none focus:ring-2 focus:ring-[#709bf0] appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {seriesList.length === 0 && <option value="" disabled>ไม่มีซีรีส์...</option>}
-              {seriesList.map(s => (
-                <option key={s.id} value={s.id}>{s.title_th}</option>
-              ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+      {!bannerIndex ? (
+        <div className="flex h-[330px] items-center justify-center rounded-lg border border-dashed border-[#4c5075] bg-[#151a3f]/70 px-6 text-center text-[14px] font-light leading-6 text-gray-400">
+          เลือกแบนเนอร์จากรายการด้านซ้ายเพื่อดูรายละเอียดและเปลี่ยนซีรีส์
+        </div>
+      ) : (
+        <>
+          <label className="mb-5 block">
+            <span className="mb-2 block text-[14px] font-light text-gray-300">เลือกซีรีส์</span>
+            <div className="relative">
+              <select
+                value={selectedSeriesId}
+                onChange={handleSelectChange}
+                disabled={isSaving}
+                className="h-11 w-full cursor-pointer appearance-none rounded bg-white px-4 pr-10 text-[15px] font-medium text-black outline-none focus:ring-2 focus:ring-[#709bf0] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {seriesList.length === 0 && <option value="" disabled>ไม่มีซีรีส์...</option>}
+                {seriesList.map(s => (
+                  <option key={s.id} value={s.id}>{s.title_th}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-600">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-          </div>
+          </label>
 
-          {/* Series Detail preview */}
-          {selectedSeries && (
-            <div className="flex gap-5 mb-8">
-              <div className="w-[130px] aspect-[2/3] relative rounded overflow-hidden shadow-md shrink-0 bg-[#171d42]">
+          {selectedSeries ? (
+            <div className="mb-6 flex gap-4 rounded-lg border border-[#34407a] bg-[#151a3f]/80 p-4">
+              <div className="relative aspect-[2/3] w-[112px] shrink-0 overflow-hidden rounded bg-[#171d42] shadow-md">
                 {selectedSeries.poster_url ? (
-                  <Image src={selectedSeries.poster_url} alt={selectedSeries.title_th} fill sizes="130px" style={{ objectFit: 'cover' }} />
+                  <Image src={selectedSeries.poster_url} alt={selectedSeries.title_th} fill sizes="112px" style={{ objectFit: 'cover' }} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500">No Image</div>
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-gray-500">No Image</div>
                 )}
               </div>
 
-              <div className="flex flex-col justify-center space-y-3.5 py-1 flex-1 overflow-hidden">
-                <div className="flex items-center gap-3">
-                  <span className="w-[34px] h-[26px] border border-gray-400 rounded flex items-center justify-center text-[11px] font-medium text-gray-300 shrink-0 bg-white/5">TH</span>
-                  <span className="text-gray-200 text-[14px] truncate" title={selectedSeries.title_th}>{selectedSeries.title_th || '-'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-[34px] h-[26px] border border-gray-400 rounded flex items-center justify-center text-[11px] font-medium text-gray-300 shrink-0 bg-white/5">EN</span>
-                  <span className="text-gray-200 text-[14px] truncate" title={selectedSeries.title_en}>{selectedSeries.title_en || '-'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-[34px] h-[26px] border border-gray-400 rounded flex items-center justify-center text-[11px] font-medium text-gray-300 shrink-0 bg-white/5">JP</span>
-                  <span className="text-gray-200 text-[14px] truncate" title={selectedSeries.title_jp}>{selectedSeries.title_jp || '-'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-[34px] h-[26px] border border-gray-400 rounded flex items-center justify-center text-[11px] font-medium text-gray-300 shrink-0 bg-white/5">CN</span>
-                  <span className="text-gray-200 text-[14px] truncate" title={selectedSeries.title_cn}>{selectedSeries.title_cn || '-'}</span>
-                </div>
+              <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3">
+                {[
+                  ['TH', selectedSeries.title_th],
+                  ['EN', selectedSeries.title_en],
+                  ['JP', selectedSeries.title_jp],
+                  ['CN', selectedSeries.title_cn],
+                ].map(([lang, title]) => (
+                  <div key={lang} className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-[24px] w-[34px] shrink-0 items-center justify-center rounded border border-gray-500 bg-white/5 text-[11px] font-medium text-gray-300">
+                      {lang}
+                    </span>
+                    <span className="truncate text-[14px] text-gray-200" title={title}>{title || '-'}</span>
+                  </div>
+                ))}
+                <PlacementWarning series={selectedSeries} />
               </div>
             </div>
-          )}
-
-          {!selectedSeries && (
-            <div className="h-[195px] mb-8 border border-dashed border-[#34407a] rounded-lg flex items-center justify-center bg-[#202650]/45 text-gray-500 font-light text-[14px]">
+          ) : (
+            <div className="mb-6 flex h-[195px] items-center justify-center rounded-lg border border-dashed border-[#34407a] bg-[#151a3f]/70 text-[14px] font-light text-gray-500">
               กรุณาเลือกซีรีส์เพื่อดูข้อมูล
             </div>
           )}
 
-          <div className="flex justify-center gap-4 mt-2">
-            <button
-              onClick={onClose}
-              disabled={isSaving}
-              className="w-[160px] h-11 border border-gray-500 hover:bg-white/5 transition-colors rounded text-gray-300 font-light cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ยกเลิก
-            </button>
-            <button
-              onClick={() => onSave(bannerIndex, selectedSeriesId)}
-              disabled={isSaving || !selectedSeriesId}
-              className="w-[160px] h-11 bg-gradient-to-r from-[#6869ff] to-[#7657f4] hover:from-[#7778ff] hover:to-[#8466ff] transition-all rounded text-white font-medium cursor-pointer text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={() => onSave(bannerIndex, selectedSeriesId)}
+            disabled={isSaving || !selectedSeriesId}
+            className="h-11 w-full cursor-pointer rounded bg-gradient-to-r from-[#6869ff] to-[#7657f4] text-[15px] font-medium text-white transition-all hover:from-[#7778ff] hover:to-[#8466ff] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSaving ? 'กำลังบันทึก...' : 'บันทึกแบนเนอร์'}
+          </button>
+        </>
+      )}
+    </aside>
   );
 }
 
@@ -591,12 +639,18 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
     setLoading(true);
     const today = new Date();
     const endDate = new Date(today);
-    endDate.setDate(today.getDate() - 1);
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 3);
+    startDate.setDate(today.getDate() - 6);
     
-    const startStr = startDate.toISOString().split('T')[0];
-    const endStr = endDate.toISOString().split('T')[0];
+    const toDateString = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const startStr = toDateString(startDate);
+    const endStr = toDateString(endDate);
     
     const monthsTh = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
     const startDay = startDate.getDate();
@@ -616,17 +670,25 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
     }
     setDateRangeStr(drStr);
 
-    const { data: viewsData, error: viewsError } = await supabase
-      .from('episode_daily_views')
-      .select('series_id, views')
-      .gte('view_date', startStr)
-      .lte('view_date', endStr);
+    const viewsResponse = await fetch('/api/backoffice/top-series-view-counts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        start_date: startStr,
+        end_date: endStr,
+      }),
+    });
+    const viewsResult = await viewsResponse.json().catch(() => ({}));
+
+    if (!viewsResponse.ok) {
+      showErrorMsg('ไม่สามารถโหลดจำนวนครั้งที่รับชมได้');
+    }
       
     const viewsMap = {}; 
-    if (viewsData) {
-      viewsData.forEach(row => {
-        if (!viewsMap[row.series_id]) viewsMap[row.series_id] = 0;
-        viewsMap[row.series_id] += (row.views || 0);
+    if (Array.isArray(viewsResult.data)) {
+      viewsResult.data.forEach(row => {
+        viewsMap[row.series_id] = row.total_views || 0;
       });
     }
 
@@ -639,7 +701,7 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
 
     const { data: topSeriesData } = await supabase
       .from('top_series')
-      .select('rank, series_id')
+      .select('rank, series_id, series:series_id(id, title_th, status, contract_ends_on)')
       .order('rank', { ascending: true });
 
     const currentLeft = [];
@@ -648,21 +710,18 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
         const topData = topSeriesData?.find(t => t.rank === i);
         const seriesId = topData ? topData.series_id : null;
         
-        const sData = seriesId ? seriesWithViews.find(s => String(s.id) === String(seriesId)) : null;
+        const sData = seriesId
+          ? seriesWithViews.find(s => String(s.id) === String(seriesId)) || topData?.series || null
+          : null;
         currentLeft.push({
             rank: i,
             series_id: seriesId,
             title: sData ? sData.title_th : '-',
-            views: sData ? sData.views : 0
+            views: sData ? sData.views || 0 : 0,
+            warning: getPlacementWarning(sData),
         });
 
-        if (seriesId) {
-            initialSelections[i] = String(seriesId);
-        } else if (seriesWithViews[i-1]) {
-            initialSelections[i] = String(seriesWithViews[i-1].id);
-        } else {
-            initialSelections[i] = '';
-        }
+        initialSelections[i] = seriesId ? String(seriesId) : '';
     }
     
     setCurrentTopSeries(currentLeft);
@@ -728,7 +787,7 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
           
           <div className="mb-6">
              <h2 className="text-[22px] font-medium text-white tracking-wide">อันดับยอดนิยม</h2>
-             <p className="text-gray-400 text-[14px] mt-1 font-light">จำนวนตอนที่คนดูในช่วงวันที่ {dateRangeStr}</p>
+             <p className="text-gray-400 text-[14px] mt-1 font-light">ยอดดูรวม 7 วันย้อนหลังจากวันนี้ ({dateRangeStr})</p>
           </div>
 
           {loading ? (
@@ -747,7 +806,12 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
                          {item.rank}
                        </span>
                        <span className="text-[#c1c7df] text-[14.5px] font-light flex-1 truncate">{item.title}</span>
-                       <span className="text-[#c1c7df] text-[14.5px] font-light shrink-0">{item.views.toLocaleString()} ตอน</span>
+                       <span className="text-[#c1c7df] text-[14.5px] font-light shrink-0">{item.views.toLocaleString()} ครั้ง</span>
+                       {item.warning ? (
+                         <span className="max-w-[150px] shrink-0 truncate text-[11px] font-medium text-[#FDE047]" title={item.warning}>
+                           {item.warning}
+                         </span>
+                       ) : null}
                      </div>
                    ))}
                  </div>
@@ -774,10 +838,10 @@ function TopSeriesModal({ isOpen, onClose, seriesList, user }) {
                            className="w-full h-[38px] bg-[#d9d9d9] text-[#222] rounded px-3 text-[14px] focus:outline-none appearance-none cursor-pointer"
                            disabled={isSaving}
                          >
-                           <option value="" disabled>-- เลือกซีรีส์ --</option>
+                           <option value="">-- ไม่เลือกซีรีส์ --</option>
                            {sortedSeries.map(s => (
                              <option key={s.id} value={s.id}>
-                               {s.title_th} - {s.views.toLocaleString()} ตอน
+                               {s.title_th} - {s.views.toLocaleString()} ครั้ง
                              </option>
                            ))}
                          </select>
@@ -820,7 +884,7 @@ export default function DisplaysPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('main_banner');
   const [seriesList, setSeriesList] = useState([]);
-  const [editingBanner, setEditingBanner] = useState(null);
+  const [editingBanner, setEditingBanner] = useState(3);
 
   // Banner state
   const [mainBanners, setMainBanners] = useState({});
@@ -831,6 +895,14 @@ export default function DisplaysPage() {
   // Drag and Drop state
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const publishedSeriesById = useMemo(() => {
+    const map = new Map();
+    seriesList.forEach((item) => {
+      map.set(String(item.id), item);
+    });
+    return map;
+  }, [seriesList]);
 
   // Add Category state
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -884,7 +956,7 @@ export default function DisplaysPage() {
     // Fetch series
     const { data: sData, error: sError } = await supabase
       .from('series')
-      .select('id, title_th, title_en, title_jp, title_cn, poster_url, dub_th, dub_en, dub_jp, dub_cn')
+      .select('id, title_th, title_en, title_jp, title_cn, poster_url, dub_th, dub_en, dub_jp, dub_cn, status, contract_ends_on')
       .eq('status', 'published')
       .order('id', { ascending: false });
 
@@ -896,7 +968,7 @@ export default function DisplaysPage() {
     // Fetch banners
     const { data: bData, error: bError } = await supabase
       .from('main_banner')
-      .select('id, series_id, series:series_id(id, title_th, poster_url)');
+      .select('id, series_id, series:series_id(id, title_th, poster_url, status, contract_ends_on)');
 
     if (!bError && bData) {
       const bMap = {};
@@ -966,7 +1038,7 @@ export default function DisplaysPage() {
       console.error('Error saving banner:', error);
       alert('เกิดข้อผิดพลาดในการบันทึกแบนเนอร์');
     } else {
-      setEditingBanner(null);
+      setEditingBanner(bannerIndex);
       fetchInitialData(); // Refresh to get the latest joined series data
     }
   };
@@ -1141,17 +1213,18 @@ export default function DisplaysPage() {
 
       {/* Tabs Container */}
       <div className="w-full bg-[#151a3f] border border-[#34407a] rounded-lg flex flex-col shadow-lg overflow-hidden">
-
         {/* Tab Headers */}
-        <div className="flex border-b border-[#34407a] bg-[#202650]">
+        <div className="flex border-b border-[#34407a] bg-[#151a3f]">
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-8 py-3.5 text-[15px] transition-colors relative font-light cursor-pointer ${activeTab === tab.id
-                ? 'text-white bg-[#262247] shadow-inner'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                }`}
+              className={`cursor-pointer border-b-2 px-8 py-4 text-[15px] font-medium transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-[#7f83ff] text-[#aeb1ff]'
+                  : 'border-transparent text-[#aab4d6] hover:bg-white/5 hover:text-white'
+              }`}
             >
               {tab.label}
             </button>
@@ -1166,18 +1239,26 @@ export default function DisplaysPage() {
               <span className="ml-3 text-gray-300">กำลังโหลดข้อมูล...</span>
             </div>
           ) : activeTab === 'main_banner' && (
-            <div className="w-full h-full">
-              <div className="flex justify-center gap-4 w-full">
+            <div className="flex w-full flex-col gap-6 xl:flex-row">
+              <div className="min-w-0 flex-1">
+                <div className="mb-5">
+                  <h2 className="text-[18px] font-medium text-white">ตำแหน่งการแสดงผลแบนเนอร์หลัก</h2>
+                  <p className="mt-1 text-[13px] font-light text-gray-400">คลิก poster เพื่อดูรายละเอียดและแก้ไขข้อมูลด้านขวา</p>
+                </div>
+                <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 2xl:grid-cols-5">
                 {[1, 2, 3, 4, 5].map((item) => {
                   const bannerData = mainBanners[item];
                   const hasBanner = bannerData && bannerData.series;
+                  const isSelected = editingBanner === item;
 
                   return (
-                    <div key={item} className="flex flex-col items-center flex-1 max-w-[220px]">
+                    <div key={item} className="flex flex-col items-center">
                       {/* Placeholder Card */}
                       <div
                         onClick={() => setEditingBanner(item)}
-                        className={`w-full flex flex-col rounded-md relative cursor-pointer overflow-hidden ${item === 3 ? 'border-[5px] border-[#362375]' : 'border-[5px] border-transparent hover:border-[#5c85f1]/50'} shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_16px_rgba(92,133,241,0.2)] transition-all`}
+                        className={`w-full flex flex-col rounded-md relative cursor-pointer overflow-hidden border-[5px] shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_4px_16px_rgba(92,133,241,0.2)] transition-all ${
+                          isSelected ? 'border-[#6C72FF] shadow-[0_0_0_1px_rgba(108,114,255,0.75),0_12px_26px_rgba(0,0,0,0.35)]' : item === 3 ? 'border-[#362375]' : 'border-transparent hover:border-[#5c85f1]/50'
+                        }`}
                       >
                         {item === 3 && (
                           <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#362375] text-white px-4 py-0.5 rounded-b text-[18px] font-medium z-30 tracking-wide">
@@ -1203,6 +1284,9 @@ export default function DisplaysPage() {
                                 {bannerData.series.title_th}
                               </span>
                             </div>
+                            <div className="bg-[#222222] px-3 pb-3">
+                              <PlacementWarning series={bannerData.series} />
+                            </div>
                           </>
                         ) : (
                           /* Empty Placeholder Area matching total height */
@@ -1218,7 +1302,16 @@ export default function DisplaysPage() {
                     </div>
                   );
                 })}
+                </div>
               </div>
+
+              <BannerDetailPanel
+                bannerIndex={editingBanner}
+                currentSeriesId={editingBanner !== null ? mainBanners[editingBanner]?.series_id : null}
+                seriesList={seriesList}
+                onSave={handleSaveBanner}
+                isSaving={isSaving}
+              />
             </div>
           )}
 
@@ -1238,6 +1331,13 @@ export default function DisplaysPage() {
                 {contentCategories.map((cat, idx) => {
                   const isUpDisabled = idx === 0;
                   const isDownDisabled = idx === contentCategories.length - 1;
+                  const categorySeriesIds = Array.isArray(cat.series_ids) ? cat.series_ids : [];
+                  const missingSeriesCount = categorySeriesIds.filter(
+                    (id) => !publishedSeriesById.has(String(id)),
+                  ).length;
+                  const expiringSeries = categorySeriesIds
+                    .map((id) => publishedSeriesById.get(String(id)))
+                    .filter((item) => Boolean(getPlacementWarning(item)));
 
                   return (
                     <div 
@@ -1283,6 +1383,13 @@ export default function DisplaysPage() {
                               <span className="w-[32px] h-[22px] border border-gray-600 rounded flex items-center justify-center text-[10px] font-medium text-gray-400 bg-white/5 shrink-0">CN</span>
                               <span className="text-gray-400 text-[14.5px] font-light truncate" title={cat.name_cn}>{cat.name_cn || '-'}</span>
                             </div>
+                            {(missingSeriesCount > 0 || expiringSeries.length > 0) && (
+                              <div className="col-span-2 rounded border border-[#FDE047]/35 bg-[#4c3f16]/35 px-3 py-2 text-[12px] font-medium text-[#FDE047]">
+                                {missingSeriesCount > 0
+                                  ? `มีซีรีส์ ${missingSeriesCount.toLocaleString('th-TH')} เรื่องที่ไม่ได้เผยแพร่หรือหมดสัญญาแล้วในหมวดนี้`
+                                  : `มีซีรีส์ ${expiringSeries.length.toLocaleString('th-TH')} เรื่องที่ใกล้หมดสัญญาในหมวดนี้`}
+                              </div>
+                            )}
                         </div>
                       </div>
 
@@ -1357,16 +1464,6 @@ export default function DisplaysPage() {
           )}
         </div>
       </div>
-
-      <BannerEditModal
-        isOpen={editingBanner !== null}
-        onClose={() => setEditingBanner(null)}
-        bannerIndex={editingBanner}
-        seriesList={seriesList}
-        onSave={handleSaveBanner}
-        isSaving={isSaving}
-        currentSeriesId={editingBanner !== null ? mainBanners[editingBanner]?.series_id : null}
-      />
 
       <AddCategoryModal 
         isOpen={isAddingCategory}
