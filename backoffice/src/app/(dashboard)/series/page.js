@@ -321,6 +321,82 @@ function ExpireSeriesModal({
   );
 }
 
+function RenewSeriesModal({ seriesItem, isSaving, onClose, onConfirm }) {
+  if (!seriesItem) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
+      <div className="w-full max-w-[520px] rounded-xl border border-[#504481] bg-[#151a3f] p-6 shadow-2xl sm:p-8">
+        <div className="mb-5 flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#34d981]/45 bg-[#123f35]/70 text-[#7ee68f]">
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 12a9 9 0 0 1 15.5-6.2" />
+              <path d="M21 3v6h-6" />
+              <path d="M21 12a9 9 0 0 1-15.5 6.2" />
+              <path d="M3 21v-6h6" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-[20px] font-semibold tracking-wide text-white">
+              ยืนยันการต่อสัญญา
+            </h2>
+            <p className="mt-2 text-[14px] font-light leading-6 text-gray-300">
+              ซีรีส์ <span className="font-medium text-white">{seriesItem.title_th || "-"}</span>{" "}
+              จะถูกเปลี่ยนสถานะกลับเป็นพร้อมเผยแพร่
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-[#34407a] bg-[#202650]/70 p-4">
+          <div className="mb-3 text-[13px] font-semibold text-[#d8dcff]">
+            รายละเอียดที่ควรตรวจสอบ
+          </div>
+          <div className="space-y-3">
+            <div className="rounded border border-[#34d981]/45 bg-[#123f35]/45 px-4 py-3 text-[13px] leading-6 text-[#9ff0aa]">
+              หลังยืนยัน ซีรีส์นี้จะกลับไปอยู่ในสถานะพร้อมเผยแพร่ แต่ระบบจะไม่แก้ไขวันสิ้นสุดสัญญาให้อัตโนมัติ
+            </div>
+            <div className="rounded border border-[#34407a] bg-[#171d42] px-4 py-3">
+              <div className="text-[12px] font-semibold text-[#b6c0e4]">
+                วันสิ้นสุดสัญญาปัจจุบัน
+              </div>
+              <div className="mt-2">
+                <ContractBadge value={seriesItem.contract_ends_on} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="h-10 cursor-pointer rounded border border-gray-500 px-5 text-[14px] font-light text-gray-300 transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isSaving}
+            className="h-10 cursor-pointer rounded bg-[#2E8B57] px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#34a267] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isSaving ? "กำลังบันทึก..." : "ยืนยันต่อสัญญา"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SeriesPage() {
   const { user } = useAuth();
   const [series, setSeries] = useState([]);
@@ -344,6 +420,8 @@ export default function SeriesPage() {
   });
   const [isCheckingExpire, setIsCheckingExpire] = useState(false);
   const [isExpiring, setIsExpiring] = useState(false);
+  const [renewModalSeries, setRenewModalSeries] = useState(null);
+  const [isRenewing, setIsRenewing] = useState(false);
   const errorTimeoutRef = useRef(null);
 
   const showError = (msg) => {
@@ -544,18 +622,29 @@ export default function SeriesPage() {
   };
 
   const handleRenew = async (id) => {
-    const confirmed = window.confirm(
-      "ต่อสัญญาซีรีส์นี้และเปลี่ยนสถานะกลับเป็นพร้อมเผยแพร่? ระบบจะไม่แก้วันสิ้นสุดสัญญาให้อัตโนมัติ",
-    );
-    if (!confirmed) return;
+    const targetSeries = series.find((item) => item.id === id);
+    if (!targetSeries) return;
 
+    setRenewModalSeries(targetSeries);
+  };
+
+  const closeRenewModal = () => {
+    if (isRenewing) return;
+    setRenewModalSeries(null);
+  };
+
+  const confirmRenew = async () => {
+    if (!renewModalSeries) return;
+
+    setIsRenewing(true);
     const { error } = await backofficeMutation(
       user,
       "series",
       "update",
       { status: "ready" },
-      { id },
+      { id: renewModalSeries.id },
     );
+    setIsRenewing(false);
 
     if (error) {
       showError("เกิดข้อผิดพลาดในการต่อสัญญาซีรีส์");
@@ -563,9 +652,12 @@ export default function SeriesPage() {
     }
 
     setSeries((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "ready" } : s)),
+      prev.map((s) =>
+        s.id === renewModalSeries.id ? { ...s, status: "ready" } : s,
+      ),
     );
     window.dispatchEvent(new Event("backoffice:contract-notifications-refresh"));
+    closeRenewModal();
   };
 
   const getGenreNames = (genreIds) => {
@@ -1182,6 +1274,12 @@ export default function SeriesPage() {
         isSaving={isExpiring}
         onClose={closeExpireModal}
         onConfirm={confirmExpire}
+      />
+      <RenewSeriesModal
+        seriesItem={renewModalSeries}
+        isSaving={isRenewing}
+        onClose={closeRenewModal}
+        onConfirm={confirmRenew}
       />
     </div>
   );
