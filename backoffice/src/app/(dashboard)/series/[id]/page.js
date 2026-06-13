@@ -23,6 +23,15 @@ function LangToggle({ label, active, onClick }) {
   );
 }
 
+const SERIES_ASPECT_RATIOS = [
+  { value: 'portrait', label: 'หนังแนวตั้ง' },
+  { value: 'landscape', label: 'หนังแนวนอน' },
+];
+
+function isValidAspectRatio(value) {
+  return SERIES_ASPECT_RATIOS.some((option) => option.value === value);
+}
+
 export default function EditSeriesPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -42,6 +51,7 @@ export default function EditSeriesPage() {
     title_cn: '',
     content_producer_id: '',
     contract_ends_on: '',
+    aspect_ratio: 'portrait',
     genre_ids: [],
     total_episodes: 1,
     dub_th: false,
@@ -114,11 +124,7 @@ export default function EditSeriesPage() {
 
       // Fetch series by ID
       if (seriesId) {
-        const { data: sData, error: sError } = await supabase
-          .from('series')
-          .select('*')
-          .eq('id', seriesId)
-          .single();
+        const { data: sData, error: sError } = await backofficeQuery(user, 'series_by_id', { id: seriesId });
 
         if (sError || !sData) {
           console.error("Error fetching series data:", sError);
@@ -133,6 +139,7 @@ export default function EditSeriesPage() {
           title_cn: sData.title_cn || '',
           content_producer_id: sData.content_producer_id ? String(sData.content_producer_id) : '',
           contract_ends_on: sData.contract_ends_on || '',
+          aspect_ratio: isValidAspectRatio(sData.aspect_ratio) ? sData.aspect_ratio : 'portrait',
           genre_ids: sData.genre_ids || [],
           total_episodes: sData.total_episodes || 1,
           dub_th: !!sData.dub_th,
@@ -212,6 +219,11 @@ export default function EditSeriesPage() {
       return;
     }
 
+    if (!isValidAspectRatio(formData.aspect_ratio)) {
+      showError('กรุณาเลือกประเภทหนังให้ถูกต้อง');
+      return;
+    }
+
     if (!formData.dub_th && !formData.dub_en && !formData.dub_jp && !formData.dub_cn) {
       showError('กรุณาเลือกเสียงพากย์อย่างน้อย 1 ภาษา');
       return;
@@ -231,6 +243,7 @@ export default function EditSeriesPage() {
       title_cn: formData.title_cn,
       content_producer_id: parseInt(formData.content_producer_id, 10),
       contract_ends_on: formData.contract_ends_on || null,
+      aspect_ratio: formData.aspect_ratio,
       genre_ids: formData.genre_ids,
       total_episodes: parseInt(formData.total_episodes),
       dub_th: formData.dub_th,
@@ -485,6 +498,29 @@ export default function EditSeriesPage() {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <span className="w-[120px] text-base font-light text-white shrink-0">ประเภทหนัง</span>
+            <div className="flex flex-wrap gap-2">
+              {SERIES_ASPECT_RATIOS.map((option) => {
+                const active = formData.aspect_ratio === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleInputChange('aspect_ratio', option.value)}
+                    className={`h-9 rounded border px-4 text-sm font-medium transition-colors cursor-pointer ${
+                      active
+                        ? 'border-[#8f8cff] bg-[#6869ff] text-white shadow-[0_0_12px_rgba(104,105,255,0.28)]'
+                        : 'border-gray-600 bg-transparent text-gray-300 hover:border-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

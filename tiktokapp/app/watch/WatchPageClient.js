@@ -30,6 +30,10 @@ const BYTEPLUS_LICENSE =
 const SUBTITLE_OFFSET_BOTTOM_PERCENT = 25;
 const PLAYER_AUDIO_GAIN = 2.5;
 const ENABLE_AUDIO_TRACK_SWITCHING = true;
+const SERIES_ASPECT_RATIO_LANDSCAPE = "landscape";
+const SERIES_ASPECT_RATIO_PORTRAIT = "portrait";
+const LANDSCAPE_STAGE_CLASS =
+  "absolute left-1/2 top-1/2 h-[100vw] w-[100vh] origin-center -translate-x-1/2 -translate-y-1/2 rotate-90";
 
 const headers = SUPABASE_HEADERS;
 let vePlayerModulePromise = null;
@@ -397,6 +401,88 @@ const parseHlsAudioTracks = (manifestText) =>
       );
     });
 
+const resolveManifestUrl = (baseUrl, nextUrl) => {
+  try {
+    return new URL(nextUrl, baseUrl).toString();
+  } catch {
+    return "";
+  }
+};
+
+const parseHlsManifestDuration = (manifestText) =>
+  String(manifestText || "")
+    .split(/\r?\n/)
+    .reduce((total, line) => {
+      const match = line.match(/^#EXTINF:([\d.]+)/i);
+      const duration = match ? Number(match[1]) : 0;
+
+      return Number.isFinite(duration) && duration > 0
+        ? total + duration
+        : total;
+    }, 0);
+
+const getHlsVariantUrls = (manifestUrl, manifestText) => {
+  const lines = String(manifestText || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const variants = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^#EXT-X-STREAM-INF:/i.test(lines[index])) continue;
+
+    const nextLine = lines
+      .slice(index + 1)
+      .find((line) => line && !line.startsWith("#"));
+    const variantUrl = nextLine
+      ? resolveManifestUrl(manifestUrl, nextLine)
+      : "";
+
+    if (variantUrl) variants.push(variantUrl);
+  }
+
+  return variants;
+};
+
+const loadHlsManifestDuration = async (manifestUrls) => {
+  const urls = [...new Set((manifestUrls || []).filter(Boolean))];
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+
+      if (!response.ok) continue;
+
+      const manifestText = await response.text();
+      const directDuration = parseHlsManifestDuration(manifestText);
+
+      if (directDuration > 0) return directDuration;
+
+      const variantUrls = getHlsVariantUrls(url, manifestText).slice(0, 3);
+
+      for (const variantUrl of variantUrls) {
+        try {
+          const variantResponse = await fetch(variantUrl, { cache: "no-store" });
+
+          if (!variantResponse.ok) continue;
+
+          const variantDuration = parseHlsManifestDuration(
+            await variantResponse.text(),
+          );
+
+          if (variantDuration > 0) return variantDuration;
+        } catch {
+          // Try the next variant or manifest URL.
+        }
+      }
+    } catch {
+      // Try the next manifest URL. Direct CDN URLs may not expose CORS.
+    }
+  }
+
+  return 0;
+};
+
 const loadHlsAudioTracks = async (manifestUrls) => {
   const urls = [...new Set((manifestUrls || []).filter(Boolean))];
 
@@ -636,6 +722,38 @@ const getSeriesTitle = (series, language) => {
   }
 };
 
+const normalizeSeriesAspectRatio = (value) =>
+  value === SERIES_ASPECT_RATIO_LANDSCAPE
+    ? SERIES_ASPECT_RATIO_LANDSCAPE
+    : SERIES_ASPECT_RATIO_PORTRAIT;
+
+async function fetchSeriesForPlayer(seriesId) {
+  const encodedSeriesId = encodeURIComponent(seriesId);
+  const response = await fetch(
+    supabaseRestUrl(
+      `series?select=id,title_th,title_en,title_jp,title_cn,poster_url,aspect_ratio&id=eq.${encodedSeriesId}&limit=1`,
+    ),
+    { headers },
+  );
+
+  if (response.ok) {
+    return response.json();
+  }
+
+  const fallbackResponse = await fetch(
+    supabaseRestUrl(
+      `series?select=id,title_th,title_en,title_jp,title_cn,poster_url&id=eq.${encodedSeriesId}&limit=1`,
+    ),
+    { headers },
+  );
+
+  if (!fallbackResponse.ok) {
+    throw new Error(`Series fetch failed: ${fallbackResponse.status}`);
+  }
+
+  return fallbackResponse.json();
+}
+
 const interactivePlayerSelector = [
   "button",
   "a",
@@ -786,6 +904,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     onAudioTracksChange,
     lineAppId,
     lineUserId,
+    isLandscape = false,
   },
   ref,
 ) {
@@ -801,6 +920,10 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   const nativeSubtitleTrackRef = useRef(null);
   const endedTriggeredRef = useRef(false);
   const [fallbackSubtitleText, setFallbackSubtitleText] = useState("");
+  const [videoProgress, setVideoProgress] = useState({
+    currentTime: 0,
+    duration: 0,
+  });
   const audioBoostRef = useRef({
     audioContext: null,
     sourceNode: null,
@@ -1044,6 +1167,94 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     );
   };
 
+  const getTimeRangeEnd = (ranges) => {
+    try {
+      const length = Number(ranges?.length || 0);
+
+      for (let index = length - 1; index >= 0; index -= 1) {
+        const end = Number(ranges.end(index));
+
+        if (Number.isFinite(end) && end > 0) return end;
+      }
+    } catch {}
+
+    return 0;
+  };
+
+  const getPlayerNumber = (player, keys) => {
+    for (const key of keys) {
+      try {
+        const value =
+          typeof player?.[key] === "function" ? player[key]() : player?.[key];
+        const number = Number(value);
+
+        if (Number.isFinite(number) && number >= 0) return number;
+      } catch {}
+    }
+
+    return 0;
+  };
+
+  const getPlaybackTiming = () => {
+    const video = getVideoElement();
+    const player = playerRef.current?.player || playerRef.current;
+    const currentTime =
+      Number(video?.currentTime) ||
+      getPlayerNumber(player, ["currentTime", "getCurrentTime"]);
+    const durationCandidates = [
+      Number(playback?.duration),
+      Number(video?.duration),
+      getPlayerNumber(player, ["duration", "getDuration"]),
+      getTimeRangeEnd(video?.seekable),
+      getTimeRangeEnd(video?.buffered),
+    ].filter((value) => Number.isFinite(value) && value > 0);
+    const reportedDuration =
+      durationCandidates.length > 0 ? Math.max(...durationCandidates) : 0;
+    const safeCurrentTime = Number.isFinite(currentTime)
+      ? Math.max(0, currentTime)
+      : 0;
+    const duration =
+      reportedDuration > safeCurrentTime
+        ? reportedDuration
+        : safeCurrentTime > 0
+          ? safeCurrentTime + Math.max(30, safeCurrentTime * 0.08)
+          : 0;
+
+    return {
+      currentTime: safeCurrentTime,
+      duration,
+    };
+  };
+
+  const updateVideoProgress = useCallback(() => {
+    const timing = getPlaybackTiming();
+
+    setVideoProgress({
+      currentTime: timing.currentTime,
+      duration: timing.duration,
+    });
+  }, []);
+
+  const seekLandscapeVideo = useCallback((event) => {
+    if (!isLandscape) return;
+
+    const video = getVideoElement();
+    const { duration } = getPlaybackTiming();
+
+    if (!video || !Number.isFinite(duration) || duration <= 0) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const primaryLength = rect.width >= rect.height ? rect.width : rect.height;
+    const rawOffset =
+      rect.width >= rect.height
+        ? event.clientX - rect.left
+        : event.clientY - rect.top;
+    const ratio = Math.max(0, Math.min(1, rawOffset / primaryLength));
+
+    video.currentTime = duration * ratio;
+    updateVideoProgress();
+  }, [isLandscape, updateVideoProgress]);
+
   const updateFallbackSubtitleText = () => {
     const video = getVideoElement();
     const currentTime = Number(video?.currentTime);
@@ -1257,7 +1468,17 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           ? video.paused
           : false;
 
-    if (isPaused) return;
+    if (isPaused) {
+      if (typeof player?.play === "function") {
+        player.play();
+        onPausedChangeRef.current?.(false);
+        return;
+      }
+
+      video?.play?.().catch?.(() => {});
+      onPausedChangeRef.current?.(false);
+      return;
+    }
 
     if (typeof player?.pause === "function") {
       player.pause();
@@ -1270,6 +1491,19 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
   };
 
   useImperativeHandle(ref, () => ({
+    play() {
+      const player = playerRef.current?.player || playerRef.current;
+      const video = getVideoElement();
+
+      if (typeof player?.play === "function") {
+        player.play();
+        onPausedChangeRef.current?.(false);
+        return;
+      }
+
+      video?.play?.().catch?.(() => {});
+      onPausedChangeRef.current?.(false);
+    },
     pause() {
       const player = playerRef.current?.player || playerRef.current;
       const video = getVideoElement();
@@ -1483,6 +1717,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     let removeVideoPlaybackListeners = null;
     let videoListenerTimer = null;
     endedTriggeredRef.current = false;
+    setVideoProgress({ currentTime: 0, duration: 0 });
 
     if (process.env.NODE_ENV === "development") {
       const originalConsoleError = console.error;
@@ -1567,7 +1802,25 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           ...(vodLogOpts ? { vodLogOpts } : {}),
           autoplay: true,
           playsinline: true,
-          useCssFullscreen: true,
+          useCssFullscreen: !isLandscape,
+          ...(isLandscape
+            ? {
+                videoFillMode: "auto",
+                "x5-video-player-type": "h5",
+                "x5-video-player-fullscreen": true,
+                "x5-video-orientation": "landscape",
+                fullscreen: {
+                  rotateFullscreen: true,
+                  useScreenOrientation: true,
+                  lockOrientationType: "landscape",
+                  needBackIcon: true,
+                },
+              }
+            : {
+                fullscreen: {
+                  useCssFullscreen: true,
+                },
+              }),
           videoAttributes: {
             playsInline: true,
             webkitPlaysInline: true,
@@ -1637,6 +1890,7 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
 
           const handlePause = () => onPausedChangeRef.current?.(true);
           const handlePlay = () => onPausedChangeRef.current?.(false);
+          const handleProgressUpdate = () => updateVideoProgress();
           const handleEnded = () => {
             if (endedTriggeredRef.current) return;
 
@@ -1644,8 +1898,9 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
             onEndedRef.current?.();
           };
           const handleTimeUpdate = () => {
-            const duration = Number(video.duration);
-            const currentTime = Number(video.currentTime);
+            handleProgressUpdate();
+
+            const { duration, currentTime } = getPlaybackTiming();
 
             if (
               Number.isFinite(duration) &&
@@ -1661,13 +1916,18 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
           video.addEventListener("play", handlePlay);
           video.addEventListener("ended", handleEnded);
           video.addEventListener("timeupdate", handleTimeUpdate);
+          video.addEventListener("loadedmetadata", handleProgressUpdate);
+          video.addEventListener("durationchange", handleProgressUpdate);
           onPausedChangeRef.current?.(video.paused);
+          handleProgressUpdate();
 
           removeVideoPlaybackListeners = () => {
             video.removeEventListener("pause", handlePause);
             video.removeEventListener("play", handlePlay);
             video.removeEventListener("ended", handleEnded);
             video.removeEventListener("timeupdate", handleTimeUpdate);
+            video.removeEventListener("loadedmetadata", handleProgressUpdate);
+            video.removeEventListener("durationchange", handleProgressUpdate);
           };
         };
 
@@ -1739,15 +1999,63 @@ const VePlayerComponent = forwardRef(function VePlayerComponent(
     playback,
     lineAppId,
     lineUserId,
+    isLandscape,
     subtitles,
   ]);
+
+  const landscapeProgressPercent =
+    videoProgress.duration > 0
+      ? Math.max(
+          0,
+          Math.min(100, (videoProgress.currentTime / videoProgress.duration) * 100),
+        )
+      : 0;
 
   return (
     <div
       onClick={handlePlayerClick}
-      className="relative h-full w-full bg-black veplayer-raised-subtitle"
+      className={`relative h-full w-full bg-black veplayer-raised-subtitle ${
+        isLandscape ? "veplayer-landscape-mode" : ""
+      }`}
     >
       <div ref={containerRef} className="h-full w-full bg-black" />
+      {isLandscape && videoProgress.duration > 0 ? (
+        <div className="absolute bottom-4 left-8 right-8 z-30">
+          <button
+            type="button"
+            aria-label="Seek video"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              event.currentTarget.setPointerCapture?.(event.pointerId);
+              seekLandscapeVideo(event);
+            }}
+            onPointerMove={(event) => {
+              if (event.buttons !== 1) return;
+
+              event.preventDefault();
+              event.stopPropagation();
+              seekLandscapeVideo(event);
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            className="group flex h-8 w-full items-center"
+          >
+            <span className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/24 shadow-[0_1px_6px_rgba(0,0,0,0.35)]">
+              <span
+                className="absolute bottom-0 left-0 top-0 rounded-full bg-white"
+                style={{ width: `${landscapeProgressPercent}%` }}
+              />
+              <span
+                className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white opacity-95 shadow-[0_1px_8px_rgba(0,0,0,0.45)]"
+                style={{ left: `${landscapeProgressPercent}%` }}
+              />
+            </span>
+          </button>
+        </div>
+      ) : null}
       {fallbackSubtitleText ? (
         <div
           className="pointer-events-none absolute left-0 right-0 z-20 flex justify-center px-5 text-center"
@@ -1800,12 +2108,17 @@ export default function WatchPage() {
   const [vipLockedEpisode, setVipLockedEpisode] = useState(null);
   const [playbackAlert, setPlaybackAlert] = useState(null);
   const [currentSeries, setCurrentSeries] = useState(null);
+  const [seriesAspectRatio, setSeriesAspectRatio] = useState(
+    SERIES_ASPECT_RATIO_PORTRAIT,
+  );
   const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoriteSaving, setIsFavoriteSaving] = useState(false);
   const [privacyOverlayVisible, setPrivacyOverlayVisible] = useState(false);
   const [hasActiveVip, setHasActiveVip] = useState(false);
   const showPlayer =
     episode?.video_url && playback?.url && !error;
+  const isLandscapeSeries =
+    seriesAspectRatio === SERIES_ASPECT_RATIO_LANDSCAPE;
 
   useEffect(() => {
     loadVePlayerModule().catch(() => {});
@@ -2096,11 +2409,18 @@ export default function WatchPage() {
       applyFetchedSubtitles(
         Array.isArray(playAuthData.subtitles) ? playAuthData.subtitles : [],
       );
+      const playbackDuration = await loadHlsManifestDuration([
+        playAuthData.preferredPlaybackSource,
+        playAuthData.proxiedPlaybackSource,
+        playAuthData.directPlaybackSource,
+      ]);
+
       setPlayback({
         url: hlsPlaybackUrl,
         streamType: playAuthData.preferredPlaybackStreamType || "hls",
         codec: "h264",
         enableHlsMSE: ENABLE_AUDIO_TRACK_SWITCHING,
+        duration: playbackDuration > 0 ? playbackDuration : undefined,
       });
 
       if (ENABLE_AUDIO_TRACK_SWITCHING) {
@@ -2284,6 +2604,7 @@ export default function WatchPage() {
       setEpisodes([]);
       setSeriesTitle("");
       setCurrentSeries(null);
+      setSeriesAspectRatio(SERIES_ASPECT_RATIO_PORTRAIT);
       setIsFavorite(false);
       setActiveEpisodeRangeStart(1);
       setVipLockedEpisode(null);
@@ -2296,20 +2617,18 @@ export default function WatchPage() {
             ),
             { headers },
           ),
-          fetch(
-            supabaseRestUrl(
-              `series?select=id,title_th,title_en,title_jp,title_cn,poster_url&id=eq.${encodeURIComponent(seriesId)}&limit=1`,
-            ),
-            { headers },
-          ),
+          fetchSeriesForPlayer(seriesId),
         ]);
         const episodeData = await episodeResponse.json();
-        const seriesData = await seriesResponse.json();
+        const seriesData = seriesResponse;
         const firstEpisode = episodeData?.[0] || null;
 
         setEpisodes(Array.isArray(episodeData) ? episodeData : []);
         const fetchedSeries = seriesData?.[0] || null;
         setCurrentSeries(fetchedSeries);
+        setSeriesAspectRatio(
+          normalizeSeriesAspectRatio(fetchedSeries?.aspect_ratio),
+        );
         setSeriesTitle(getSeriesTitle(fetchedSeries, language));
         setIsFavorite(isSeriesFavorite(fetchedSeries?.id));
         saveRecentSeries(fetchedSeries);
@@ -2336,7 +2655,7 @@ export default function WatchPage() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex select-none bg-black text-white"
+      className="fixed inset-0 z-[100] flex select-none overflow-hidden bg-black text-white"
       onContextMenu={(event) => event.preventDefault()}
       onCopy={(event) => event.preventDefault()}
       onCut={(event) => event.preventDefault()}
@@ -2369,94 +2688,193 @@ export default function WatchPage() {
       ) : null}
 
       {showPlayer && isVideoPaused && !vipLockedEpisode ? (
-        <div className="absolute bottom-[72px] right-4 z-20 flex flex-col items-center gap-5">
-          <button
-            type="button"
-            onClick={handleFavoriteToggle}
-            disabled={!currentSeries?.id || isFavoriteSaving}
-            aria-label={labels.favorite}
-            aria-pressed={isFavorite}
-            className={`flex h-9 w-9 items-center justify-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95 ${
-              isFavorite ? "text-[#FF2D55]" : "text-white"
-            } ${isFavoriteSaving ? "opacity-70" : ""}`}
+        <div
+          className={
+            isLandscapeSeries
+              ? `${LANDSCAPE_STAGE_CLASS} pointer-events-none z-20`
+              : "absolute bottom-[72px] right-4 z-20 flex flex-col items-center gap-5"
+          }
+        >
+          {isLandscapeSeries ? (
+            <>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                aria-label={labels.back}
+                className="pointer-events-auto absolute left-4 top-4 inline-flex h-10 items-center gap-1.5 rounded-full border border-white/20 bg-black/45 px-3.5 text-[14px] font-semibold leading-none text-white shadow-[0_6px_18px_rgba(0,0,0,0.35)] backdrop-blur active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+                <span>{labels.back}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => playerControlRef.current?.play?.()}
+                aria-label="Play"
+                className="pointer-events-auto absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/42 text-white shadow-[0_10px_30px_rgba(0,0,0,0.38)] backdrop-blur active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  className="translate-x-0.5"
+                >
+                  <path d="M8 5v14l11-7-11-7Z" />
+                </svg>
+              </button>
+            </>
+          ) : null}
+
+          <div
+            className={
+              isLandscapeSeries
+                ? "pointer-events-auto absolute right-4 top-4 flex items-center gap-4"
+                : "flex flex-col items-center gap-5"
+            }
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="30"
-              height="30"
-              viewBox="0 0 24 24"
-              fill={isFavorite ? "currentColor" : "none"}
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <button
+              type="button"
+              onClick={handleFavoriteToggle}
+              disabled={!currentSeries?.id || isFavoriteSaving}
+              aria-label={labels.favorite}
+              aria-pressed={isFavorite}
+              className={`flex h-9 w-9 items-center justify-center drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95 ${
+                isFavorite ? "text-[#FF2D55]" : "text-white"
+              } ${isFavoriteSaving ? "opacity-70" : ""}`}
             >
-              <path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 0 1 7.1-7.1l.4.4.4-.4a5 5 0 0 1 7.1 7.1Z" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsEpisodeMenuOpen(true);
-              setIsSubtitleMenuOpen(false);
-            }}
-            aria-label={labels.list}
-            className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="30"
-              height="30"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 0 1 7.1-7.1l.4.4.4-.4a5 5 0 0 1 7.1 7.1Z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsEpisodeMenuOpen(true);
+                setIsSubtitleMenuOpen(false);
+              }}
+              aria-label={labels.list}
+              className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95"
             >
-              <path d="M8 6h12" />
-              <path d="M8 12h12" />
-              <path d="M8 18h12" />
-              <path d="m3 8 3-2-3-2v4Z" fill="currentColor" stroke="none" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsSubtitleMenuOpen(true);
-              setIsEpisodeMenuOpen(false);
-            }}
-            aria-label={labels.settings}
-            className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="30"
-              height="30"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M8 6h12" />
+                <path d="M8 12h12" />
+                <path d="M8 18h12" />
+                <path d="m3 8 3-2-3-2v4Z" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSubtitleMenuOpen(true);
+                setIsEpisodeMenuOpen(false);
+              }}
+              aria-label={labels.settings}
+              className="flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)] active:scale-95"
             >
-              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-              <path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1.1 1.7v.2a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1.1-1.7 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.7-1.1H2a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.7-1.1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1.1-1.7V2a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1.1 1.7 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.7 1.1h.2a2.1 2.1 0 0 1 0 4.2h-.2A1.8 1.8 0 0 0 19.4 15Z" />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+                <path d="M19.4 15a1.8 1.8 0 0 0 .4 2l.1.1a2.1 2.1 0 0 1-3 3l-.1-.1a1.8 1.8 0 0 0-2-.4 1.8 1.8 0 0 0-1.1 1.7v.2a2.1 2.1 0 0 1-4.2 0v-.2a1.8 1.8 0 0 0-1.1-1.7 1.8 1.8 0 0 0-2 .4l-.1.1a2.1 2.1 0 0 1-3-3l.1-.1a1.8 1.8 0 0 0 .4-2 1.8 1.8 0 0 0-1.7-1.1H2a2.1 2.1 0 0 1 0-4.2h.2a1.8 1.8 0 0 0 1.7-1.1 1.8 1.8 0 0 0-.4-2l-.1-.1a2.1 2.1 0 0 1 3-3l.1.1a1.8 1.8 0 0 0 2 .4 1.8 1.8 0 0 0 1.1-1.7V2a2.1 2.1 0 0 1 4.2 0v.2a1.8 1.8 0 0 0 1.1 1.7 1.8 1.8 0 0 0 2-.4l.1-.1a2.1 2.1 0 0 1 3 3l-.1.1a1.8 1.8 0 0 0-.4 2 1.8 1.8 0 0 0 1.7 1.1h.2a2.1 2.1 0 0 1 0 4.2h-.2A1.8 1.8 0 0 0 19.4 15Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       ) : null}
 
       {showPlayer && isVideoPaused && isEpisodeMenuOpen && !vipLockedEpisode ? (
-        <div className="absolute inset-0 z-30 flex items-end">
+        <div
+          className={
+            isLandscapeSeries
+              ? `${LANDSCAPE_STAGE_CLASS} z-30 flex items-end`
+              : "absolute inset-0 z-30 flex items-end"
+          }
+        >
           <button
             type="button"
             aria-label={labels.back}
             onClick={() => setIsEpisodeMenuOpen(false)}
             className="absolute inset-0 bg-black/45"
           />
-          <div className="relative w-full bg-[#2B2B3A] px-3.5 pb-4 pt-3.5 text-white shadow-[0_-10px_28px_rgba(0,0,0,0.36)]">
-            <h2 className="mb-3 truncate text-[16px] font-medium leading-5 tracking-normal text-white">
+          <div
+            className={`relative w-full bg-[#2B2B3A] px-3.5 pb-4 pt-3.5 text-white shadow-[0_-10px_28px_rgba(0,0,0,0.36)] ${
+              isLandscapeSeries ? "max-h-[88%] overflow-y-auto" : ""
+            }`}
+          >
+            {isLandscapeSeries ? (
+              <button
+                type="button"
+                onClick={() => setIsEpisodeMenuOpen(false)}
+                aria-label={labels.back}
+                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/28 text-white shadow-[0_4px_14px_rgba(0,0,0,0.28)] active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            ) : null}
+
+            <h2
+              className={`mb-3 truncate text-[16px] font-medium leading-5 tracking-normal text-white ${
+                isLandscapeSeries ? "pr-11" : ""
+              }`}
+            >
               {seriesTitle || labels.list}
             </h2>
 
@@ -2564,17 +2982,56 @@ export default function WatchPage() {
       isVideoPaused &&
       isSubtitleMenuOpen &&
       !vipLockedEpisode ? (
-        <div className="absolute inset-0 z-30 flex items-end">
+        <div
+          className={
+            isLandscapeSeries
+              ? `${LANDSCAPE_STAGE_CLASS} z-30 flex items-end`
+              : "absolute inset-0 z-30 flex items-end"
+          }
+        >
           <button
             type="button"
             aria-label={labels.back}
             onClick={() => setIsSubtitleMenuOpen(false)}
             className="absolute inset-0 bg-black/45"
           />
-          <div className="relative w-full bg-[#2b2b3d] px-4 pb-6 pt-5 text-white">
+          <div
+            className={`relative w-full bg-[#2b2b3d] px-4 pb-6 pt-5 text-white ${
+              isLandscapeSeries ? "max-h-[88%] overflow-y-auto" : ""
+            }`}
+          >
+            {isLandscapeSeries ? (
+              <button
+                type="button"
+                onClick={() => setIsSubtitleMenuOpen(false)}
+                aria-label={labels.back}
+                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/28 text-white shadow-[0_4px_14px_rgba(0,0,0,0.28)] active:scale-95"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            ) : null}
+
             {audioTrackOptions.length > 0 ? (
               <>
-                <h2 className="mb-3 px-3 text-[20px] font-medium leading-none">
+                <h2
+                  className={`mb-3 px-3 text-[20px] font-medium leading-none ${
+                    isLandscapeSeries ? "pr-11" : ""
+                  }`}
+                >
                   {labels.audioDubs}
                 </h2>
                 <div className="mb-5 overflow-hidden rounded-lg bg-[#1d1d29]">
@@ -2613,7 +3070,11 @@ export default function WatchPage() {
               </>
             ) : null}
 
-            <h2 className="mb-3 px-3 text-[20px] font-medium leading-none">
+            <h2
+              className={`mb-3 px-3 text-[20px] font-medium leading-none ${
+                isLandscapeSeries ? "pr-11" : ""
+              }`}
+            >
               {labels.subtitles}
             </h2>
             <div className="overflow-hidden rounded-lg bg-[#1d1d29]">
@@ -2804,19 +3265,28 @@ export default function WatchPage() {
           <p className="text-sm text-white/60">{labels.loading}</p>
         </div>
       ) : showPlayer ? (
-        <VePlayerComponent
-          key={playback.url}
-          ref={playerControlRef}
-          vid={episode.video_url.trim()}
-          playback={playback}
-          subtitles={subtitles}
-          activeSubtitle={activeSubtitle}
-          onPausedChange={setIsVideoPaused}
-          onEnded={handleVideoEnded}
-          onAudioTracksChange={handleAudioTracksChange}
-          lineAppId={1006938}
-          lineUserId={`web-watch-${seriesId || "unknown"}`}
-        />
+        <div
+          className={
+            isLandscapeSeries
+              ? `${LANDSCAPE_STAGE_CLASS} bg-black`
+              : "h-full w-full bg-black"
+          }
+        >
+          <VePlayerComponent
+            key={`${playback.url}:${seriesAspectRatio}`}
+            ref={playerControlRef}
+            vid={episode.video_url.trim()}
+            playback={playback}
+            subtitles={subtitles}
+            activeSubtitle={activeSubtitle}
+            onPausedChange={setIsVideoPaused}
+            onEnded={handleVideoEnded}
+            onAudioTracksChange={handleAudioTracksChange}
+            lineAppId={1006938}
+            lineUserId={`web-watch-${seriesId || "unknown"}`}
+            isLandscape={isLandscapeSeries}
+          />
+        </div>
       ) : (
         <div className="flex flex-col items-center justify-center w-full h-full gap-4 px-6 text-center">
           <p className="text-lg font-bold">{error || labels.missing}</p>

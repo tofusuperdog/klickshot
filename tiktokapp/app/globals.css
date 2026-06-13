@@ -69,8 +69,23 @@ body {
 .veplayer-raised-subtitle .xgplayer-controls [title*="subtitle" i],
 .veplayer-raised-subtitle .xgplayer-controls [title*="caption" i],
 .veplayer-raised-subtitle .xgplayer-controls [aria-label="CC"],
-.veplayer-raised-subtitle .xgplayer-controls [title="CC"],
-.veplayer-raised-subtitle .xgplayer-fullscreen {
+.veplayer-raised-subtitle .xgplayer-controls [title="CC"] {
+  display: none !important;
+}
+
+.veplayer-raised-subtitle:not(.veplayer-landscape-mode) .xgplayer-fullscreen {
+  display: none !important;
+}
+
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-controls,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-control,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-progress,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-volume,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-fullscreen,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-time,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-play,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-pause,
+.veplayer-raised-subtitle.veplayer-landscape-mode .xgplayer-start {
   display: none !important;
 }
 

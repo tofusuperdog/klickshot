@@ -105,6 +105,26 @@ function renderLangs(item, prefix) {
   );
 }
 
+function getSeriesAspectRatioLabel(value) {
+  return value === "landscape" ? "หนังแนวนอน" : "หนังแนวตั้ง";
+}
+
+function AspectRatioBadge({ value }) {
+  const isLandscape = value === "landscape";
+
+  return (
+    <span
+      className={`inline-flex w-full items-center justify-center rounded border px-2.5 py-1 text-center text-[11px] font-medium ${
+        isLandscape
+          ? "border-[#7dd3fc]/60 bg-[#0f3350]/60 text-[#9be4ff]"
+          : "border-[#8f8cff]/60 bg-[#2a2c66]/55 text-[#d7d5ff]"
+      }`}
+    >
+      {getSeriesAspectRatioLabel(value)}
+    </span>
+  );
+}
+
 function StatusColumn({
   status,
   missingEpisodes,
@@ -980,21 +1000,24 @@ export default function SeriesPage() {
                       </div>
 
                       {/* Poster */}
-                      <div className="relative h-[154px] w-[110px] shrink-0 overflow-hidden rounded bg-[#171d42] shadow-[0_10px_24px_rgba(0,0,0,0.24)] ring-1 ring-[#455189]">
-                        {s.poster_url ? (
-                          <Image
-                            src={s.poster_url}
-                            alt={s.title_th}
-                            fill
-                            sizes="110px"
-                            loading={index === 0 ? "eager" : "lazy"}
-                            style={{ objectFit: "cover" }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center w-full h-full text-xs text-gray-600">
-                            No Image
-                          </div>
-                        )}
+                      <div className="flex w-[127px] shrink-0 flex-col items-center gap-2">
+                        <div className="relative h-[177px] w-[127px] overflow-hidden rounded bg-[#171d42] shadow-[0_10px_24px_rgba(0,0,0,0.24)] ring-1 ring-[#455189]">
+                          {s.poster_url ? (
+                            <Image
+                              src={s.poster_url}
+                              alt={s.title_th}
+                              fill
+                              sizes="127px"
+                              loading={index === 0 ? "eager" : "lazy"}
+                              style={{ objectFit: "cover" }}
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-600">
+                              No Image
+                            </div>
+                          )}
+                        </div>
+                        <AspectRatioBadge value={s.aspect_ratio} />
                       </div>
 
                       {/* Titles & Genres */}
