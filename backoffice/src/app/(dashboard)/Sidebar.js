@@ -85,8 +85,15 @@ const menuGroups = [
     label: "ระบบ",
     items: [
       {
-        name: "รายงาน",
+        name: "รายงานรายได้",
         path: "/reports",
+        permKey: "perm_reports",
+        iconInactive: "/report.svg",
+        iconActive: "/report_b.svg",
+      },
+      {
+        name: "รายงานการเข้าชม",
+        path: "/viewing-reports",
         permKey: "perm_reports",
         iconInactive: "/report.svg",
         iconActive: "/report_b.svg",
@@ -122,7 +129,7 @@ export default function Sidebar() {
   return (
     <>
       <div className="w-[232px] h-full bg-gradient-to-b from-[#101440] via-[#0d1238] to-[#0a1130] text-gray-300 flex flex-col justify-between border-r border-[#161a44] flex-shrink-0 shadow-[12px_0_38px_rgba(0,0,0,0.22)]">
-        <div className="min-h-0">
+        <div className="min-h-0 overflow-y-auto custom-scrollbar">
           <div className="flex items-center px-5 pt-5 pb-6">
             <div className="relative w-[218px] h-[75px]">
               <Image

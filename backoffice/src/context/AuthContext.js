@@ -60,6 +60,7 @@ export function AuthProvider({ children }) {
       { path: '/content-producers', permKey: 'perm_content_producers' },
       { path: '/sales', permKey: 'perm_sales' },
       { path: '/reports', permKey: 'perm_reports' },
+      { path: '/viewing-reports', permKey: 'perm_reports' },
       { path: '/customers', permKey: 'perm_customers' },
       { path: '/users', permKey: 'perm_users' },
     ];

@@ -69,6 +69,9 @@ next-env.d.ts
 # Local documentation snapshots
 docs/database-data-dictionary.md
 
+# Supabase migrations
+supabase/migrations/
+
 # OS and editor files
 .DS_Store
 Thumbs.db
