@@ -4,31 +4,39 @@ import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { backofficeQuery, backofficeUserMutation } from '@/lib/backoffice';
 
-const permissionColumns = [
-  { key: 'dashboard', label: 'ภาพรวม', icon: '/dashboard.svg', alwaysOn: true },
-  { key: 'perm_series', label: 'ซีรีส์', icon: '/series.svg' },
-  { key: 'perm_genres', label: 'แนวเรื่อง', icon: '/genres.svg' },
-  { key: 'perm_displays', label: 'การแสดงผล', icon: '/displays.svg' },
-  { key: 'perm_content_producers', label: 'ผู้ผลิตคอนเทนต์', icon: '/film.svg' },
-  { key: 'perm_sales', label: 'การขาย', icon: '/sales.svg' },
-  { key: 'perm_reports', label: 'รายงาน', icon: '/report.svg' },
-  { key: 'perm_customers', label: 'ลูกค้า', icon: '/customers.svg' },
-  { key: 'perm_users', label: 'ผู้ใช้งาน', icon: '/users.svg' },
+const permissionSections = [
+  {
+    label: 'ทั่วไป',
+    items: [{ key: 'dashboard', label: 'ภาพรวม', icon: '/dashboard.svg', alwaysOn: true }],
+  },
+  {
+    label: 'คอนเทนต์',
+    items: [
+      { key: 'perm_series', label: 'ซีรีส์', icon: '/series.svg' },
+      { key: 'perm_genres', label: 'แนวเรื่อง', icon: '/genres.svg' },
+      { key: 'perm_displays', label: 'การแสดงผล', icon: '/displays.svg' },
+    ],
+  },
+  {
+    label: 'ผู้ใช้ & ลูกค้า',
+    items: [
+      { key: 'perm_content_producers', label: 'ผู้ผลิตคอนเทนต์', icon: '/film.svg' },
+      { key: 'perm_customers', label: 'ลูกค้า', icon: '/customers.svg' },
+      { key: 'perm_users', label: 'ผู้ใช้งาน', icon: '/users.svg' },
+    ],
+  },
+  {
+    label: 'การเงิน',
+    items: [{ key: 'perm_sales', label: 'การขาย', icon: '/sales.svg' }],
+  },
+  {
+    label: 'ระบบ',
+    items: [{ key: 'perm_reports', label: 'รายงาน', description: 'ครอบคลุมเมนูรายงานทั้งหมด', icon: '/report.svg' }],
+  },
 ];
 
-const modalPermissionsLeft = [
-  { key: 'perm_series', label: 'ซีรีส์', icon: '/series.svg' },
-  { key: 'perm_genres', label: 'แนวเรื่อง', icon: '/genres.svg' },
-  { key: 'perm_displays', label: 'การแสดงผล', icon: '/displays.svg' },
-  { key: 'perm_content_producers', label: 'ผู้ผลิตคอนเทนต์', icon: '/film.svg' },
-];
-
-const modalPermissionsRight = [
-  { key: 'perm_sales', label: 'การขาย', icon: '/sales.svg' },
-  { key: 'perm_reports', label: 'รายงาน', icon: '/report.svg' },
-  { key: 'perm_customers', label: 'ลูกค้า', icon: '/customers.svg' },
-  { key: 'perm_users', label: 'ผู้ใช้งาน', icon: '/users.svg' },
-];
+const permissionColumns = permissionSections.flatMap((section) => section.items);
+const editablePermissionSections = permissionSections.filter((section) => section.label !== 'ทั่วไป');
 
 const defaultPermissions = {
   perm_sales: false,
@@ -75,7 +83,7 @@ function UserModal({ isOpen, title, formData, setFormData, onClose, onSave, isAd
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] backdrop-grayscale transition-all duration-300">
-      <div className="bg-[#151a3f] border border-[#504481] rounded-xl w-full max-w-[480px] shadow-2xl p-8 py-10">
+      <div className="max-h-[90vh] w-full max-w-[720px] overflow-y-auto rounded-xl border border-[#504481] bg-[#151a3f] p-8 py-10 shadow-2xl custom-scrollbar">
         <h2 className="text-2xl font-semibold text-gray-300 text-center mb-8 tracking-wide">
           {title}
         </h2>
@@ -134,42 +142,39 @@ function UserModal({ isOpen, title, formData, setFormData, onClose, onSave, isAd
 
           <div className="mb-4">
             <span className="block text-[15px] font-light text-gray-300 mb-5">สิทธิ์การเข้าถึง</span>
-            <div className="flex px-4 gap-x-12">
-              <div className="flex-1 space-y-4">
-                {modalPermissionsLeft.map((item) => (
-                  <div key={item.key} className={`flex items-center space-x-3 group ${isAdminEdit ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`} onClick={() => handleToggle(item.key)}>
-                    <div className="relative flex items-center justify-center">
-                      <div className={`w-[18px] h-[18px] border rounded-sm transition-all ${formData[item.key] ? 'border-green-500' : 'border-gray-400'}`}></div>
-                      {formData[item.key] && (
-                        <svg className="w-3.5 h-3.5 text-green-500 absolute pointer-events-none" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="text-gray-300 font-light text-sm group-hover:text-white transition-colors">
-                      <span>{item.label}</span>
-                    </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {editablePermissionSections.map((section) => (
+                <div key={section.label} className="rounded-lg border border-[#34407a] bg-[#111735]/70 p-4">
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="text-xs font-medium text-[#aeb7d5]">{section.label}</span>
+                    <span className="h-px flex-1 bg-[#34407a]" />
                   </div>
-                ))}
-              </div>
-
-              <div className="flex-1 space-y-4">
-                {modalPermissionsRight.map((item) => (
-                  <div key={item.key} className={`flex items-center space-x-3 group ${isAdminEdit ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`} onClick={() => handleToggle(item.key)}>
-                    <div className="relative flex items-center justify-center">
-                      <div className={`w-[18px] h-[18px] border rounded-sm transition-all ${formData[item.key] ? 'border-green-500' : 'border-gray-400'}`}></div>
-                      {formData[item.key] && (
-                        <svg className="w-3.5 h-3.5 text-green-500 absolute pointer-events-none" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="text-gray-300 font-light text-sm group-hover:text-white transition-colors">
-                      <span>{item.label}</span>
-                    </div>
+                  <div className="space-y-3">
+                    {section.items.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        disabled={isAdminEdit}
+                        className={`group flex w-full items-center space-x-3 text-left ${isAdminEdit ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                        onClick={() => handleToggle(item.key)}
+                      >
+                        <div className="relative flex items-center justify-center">
+                          <div className={`h-[18px] w-[18px] rounded-sm border transition-all ${formData[item.key] ? 'border-green-500' : 'border-gray-400'}`}></div>
+                          {formData[item.key] && (
+                            <svg className="pointer-events-none absolute h-3.5 w-3.5 text-green-500" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span>
+                          <span className="block text-sm font-light text-gray-300 transition-colors group-hover:text-white">{item.label}</span>
+                          {item.description && <span className="mt-0.5 block text-[11px] text-[#8f99bd]">{item.description}</span>}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -438,9 +443,25 @@ export default function UsersPage() {
         </div>
       ) : (
         /* User List */
-        <div className="bg-[#202650] border border-[#34407a] rounded-lg">
+        <div className="overflow-x-auto rounded-lg border border-[#34407a] bg-[#202650] custom-scrollbar">
+          <div className="min-w-[1120px]">
+          {/* Section Row */}
+          <div className="grid grid-cols-[1.5fr_repeat(9,minmax(72px,1fr))_0.5fr_0.5fr] items-center border-b border-[#34407a] bg-[#151a3f] text-xs font-medium text-[#aeb7d5]">
+            <div className="px-6 py-3">สิทธิ์การเข้าถึง</div>
+            {permissionSections.map((section) => (
+              <div
+                key={section.label}
+                className="border-l border-[#34407a] px-3 py-3 text-center"
+                style={{ gridColumn: `span ${section.items.length}` }}
+              >
+                {section.label}
+              </div>
+            ))}
+            <div className="col-span-2 border-l border-[#34407a] px-3 py-3 text-center">จัดการ</div>
+          </div>
+
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center border-b border-[#34407a] text-base text-gray-300 font-light bg-[#202650] rounded-t-lg">
+          <div className="grid grid-cols-[1.5fr_repeat(9,minmax(72px,1fr))_0.5fr_0.5fr] items-center border-b border-[#34407a] bg-[#202650] text-base font-light text-gray-300">
             <div className="px-6 py-4 font-medium">ชื่อผู้ใช้งาน</div>
             {permissionColumns.map((col) => (
               <div key={col.key} className="px-4 py-4 flex justify-center items-center">
@@ -449,6 +470,7 @@ export default function UsersPage() {
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2.5 bg-[#2d2252] text-gray-200 text-xs px-2.5 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-[#504481] translate-y-1 group-hover:translate-y-0">
                     {col.label}
+                    {col.description && <span className="ml-1 text-[#aeb7d5]">— {col.description}</span>}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#2d2252] border-b border-r border-[#504481] rotate-45"></div>
                   </div>
                 </div>
@@ -488,7 +510,7 @@ export default function UsersPage() {
               const rowBg = index % 2 === 0 ? 'bg-white/[0.04]' : 'bg-[#202650]';
 
               return (
-                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(9,1fr)_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#34407a]/50 text-base`}>
+                <div key={user.id} className={`grid grid-cols-[1.5fr_repeat(9,minmax(72px,1fr))_0.5fr_0.5fr] items-center ${rowBg} hover:bg-white/[0.06] transition-colors border-b border-[#34407a]/50 text-base`}>
                   <div className="px-6 py-4 text-gray-300">{user.username}</div>
                   {permissionColumns.map((col) => (
                     <div key={col.key} className="px-4 py-4 flex justify-center items-center">
@@ -536,6 +558,7 @@ export default function UsersPage() {
               );
             })
           )}
+          </div>
         </div>
       )}
 
