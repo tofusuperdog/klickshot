@@ -14,6 +14,7 @@ const statusLabels = {
 
 const tabs = [
   { id: 'latest', label: 'ลูกค้าล่าสุด' },
+  { id: 'vip', label: 'ลูกค้า VIP' },
   { id: 'search', label: 'ค้นหาลูกค้า' },
 ];
 
@@ -49,6 +50,9 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(false);
   const [latestCustomers, setLatestCustomers] = useState([]);
   const [latestLoading, setLatestLoading] = useState(true);
+  const [vipCustomers, setVipCustomers] = useState([]);
+  const [vipLoading, setVipLoading] = useState(false);
+  const [vipError, setVipError] = useState('');
 
   const customer = result?.customer || null;
   const vipSubscriptions = result?.vip_subscriptions || [];
@@ -85,6 +89,45 @@ export default function CustomersPage() {
       isCurrent = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab !== 'vip' || !user) return undefined;
+
+    const controller = new AbortController();
+
+    async function fetchVipCustomers() {
+      setVipLoading(true);
+      setVipError('');
+
+      try {
+        const response = await fetch('/api/backoffice/active-vip-customers', {
+          cache: 'no-store',
+          credentials: 'include',
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          setVipCustomers([]);
+          setVipError(payload.error || 'ไม่สามารถโหลดข้อมูลลูกค้า VIP ได้');
+          return;
+        }
+
+        setVipCustomers(Array.isArray(payload.data) ? payload.data : []);
+      } catch (fetchError) {
+        if (fetchError?.name !== 'AbortError') {
+          setVipCustomers([]);
+          setVipError('ไม่สามารถเชื่อมต่อเพื่อโหลดข้อมูลลูกค้า VIP ได้');
+        }
+      } finally {
+        if (!controller.signal.aborted) setVipLoading(false);
+      }
+    }
+
+    fetchVipCustomers();
+
+    return () => controller.abort();
+  }, [activeTab, user]);
 
   const searchCustomer = async (id) => {
     const cleanedId = String(id || '').trim();
@@ -210,6 +253,62 @@ export default function CustomersPage() {
                           ดูรายละเอียด
                         </button>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {activeTab === 'vip' && (
+        <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-[#34407a] bg-[#151a3f]/90 p-4 shadow-lg">
+          <div className="mb-3 flex shrink-0 items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-white">ลูกค้า VIP ที่ใช้งานอยู่</h2>
+              <p className="mt-1 text-[12px] text-gray-400">แสดงเฉพาะรายการที่มีสถานะ Active และยังไม่เกินเวลาสิ้นสุด</p>
+            </div>
+            <div className="rounded bg-[#202650] px-3 py-1.5 text-[12px] text-gray-300">
+              {vipCustomers.length.toLocaleString()} รายการ
+            </div>
+          </div>
+
+          {vipLoading ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded border border-[#34407a]/70 bg-[#202650]/60 px-4 py-10 text-center text-[14px] text-gray-400">
+              กำลังโหลดลูกค้า VIP...
+            </div>
+          ) : vipError ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded border border-[#6d2f3c] bg-[#2c1018] px-4 py-10 text-center text-[14px] text-[#ffb4c2]">
+              {vipError}
+            </div>
+          ) : vipCustomers.length === 0 ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded border border-[#34407a]/70 bg-[#202650]/60 px-4 py-10 text-center text-[14px] text-gray-400">
+              ยังไม่มีลูกค้า VIP ที่ใช้งานอยู่
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto rounded border border-[#34407a]/70 custom-scrollbar">
+              <table className="w-full min-w-[720px] border-collapse text-left text-[13px] text-gray-200">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-[#34407a] bg-[#171d42]/75 text-gray-300">
+                    <th className="px-3 py-2.5 font-medium">รหัสลูกค้า</th>
+                    <th className="px-3 py-2.5 font-medium">ชนิดแพ็กเกจ</th>
+                    <th className="px-3 py-2.5 font-medium">เวลาเริ่มต้น</th>
+                    <th className="px-3 py-2.5 font-medium">เวลาสิ้นสุด</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vipCustomers.map((subscription, index) => (
+                    <tr
+                      key={subscription.id}
+                      className={`border-b border-[#34407a]/50 ${
+                        index % 2 === 0 ? 'bg-[#28214f]/25' : 'bg-[#28214f]/10'
+                      }`}
+                    >
+                      <td className="px-3 py-2.5 font-medium text-white">#{subscription.customer_id}</td>
+                      <td className="px-3 py-2.5">{formatValue(subscription.package_type)}</td>
+                      <td className="px-3 py-2.5">{formatDateTime(subscription.starts_at)}</td>
+                      <td className="px-3 py-2.5">{formatDateTime(subscription.expires_at)}</td>
                     </tr>
                   ))}
                 </tbody>
