@@ -135,7 +135,7 @@ export default function SalesPage() {
         <div className="relative w-8 h-8">
           <Image src="/sales.svg" alt="Sales" fill sizes="36px" style={{ objectFit: 'contain' }} />
         </div>
-        <h1 className="text-xl text-gray-300 font-semibold tracking-wide">การขาย</h1>
+        <h1 className="text-xl text-gray-300 font-semibold tracking-wide">ราคา</h1>
       </div>
 
       <div className="border border-[#34407a] rounded-lg overflow-hidden shadow-lg bg-[#151a3f]/85">

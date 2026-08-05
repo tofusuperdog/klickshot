@@ -73,7 +73,7 @@ const menuGroups = [
     label: "การเงิน",
     items: [
       {
-        name: "การขาย",
+        name: "ราคา",
         path: "/sales",
         permKey: "perm_sales",
         iconInactive: "/sales.svg",
